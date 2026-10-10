@@ -1442,3 +1442,7 @@ html.vt-arr::view-transition-group(*){animation-duration:.26s}
 html.vt-arr::view-transition-old(*),html.vt-arr::view-transition-new(*){animation-duration:.2s}
 html.vt-arr::view-transition{pointer-events:none}   /* taps during the move reach the menu (a quick second ↑) */
 .arrlist button,.lm-aud,.lm-mode,.laycard label{touch-action:manipulation}   /* quick repeated taps are taps, not a double-tap gesture */
+/* live card before the first game of the stream: the player's usual numbers + their last session */
+.oa-usual{margin-top:10px}.oa-usual .lab{display:block;margin-bottom:4px}.oa-usual .oa-nums{opacity:.92}
+.oa-prev{display:block;margin-top:8px}
+.oa-usual .lab{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}

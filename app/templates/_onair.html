@@ -37,6 +37,8 @@
       {% set l = x.last %}<a class="oa-last" href="/match/{{ l.match_id }}?player={{ x.p.slug }}">Last: <b class="res {{ l.outcome|lower }}">{{ l.outcome }}</b> · {{ l.map or '?' }} · {{ l.mode or '' }} · {{ l.kills }}/{{ l.deaths }}/{{ l.assists }} · {{ x.ended_ago // 60 }}m ago →</a>
       {% else %}
       <div class="oa-rec"><span class="lab">This stream</span><b>0-0</b><small>{{ 'no matchmade games yet' if x.customs_hidden else 'waiting for the first game' }}</small></div>
+      {% if x.usual %}{% set u = x.usual %}<div class="oa-usual"><span class="lab">Usual · last 90 days</span><div class="oa-nums">{% for k, l, f in [('kda', 'KDA', 'kda'), ('kd', 'K/D', ''), ('dmg_pm', 'Dmg/min', ''), ('win_pct', 'Win', 'pct'), ('sc_pct', 'Score %', 'pct'), ('acc', 'Acc', 'pct')] %}{% if u[k] is not none %}<span class="lv"><b>{{ fv(u[k], f) }}</b>{{ l }}</span>{% endif %}{% endfor %}</div></div>{% endif %}
+      {% if x.prev %}<a class="oa-last oa-prev" href="/p/{{ x.p.slug }}?session={{ x.prev.first[:8] }}#latest">Last session: <b>{{ x.prev.wins }}-{{ x.prev.losses }}</b> · {{ x.prev.games }} game{{ '' if x.prev.games == 1 else 's' }}{% if x.prev.kda is not none %} · KDA {{ x.prev.kda|kda }}{% endif %} · {{ x.prev.start|dt('%a %b %-d') }} →</a>{% endif %}
       {% if x.customs_hidden %}<p class="muted oa-wait oa-cust"><b>In custom games?</b> {{ x.p.gamertag }}'s customs (scrims) aren't shared by Halo, so only matchmade games show up here.</p>
       {% else %}<p class="muted oa-wait">Halo publishes each game when it ends; results land here within a couple of minutes.</p>{% endif %}
       {% endif %}</div>{% endfor %}</div>

@@ -52,6 +52,17 @@ class OnAir(unittest.TestCase):
             self.assertIn('In custom games?',web.render_template('_onair.html',onair=o))
         self.conn.execute("UPDATE matches SET playlist=NULL WHERE match_id=(SELECT MIN(match_id) FROM matches)")   # one custom on record
         self.assertFalse(web._onair(self.g(),{'started':time.time()-40*60,'halo':True},'pro')['per'][0]['customs_hidden'])
+    def test_no_games_yet_shows_usual_and_last_session(self):
+        # 2026-10-10: before the first game of a stream the card carries the usual numbers and the last session
+        for d in range(4): self.add(2*86400+d*900, 'Win' if d else 'Loss')          # last session: 4 games, 3-1
+        for d in range(3): self.add(9*86400+d*900)                                     # an older one
+        o=web._onair(self.g(),{'started':time.time()-20*60,'halo':True,'title':'t','game':'Halo Infinite','viewers':3},'pro')
+        x=o['per'][0]
+        self.assertEqual(x['games'],0); self.assertIsNotNone(x['usual'])
+        self.assertEqual((x['prev']['games'],x['prev']['wins'],x['prev']['losses']),(4,3,1))
+        with web.app.test_request_context('/p/pro'):
+            html=web.render_template('_onair.html',onair=o)
+        self.assertIn('Usual · last 90 days',html); self.assertIn('Last session: <b>3-1</b>',html)
     def test_offline_is_none(self):
         self.assertIsNone(web._onair(self.g(),None,'pro'))
 

@@ -1100,6 +1100,22 @@ def _tier(csr):
     return next((name for floor, name in RANK_TIERS if csr is not None and csr >= floor), None)
 
 
+def _prev_session(rows):
+    """The last session before this stream (games no more than SESSION_GAP_S apart): {start, wins, losses, games, kda,
+    first} or None. rows: matches in any order."""
+    rows = sorted((r for r in rows if r["outcome"] in ("Win", "Loss", "Tie")), key=lambda r: r["started_at"], reverse=True)
+    if not rows:                        # (games they left early don't count, like the session list)
+        return None
+    sess = [rows[0]]
+    for r in rows[1:]:
+        if sess[-1]["started_at"] - (r["started_at"] + (r["duration_s"] or 0)) > analytics.SESSION_GAP_S:
+            break
+        sess.append(r)
+    a = analytics._agg(sess)
+    return {"start": sess[-1]["started_at"], "games": len(sess), "wins": sum(r["outcome"] == "Win" for r in sess),
+            "losses": sum(r["outcome"] == "Loss" for r in sess), "kda": a.get("kda"), "first": sess[-1]["match_id"]}
+
+
 def _tonight(main, ids, since, stream_start):
     """One card of the live panel: games on these accounts since `since`, plus lobby read, strip, milestones, best plays."""
     ph = ",".join("?" * len(ids))
@@ -1111,16 +1127,17 @@ def _tonight(main, ids, since, stream_start):
         analytics.derive(r)
     x = {"p": main, "games": len(rows), "a": analytics._agg(rows) if rows else {}, "last": rows[0] if rows else None,
          "pips": [r["outcome"].lower() for r in reversed(rows)], "strip": [], "best": [], "milestones": [], "lobby": None}
-    if not rows:
-        return x
-    last = rows[0]
-    x["ended_ago"] = int(time.time() - last["started_at"] - (last["duration_s"] or 0))
-    x["csr"] = x["a"].get("csr_net")
     # the player's usual (90 days before this stream, at least 5 games): the live numbers are tinted against it
     base = [dict(r) for r in db.q(f"SELECT * FROM matches WHERE player_id IN ({ph}) AND started_at<? AND started_at>=? AND COALESCE(duration_s, 999)>={analytics.MIN_GAME_S}", *ids, since, since - 90 * 86400)]
     for r in base:
         analytics.derive(r)
     x["usual"] = analytics._agg(base) if len(base) >= 5 else None
+    if not rows:
+        x["prev"] = _prev_session(base)     # 2026-10-10: no games yet this stream — the card shows usual + last session
+        return x
+    last = rows[0]
+    x["ended_ago"] = int(time.time() - last["started_at"] - (last["duration_s"] or 0))
+    x["csr"] = x["a"].get("csr_net")
     # lobby read: how tonight's lobbies have gone (Halo only publishes MMR after a game ends, so this is never "next game")
     edges = [r for r in rows if r.get("mmr_edge") is not None and r["outcome"] in ("Win", "Loss")]
     if edges:
