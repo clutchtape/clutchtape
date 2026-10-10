@@ -1,0 +1,9 @@
+{# Twitch channels popover (2026-10-10) for player and squad headers. Needs tw_rows = [(slug, gamertag, channel or '')].
+   Saved on this browser only (session cookie) by /twitch-links; a blank box removes that channel. #}
+{% if twitch_on %}{% set has_tw = tw_rows|selectattr(2)|list %}<details class="twpop">
+<summary class="twbtn{{ ' on' if has_tw }}" title="Twitch channels: clips, VOD links and Watch together"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M4.3 3 3 6.4v13.1h4.5V22h2.6l2.4-2.5h3.6l4.9-4.9V3H4.3zm15 10.8-2.8 2.8H12l-2.4 2.4v-2.4H5.8V4.9h13.5v8.9zM16.5 8v4.9h-1.8V8h1.8zm-4.9 0v4.9H9.8V8h1.8z"/></svg>{{ 'Twitch' if has_tw else '+ Twitch' }}</summary>
+<form class="twcard" method="post" action="/twitch-links"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+  <div class="twcard-h"><b>Twitch channels</b><span>Adds clips, links each game to the right spot in the VOD{{ ' and Watch together' if tw_rows|length > 1 }}.</span></div>
+  {% for slug, gt, ch in tw_rows %}<label class="twrow"><span class="twwho">{{ gt }}</span><span class="twfield"><span class="twpre" aria-hidden="true">twitch.tv/</span><input type="hidden" name="slug" value="{{ slug }}"><input name="twitch" value="{{ ch or '' }}" maxlength="80" placeholder="channel" aria-label="Twitch channel for {{ gt }}" autocomplete="off" autocapitalize="off" spellcheck="false"></span></label>{% endfor %}
+  <div class="twcard-f"><small>🔒 Saved on this device only. Never in the link or our database. Leave blank to remove.</small><span class="twacts"><button type="button" class="twcancel" data-twclose>Cancel</button><button type="submit" class="twsave">Save</button></span></div>
+</form></details>{% endif %}

@@ -7,7 +7,7 @@
 {% set stick = ('who',) if raw.squad else ('time',) %}
 {% set stick_wide = ('time', 'map') if raw.squad else ('map',) %}
 <section class="panel rawlog" id="raw" aria-label="Raw data">
-  <div class="ph"><h2>Raw data</h2><span class="muted">{{ raw.rows|map(attribute='gnum')|unique|list|length }} games · {{ raw.cols|length }} columns · scroll sideways · click a header to sort</span></div>
+  <div class="ph"><h2>Raw data</h2><span class="muted">{{ raw.rows|map(attribute='gnum')|unique|list|length }} games · {{ raw.cols|length }} columns · scroll sideways · click a header to sort</span>{% with nav_list = (d.sessions if d.sessions is defined else d.nights), nav_sel = d.s_idx %}{% include "_sess_nav.html" %}{% endwith %}</div>
   <div class="tablewrap"><table class="rawtable{{ ' rawsquad' if raw.squad }}">
     <thead><tr><th data-stick>#</th>{% for c in raw.cols %}<th class="rg-{{ c.group }}"{% if c.key in stick %} data-stick{% elif c.key in stick_wide %} data-stick="wide"{% endif %}{% if c.help %} title="{{ c.help }}"{% endif %}>{{ c.label }}</th>{% endfor %}</tr>
     {% for a in raw.avg %}<tr class="rawtot"><td title="Average per game">Avg</td>{% for c in raw.cols %}{% set v = a.cells[loop.index0] %}<td class="rg-{{ c.group }}">{% if c.key == 'who' %}<b>{{ a.who }}</b>{% elif c.key == 'time' %}{% if not raw.squad %}<b>Per game</b>{% endif %}{% elif c.key == 'map' %}{{ a.games }} games{% elif c.key == 'outcome' %}{{ a.wins }}–{{ a.losses }}{% elif v is not none %}{{ rawcell(c, v) }}{% endif %}</td>{% endfor %}</tr>{% endfor %}</thead>

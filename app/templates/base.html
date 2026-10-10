@@ -17,7 +17,7 @@
   <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
   <link rel="manifest" href="/static/manifest.webmanifest">
   <meta property="og:image" content="{{ og.image if og and og.image else request.host_url ~ 'og/home.png?v=1' }}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:type" content="website"><meta name="twitter:card" content="summary_large_image">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=162">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=166">
   <script nonce="{{ csp_nonce }}">try{if(localStorage.getItem('ct-view')==='raw')document.documentElement.classList.add('rawview')}catch(e){}</script>
 {% block head %}{% endblock %}
 <link rel="stylesheet" href="/static/mobile.css?v=26">
@@ -55,7 +55,7 @@ document.addEventListener('click',function(e){var b=e.target.closest('[data-shar
 <script nonce="{{ csp_nonce }}" src="/static/fullscreen.js?v=1" defer></script>
 <script nonce="{{ csp_nonce }}" src="/static/watchframe.js?v=5" defer></script>
 <script nonce="{{ csp_nonce }}" src="/static/saved.js?v=6" defer></script>
-<script nonce="{{ csp_nonce }}" src="/static/heat.js?v=14" defer></script>
+<script nonce="{{ csp_nonce }}" src="/static/heat.js?v=16" defer></script>
 <script nonce="{{ csp_nonce }}" src="/static/mediatoggle.js?v=7" defer></script>
 <script nonce="{{ csp_nonce }}" src="/static/recap-highlights.js?v=1" defer></script>
 <script nonce="{{ csp_nonce }}" src="/static/recap.js?v=8" defer></script>

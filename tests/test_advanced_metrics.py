@@ -106,3 +106,22 @@ class RawViewTests(unittest.TestCase):
         self.assertEqual([(x['gnum'],x['who']) for x in q['rows']][:4],[(1,'Ann'),(1,'Bo'),(2,'Ann'),(2,'Bo')])
         self.assertEqual([a['who'] for a in q['avg']],['Ann','Bo'])
         kc=[c['key'] for c in q['cols']].index('kills');self.assertEqual(q['avg'][1]['cells'][kc],1)
+
+
+class PlayerTableTests(unittest.TestCase):
+    def test_rank_heat_per_player_and_neutral_small_gaps(self):
+        import player_table
+        from test_companion import row
+        a=[row('a1',1000,kills=20,deaths=5),row('a2',2000,kills=18,deaths=6)]
+        b=[row('b1',1000,kills=10,deaths=12,pid=2)]
+        c=[row('c1',1000,kills=14,deaths=8,pid=3)]
+        t=player_table.build([('Ann',a,None),('Bo',b,None),('Cy',c,None),('Nobody',[],None)])
+        self.assertEqual([r['label'] for r in t['rows']],['Ann','Bo','Cy'])                                # empty player skipped
+        col=[x['key'] for x in t['cols']].index
+        k=lambda i,key:t['rows'][i]['cells'][col(key)]
+        self.assertEqual(k(0,'kills_pg'),(19.0,'h-ex'));self.assertEqual(k(1,'kills_pg')[1],'h-poor')
+        self.assertEqual(k(0,'deaths_pg')[1],'h-ex');self.assertEqual(k(1,'deaths_pg')[1],'h-poor')     # fewer deaths = better
+        self.assertEqual(k(0,'games'),(2,''))                                                             # games: no colour
+        two=player_table.build([('This session',[row('x',1,kills=10)],None),('Usual',[row('y',1,kills=10.2)],'')])
+        self.assertEqual(two['rows'][0]['cells'][[x['key'] for x in two['cols']].index('kills_pg')][1],'h-avg')  # <3% apart
+        self.assertIsNone(player_table.build([('A',[],None)]))

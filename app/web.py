@@ -16,6 +16,7 @@ from flask import Response, g, Flask, abort, jsonify, redirect, render_template,
 from werkzeug.exceptions import HTTPException
 import analytics
 import raw_view
+import player_table
 import capacity
 import privacy
 
@@ -648,7 +649,7 @@ def squad(slugs, short=False, code=None, game=None):
         if st:
             onair = _onair([(m, [m["id"]] + [a["id"] for a in _alts(m["id"])]) for m in ps], st, chans.get(slug))
             break
-    return render_template("squad.html", raw=raw_view.build(night, squad=[(p["id"], p["gamertag"]) for p in ps]) if tab == "latest" else None, session_picks=session_watch.for_sessions(data["nights"], [p["id"] for p in ps], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(night, [p["id"] for p in ps]) if tab == "latest" else {}, tab=tab, kpis=kp, adv=adv, periods=periods, pidgt=gt, onair=onair, **extra, comparison=comparison, recap_matches=session_review.recap_matches(data.get('night') or []), recap_names=[p['gamertag'] for p in ps], gtmap={p["slug"]: p["gamertag"] for p in ps}, pcfg=pcfg, vm=vm, og=og, share_url=share_url, d=data, ps=ps, chans=chans, tw=first, psrc=psrc, plabel=plabel, host=request.host.split(":")[0],
+    return render_template("squad.html", pt=_squad_table(night, ps) if tab == "latest" else None, raw=raw_view.build(night, squad=[(p["id"], p["gamertag"]) for p in ps]) if tab == "latest" else None, session_picks=session_watch.for_sessions(data["nights"], [p["id"] for p in ps], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(night, [p["id"] for p in ps]) if tab == "latest" else {}, tab=tab, kpis=kp, adv=adv, periods=periods, pidgt=gt, onair=onair, **extra, comparison=comparison, recap_matches=session_review.recap_matches(data.get('night') or []), recap_names=[p['gamertag'] for p in ps], gtmap={p["slug"]: p["gamertag"] for p in ps}, pcfg=pcfg, vm=vm, og=og, share_url=share_url, d=data, ps=ps, chans=chans, tw=first, psrc=psrc, plabel=plabel, host=request.host.split(":")[0],
                            slugs=",".join(names), vods=vods, sq_base=("/sq/" + code) if code else None, open_game=game)
 
 
@@ -802,6 +803,28 @@ def _tw_save(pairs):
     session["tw"] = dict(list(m.items())[-TW_MAX:])
 
 
+@app.route("/twitch-links", methods=["POST"])
+def twitch_links():
+    """Twitch box on player/squad pages: remember channels for these players on this browser only (session cookie),
+    never in the URL or database. A blank box forgets that player's channel."""
+    check_csrf()
+    back = request.form.get("next") or "/"
+    if not re.fullmatch(r"/(p|sq|squad)/[A-Za-z0-9,_-]+", back.split("?")[0]):
+        back = "/"
+    pairs = []
+    for slug, raw in zip(request.form.getlist("slug")[:MAX_SQUAD], request.form.getlist("twitch")):
+        slug, raw = slug.strip().lower(), raw.strip()
+        if not re.fullmatch(r"[a-z0-9-]+", slug) or _blocked(slug) or not db.q1("SELECT 1 FROM players WHERE slug=?", slug):
+            continue
+        if raw and not twitch.parse_login(raw):
+            return render_template("error.html", title="Couldn't read that Twitch link",
+                                   message=f"“{raw[:80]}” isn't a Twitch channel. Try twitch.tv/name or just the name."), 400
+        pairs.append((slug, raw or None))
+    if pairs:
+        _tw_save(pairs)
+    return redirect(back)
+
+
 @app.before_request
 def _tw_out_of_urls():
     """Old/shared links with ?tw=: remember the channel on this browser and reload the clean address."""
@@ -852,7 +875,7 @@ def hub_helpers():
         if args.get("session"):
             args["session"] = _short_id(args["session"])
         return request.path + (("?" + urlencode(args)) if args else "")
-    return {"hub_tabs": HUB_TABS, "tab_url": tab_url}
+    return {"hub_tabs": HUB_TABS, "tab_url": tab_url, "twitch_on": twitch.enabled()}
 
 
 def _kpis(matches, per=None):
@@ -878,6 +901,27 @@ def _kpis(matches, per=None):
 
 
 BASE_DAYS = 90
+
+
+def _solo_table(matches, rows):
+    """Player stats table on a player page: this session vs the usual (the 90 days around it, session left out)."""
+    if not matches:
+        return None
+    ids = {m["match_id"] for m in matches}
+    cutoff = min(m["started_at"] for m in matches) - BASE_DAYS * 86400
+    base = [r for r in rows if r["match_id"] not in ids and r["started_at"] >= cutoff]
+    return player_table.build([("This session", matches, None),
+                               ("Usual", base if len(base) >= 5 else [], f"{len(base)} games in the 90 days before")])
+
+
+def _squad_table(night, ps):
+    """Player stats table on a squad page: one row per player for the night, best SC% first."""
+    t = player_table.build([(p["gamertag"], [g["members"][p["id"]] for g in night if p["id"] in g["members"]], None) for p in ps])
+    if t:
+        i = next((n for n, c in enumerate(t["cols"]) if c["key"] == "sc_pct"), None)
+        if i is not None:
+            t["rows"].sort(key=lambda r: -(r["cells"][i][0] if r["cells"][i][0] is not None else -1))
+    return t
 
 
 def _breakdown(matches, rows):
@@ -1170,7 +1214,7 @@ def profile(slug):
     comparison = session_review.comparison(data['sessions'], data['s_idx'], 'recent' if request.args.get('compare') == 'recent' else 'previous')
     tab = _tab()
     extra = _hub_board(p["slug"]) if tab == "analysis" else {}
-    return render_template("profile.html", session_picks=session_watch.for_sessions(data["sessions"], [p["id"] for p in [p] + alts], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(s["matches"] if s else [], [p["id"]] + [a["id"] for a in alts]) if tab == "latest" else {}, tab=tab, onair=onair, alts=alts, kpis=_kpis(s["matches"]) if s else [], adv=_adv_kpis({p["gamertag"]: s["matches"]}) if s else [], sess_agg=analytics._agg(s["matches"]) if s else None, brk=_breakdown(s["matches"], data["rows"]) if s and tab == "latest" else None, raw=raw_view.build(s["matches"]) if s and tab == "latest" else None, periods=_periods({p["gamertag"]: data["rows"]}, solo=True) if tab == "records" else None, **extra, comparison=comparison, recap_matches=session_review.recap_matches(s['matches'] if s else []), recap_names=[p['gamertag']], pcfg=pcfg, vm=vm, og=og, p=p, d=data, clips=clips, vods=vods, tw=tw, psrc=psrc, plabel=plabel,
+    return render_template("profile.html", session_picks=session_watch.for_sessions(data["sessions"], [p["id"] for p in [p] + alts], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(s["matches"] if s else [], [p["id"]] + [a["id"] for a in alts]) if tab == "latest" else {}, tab=tab, onair=onair, alts=alts, kpis=_kpis(s["matches"]) if s else [], adv=_adv_kpis({p["gamertag"]: s["matches"]}) if s else [], sess_agg=analytics._agg(s["matches"]) if s else None, brk=_breakdown(s["matches"], data["rows"]) if s and tab == "latest" else None, pt=_solo_table(s["matches"], data["rows"]) if s and tab == "latest" else None, raw=raw_view.build(s["matches"]) if s and tab == "latest" else None, periods=_periods({p["gamertag"]: data["rows"]}, solo=True) if tab == "records" else None, **extra, comparison=comparison, recap_matches=session_review.recap_matches(s['matches'] if s else []), recap_names=[p['gamertag']], pcfg=pcfg, vm=vm, og=og, p=p, d=data, clips=clips, vods=vods, tw=tw, psrc=psrc, plabel=plabel,
                            host=request.host.split(":")[0])
 
 

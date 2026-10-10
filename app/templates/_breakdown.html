@@ -1,10 +1,6 @@
-{# Session breakdown under the game log (2026-10-10): works without Twitch. Needs brk = web._breakdown(). #}
+{# Session breakdown under the game log (2026-10-10): by mode + medals. Session vs usual lives in the Player stats
+   table above the game log (_player_table.html). Needs brk = web._breakdown(). #}
 <section class="brk" aria-label="Session breakdown">
-  <div class="panel brk-vs"><div class="ph"><h2>This session vs usual</h2><span class="muted">{% if brk.base_games %}usual = {{ brk.base_games }} games in the {{ brk.days }} days before{% else %}not enough earlier games to compare{% endif %}</span></div>
-    <div class="vsgrid">{% for v in brk.vs %}<div class="vs {{ 'good' if v.good else 'bad' if v.good == false else '' }}"{% if v.help %} title="{{ v.help }}"{% endif %}>
-      <span class="vs-l">{{ v.label }}</span><b class="vs-n">{{ (v.now|kda) if v.label == 'KDA' else ('{:+,}'.format(v.now) if v.label == 'Dmg ±' else v.now) }}{{ v.unit }}</b>
-      {% if v.delta is not none %}<span class="vs-d">{{ '▲' if v.delta > 0 else '▼' if v.delta < 0 else '=' }} {{ ('{:+g}'.format(v.delta) if v.delta else '0') }}{{ v.unit }} <small>vs {{ (v.usual|kda) if v.label == 'KDA' else ('{:+,}'.format(v.usual) if v.label == 'Dmg ±' else v.usual) }}{{ v.unit }}</small></span>{% endif %}
-    </div>{% endfor %}</div></div>
   <div class="brk-side">
     {% if brk.modes|length > 0 %}<div class="panel brk-modes"><div class="ph"><h2>By mode</h2></div>
       <table class="brkmodes"><thead><tr><th>Mode</th><th>Games</th><th>W–L</th><th>SC%</th><th>KDA</th><th>Dmg/min</th></tr></thead><tbody>

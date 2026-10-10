@@ -1001,7 +1001,7 @@ button.primary,button.secondary{align-items:center;justify-content:center;text-a
 /* Game log: session row inside the table so totals line up with the game columns (desktop); phones keep the swipe totals */
 .gamelog .glsess td{background:rgba(255,140,60,.07);border-bottom:2px solid rgba(255,140,60,.35);font-size:13px;padding-top:9px;padding-bottom:9px}
 .gamelog .glsess td:first-child{box-shadow:inset 3px 0 0 #fb8b4b}
-@media(min-width:701px){.solo-log .nightper{display:none}.solo-log .tablewrap:has(> .nightper){display:none}}
+@media(min-width:701px){}
 @media(max-width:700px){.gamelog .glsess{display:none}}
 /* wide screens: a few advanced columns by default */
 @media(min-width:1280px){.statfold .xc.xw{display:table-cell}}
@@ -1050,3 +1050,49 @@ button.primary,button.secondary{align-items:center;justify-content:center;text-a
 .rawtable .stk.rg-core b{white-space:nowrap}
 .hub-more.edge-left .hub-menu{right:auto;left:0}
 @media(max-width:700px){.addmem.soloadd{display:block;margin:6px 0 0}.addmem.soloadd form{margin:6px 0 0}}
+/* previous / next session (_sess_nav.html) */
+.sessnav{display:inline-flex;align-items:center;gap:6px;margin-left:auto;margin-right:8px}
+.sessbtn{display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 11px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}
+a.sessbtn:hover{border-color:var(--acc2);color:var(--acc2)}.sessbtn.off{opacity:.35}
+.sesspos{font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums}
+@media(max-width:700px){.sessnav{margin:6px 0 0;width:100%}.sesspos{margin:0 auto}.sessbtn{min-height:38px;padding:0 14px}
+}
+.brk{grid-template-columns:minmax(0,1fr)}.brk .brk-side{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}
+@media(max-width:900px){.brk .brk-side{grid-template-columns:minmax(0,1fr)}}
+/* Player stats table (_player_table.html): heat by rank, like the main Halo site — soft fill, coloured text */
+.ptable{border-collapse:collapse;font-variant-numeric:tabular-nums;width:100%}
+.ptable th{white-space:nowrap;cursor:pointer}
+.ptable td{white-space:nowrap}
+.ptable td.name{font-weight:800}.ptable td.name small{display:block;font-weight:500;font-size:10.5px;color:var(--mute)}
+.ptable td.h-ex{background:rgba(34,197,94,.16);color:#8ee6a8;font-weight:700}
+.ptable td.h-good{background:rgba(74,222,128,.10);color:#9fd9ad;font-weight:650}
+.ptable td.h-avg{background:rgba(234,179,8,.07)}
+.ptable td.h-below{background:rgba(249,115,22,.10);color:#e0a87a;font-weight:650}
+.ptable td.h-poor{background:rgba(239,68,68,.14);color:#f0a3a3;font-weight:700}
+.ptable .na{color:#5e574f}
+.scrollx .stk{position:sticky;z-index:2;background:var(--panel,#16130f)}.scrollx .stk-last{box-shadow:6px 0 8px -6px rgba(0,0,0,.7)}
+.scrollx thead .stk{background:var(--panel,#16130f)}
+/* desktop: Save · Share · Color as plain buttons, no ⋯ (heat.js keeps the details open above 700px) */
+@media(min-width:701px){.hub-more>summary{display:none}
+ .hub-more .hub-menu{position:static;flex-direction:row;align-items:center;gap:8px;min-width:0;padding:0;background:none;border:0;box-shadow:none;border-radius:0}
+ .hub-more .hub-menu>*{width:auto;justify-content:center}}
+/* Twitch channels popover (_tw_form.html) */
+.twpop{position:relative;display:inline-block;vertical-align:middle;margin-left:6px}
+.twbtn{list-style:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;padding:0 12px;border-radius:999px;border:1px solid rgba(145,70,255,.55);background:rgba(145,70,255,.12);color:#c9a8ff;font-size:13px;font-weight:700;white-space:nowrap}
+.twbtn::-webkit-details-marker{display:none}.twbtn:hover,.twpop[open]>.twbtn{background:rgba(145,70,255,.22);color:#e4d4ff;border-color:#9146ff}
+.twbtn.on{background:#9146ff;color:#fff;border-color:#9146ff}
+.twcard{position:absolute;left:0;top:calc(100% + 8px);z-index:40;width:min(380px,calc(100vw - 32px));display:grid;gap:10px;padding:14px;border-radius:14px;background:#17131c;border:1px solid rgba(145,70,255,.45);box-shadow:0 16px 40px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.4)}
+.twcard-h b{display:block;font-size:14px;color:#efe6ff}.twcard-h span{display:block;margin-top:3px;font-size:12px;line-height:1.4;color:var(--mute)}
+.twrow{display:grid;gap:4px}.twwho{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#bdb3a6}
+.twfield{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;background:#0f0c12;overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.twfield:focus-within{border-color:#9146ff;box-shadow:0 0 0 3px rgba(145,70,255,.25)}
+.twpre{padding:0 1px 0 10px;font-size:14px;color:#7c7287;white-space:nowrap}
+.twfield input{flex:1;min-width:0;min-height:38px;padding:0 10px 0 0;border:0;background:none;color:var(--ink);font-size:14px;outline:none;box-shadow:none}
+.twcard-f{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.twcard-f small{flex:1 1 180px;font-size:11px;line-height:1.35;color:var(--mute)}
+.twacts{display:inline-flex;gap:8px;margin-left:auto}
+.twacts button{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:0 14px;border-radius:999px;font-size:13px;font-weight:700;cursor:pointer}
+.twcancel{background:none;border:1px solid var(--line);color:var(--ink)}
+.twsave{background:#9146ff;border:1px solid #9146ff;color:#fff}.twsave:hover{background:#a970ff}
+@media(max-width:700px){.twpop{display:block;margin:6px 0 0}.twbtn{min-height:38px}
+ .twcard{position:static;width:auto;margin-top:8px}.twfield input{min-height:44px;font-size:16px}.twacts button{min-height:42px}}

@@ -72,6 +72,20 @@ class LookupTests(unittest.TestCase):
         with fresh.session_transaction() as sess:
             self.assertNotIn('tw', sess)
 
+    def test_twitch_box_saves_per_browser_and_blank_forgets(self):
+        db.run("INSERT OR IGNORE INTO players(xuid,gamertag,slug,created_at) VALUES('78','Tw Two','tw-two',0)")
+        post = lambda pairs, nxt: self.client.post('/twitch-links', data=MultiDict(
+            [('csrf', 'test-csrf'), ('next', nxt)] + [x for s, c in pairs for x in (('slug', s), ('twitch', c))]))
+        r = post([('tw-two', 'https://twitch.tv/TwoChan'), ('nobody-here', 'x')], '/sq/abc123?session=dec90af6')
+        self.assertEqual(r.status_code, 302); self.assertEqual(r.location, '/sq/abc123?session=dec90af6')
+        with self.client.session_transaction() as sess:
+            self.assertEqual(sess['tw'], {'tw-two': 'twochan'})                # unknown players are ignored
+        self.assertEqual(post([('tw-two', 'not a channel!!')], '/p/tw-two').status_code, 400)
+        self.assertEqual(post([('tw-two', '')], 'https://evil.example/').location, '/')   # blank forgets; no off-site redirect
+        with self.client.session_transaction() as sess:
+            self.assertEqual(sess['tw'], {})
+        self.assertEqual(self.client.post('/twitch-links', data={'slug': 'tw-two', 'twitch': 'x'}).status_code, 400)  # csrf
+
     def test_lookup_always_opens_the_one_page_per_player_or_squad(self):
         # 2026-10-08: one page per player/squad; 2026-10-10: Twitch never goes in the URL.
         with patch.object(web, '_add_one', return_value=('x-echo-x', 'x_echo_x', None)):

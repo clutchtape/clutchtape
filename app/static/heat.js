@@ -81,7 +81,7 @@
     if (hint) hint.remove(); wrap.classList.remove('swipe');
     if (table.classList.contains('mobile-cards') && innerWidth <= 700) return;
     if (table.scrollWidth <= wrap.clientWidth + 1) return;
-    if (table.classList.contains('rawtable')) { swipe(wrap); rawStick(table); return; }   /* raw data: always scroll, frozen name/time */
+    if (table.classList.contains('rawtable') || table.classList.contains('scrollx')) { swipe(wrap); rawStick(table); return; }   /* raw data: always scroll, frozen name/time */
     if (wrap.clientWidth < 700) { swipe(wrap); return; }      /* phones: swipe sideways (no visible scrollbar) with a › arrow */
     var heads = [].slice.call(head.cells), n = heads.length;
     var widths = heads.map(function (th) { return th.getBoundingClientRect().width; });
@@ -164,17 +164,23 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', sync); else sync();
 })();
 
-/* ⋯ header menu: open it toward the side with room, close on an outside tap or Escape */
+/* ⋯ header menu: on desktop it's always open and shown as plain buttons (Save · Share · Color); on phones it's a ⋯
+   menu that opens toward the side with room and closes on an outside tap or Escape */
 (function () {
+  var wide = window.matchMedia('(min-width:701px)');
+  function inline() { [].forEach.call(document.querySelectorAll('details.hub-more'), function (d) { d.open = wide.matches; }); }
+  if (wide.addEventListener) wide.addEventListener('change', inline);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', inline); else inline();
   document.addEventListener('toggle', function (e) {
     var d = e.target; if (!d.classList || !d.classList.contains('hub-more') || !d.open) return;
     d.classList.remove('edge-left'); var m = d.querySelector('.hub-menu'); if (m && m.getBoundingClientRect().left < 8) d.classList.add('edge-left');
   }, true);
   document.addEventListener('click', function (e) {
+    if (wide.matches) return;
     [].forEach.call(document.querySelectorAll('details.hub-more[open]'), function (d) { if (!d.contains(e.target)) d.open = false; });
   });
   document.addEventListener('keydown', function (e) {
-    if (e.key !== 'Escape') return;
+    if (e.key !== 'Escape' || wide.matches) return;
     [].forEach.call(document.querySelectorAll('details.hub-more[open]'), function (d) { d.open = false; d.querySelector('summary').focus(); });
   });
 })();
@@ -183,3 +189,16 @@
 document.addEventListener('toggle', function (e) {
   var d = e.target; if (d.classList && d.classList.contains('addmem') && d.open) { var i = d.querySelector('input[name=gamertag]'); if (i) i.focus(); }
 }, true);
+
+/* Twitch popover: Cancel / outside tap / Escape close it */
+(function () {
+  function shut(except) { [].forEach.call(document.querySelectorAll('details.twpop[open]'), function (d) { if (d !== except) d.open = false; }); }
+  document.addEventListener('click', function (e) {
+    var c = e.target.closest('[data-twclose]'); if (c) { c.closest('details').open = false; return; }
+    shut(e.target.closest('details.twpop'));
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') shut(null); });
+  document.addEventListener('toggle', function (e) {
+    var d = e.target; if (d.classList && d.classList.contains('twpop') && d.open) { var i = d.querySelector('input[name=twitch]'); if (i && window.matchMedia('(min-width:701px)').matches) i.focus(); }
+  }, true);
+})();

@@ -1,0 +1,8 @@
+{# Previous / next session buttons (2026-10-10). Needs nav_list (sessions, newest first) and nav_sel (index shown).
+   Previous = the older session. Links keep the page's other filters (tab_url). #}
+{% if nav_list and nav_list|length > 1 %}{% set older = nav_list[nav_sel + 1] if nav_sel + 1 < nav_list|length else none %}{% set newer = nav_list[nav_sel - 1] if nav_sel > 0 else none %}
+<span class="sessnav" role="group" aria-label="Sessions">
+{% if older %}<a class="sessbtn" rel="prev" href="{{ tab_url('latest', session=older.matches[-1].match_id, s=None, vod=None, watch=None) }}" title="{{ older.start|dt('%a %b %-d') }} · {{ older.record }}">‹ Previous</a>{% else %}<span class="sessbtn off" aria-disabled="true">‹ Previous</span>{% endif %}
+<span class="sesspos">{{ nav_sel + 1 }}/{{ nav_list|length }}</span>
+{% if newer %}<a class="sessbtn" rel="next" href="{{ tab_url('latest', session=newer.matches[-1].match_id, s=None, vod=None, watch=None) }}" title="{{ newer.start|dt('%a %b %-d') }} · {{ newer.record }}">Next ›</a>{% else %}<span class="sessbtn off" aria-disabled="true">Next ›</span>{% endif %}
+</span>{% endif %}
