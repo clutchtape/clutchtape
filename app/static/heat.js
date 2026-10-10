@@ -221,7 +221,9 @@ document.addEventListener('toggle', function (e) {
     var vs = document.getElementById('livevs'), total = player.offsetHeight + (vs && vs.offsetHeight ? vs.offsetHeight + 12 : 0);
     /* 2026-10-10: when the right side is wide enough for both (screens are wider than tall, so a height-limited video
        leaves width over), chat and live stats sit side by side, chat on the left, both the full height. No handle. */
-    var two = side.clientWidth >= 680;
+    /* Customize (customize.js): chat hidden = the stats take the whole side; beside/below force the arrangement */
+    if (html.classList.contains('lay-chat-hidden')) { side.classList.remove('side2'); bar.hidden = true; o.style.height = total + 'px'; o.classList.add('split'); return; }
+    var two = html.classList.contains('lay-chat-below') ? false : side.clientWidth >= (html.classList.contains('lay-chat-beside') ? 560 : 680);
     side.classList.toggle('side2', two);
     if (two) { bar.hidden = true; o.style.height = total + 'px'; o.classList.add('split'); chat.style.setProperty('--chat-h', total + 'px'); return; }
     if (bar.parentElement !== side || bar.nextElementSibling !== chat) side.insertBefore(bar, chat);

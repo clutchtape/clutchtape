@@ -13,8 +13,8 @@
   <div class="lvm">
     {% if not squad_view and pt.rows|length == 2 %}{% set a, u = pt.rows[0], pt.rows[1] %}
     <div class="lvm-head"><b>{{ vs_title }}</b><span>{{ a.label }}{% if not sess_current %} · updates with the first game{% endif %}</span></div>
-    <div class="lvm-grid">{% for c in pt.cols %}{% set v, cls = a.cells[loop.index0] %}{% set uv = u.cells[loop.index0][0] %}
-      <div class="lvm-t {{ cls }}{{ ' lvm-x' if c.key not in LVKEY }}"{% if c.help %} title="{{ c.help }}{{ ' · lower is better' if c.better == 'lo' }}"{% endif %}><span>{{ c.label }}</span><b>{{ ptval(c, v) }}</b>{% if c.key == 'games' %}<small>{{ uv }} in 90 days</small>{% elif c.key != 'csr_net' %}<small>usual {{ ptval(c, uv) }}</small>{% endif %}</div>{% endfor %}</div>
+    <div class="lvm-grid">{% for c in pt.cols %}{% set v, cls = a.cells[loop.index0] %}{% set uv = u.cells[loop.index0][0] %}{% set dl = a.delta[loop.index0] if a.delta else none %}
+      <div class="lvm-t {{ cls }}{{ ' lvm-x' if c.key not in LVKEY }}" data-k="{{ c.key }}"{% if c.help %} title="{{ c.help }}{{ ' · lower is better' if c.better == 'lo' }}"{% endif %}><span>{{ c.label }}</span><b>{{ ptval(c, v) }}</b>{% if c.key == 'games' %}<small>{{ uv }} in 90 days</small>{% elif c.key != 'csr_net' %}<small>usual {{ ptval(c, uv) }}</small>{% endif %}{% if dl %}<i class="dbar {{ 'up' if dl > 0 else 'dn' }}" style="--w:{{ (dl|abs * 46)|round(1) }}%" aria-hidden="true"></i>{% endif %}</div>{% endfor %}</div>
     {% else %}
     <div class="lvm-head"><b>{{ vs_title }}</b><span>green = best, red = worst</span></div>
     <div class="tablewrap"><table class="ptable lvm-rows"><thead><tr><th></th>{% for r in pt.rows %}<th>{{ r.label }}</th>{% endfor %}</tr></thead>

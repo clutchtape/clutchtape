@@ -77,6 +77,9 @@
        game row doesn't throw the rest out of line */
     function where(el, root) { var path = []; for (var e = el; e && e !== root; e = e.parentElement) {
         if (e.tagName === 'TR' && rowKey(e)) { path.unshift(rowKey(e)); continue; }
+        /* a named stat (data-k): matched by name within its player card, wherever pinning moved it (customize.js) */
+        if (e.dataset && e.dataset.k) { var card = e.closest('.oa-card'), cards = card && card.parentElement ? [].indexOf.call(card.parentElement.children, card) : 0;
+          return 'card' + cards + '>k:' + e.dataset.k + (path.length ? '>' + path.join('>') : ''); }
         var sib = e.parentElement ? [].filter.call(e.parentElement.children, function (c) { return c.tagName === e.tagName && !INJ.test(c.className); }) : [];
         path.unshift(e.tagName + sib.indexOf(e)); }
       return path.join('>'); }

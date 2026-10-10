@@ -39,6 +39,7 @@ COLS = [
 SIGNED = {"dmg_diff_pg", "xk_pg", "csr_net", "mmr_edge"}
 PCT = {"win_pct", "sc_pct", "dmg_share", "acc", "hs_pct"}
 LEVELS = ("h-poor", "h-below", "h-avg", "h-good", "h-ex")
+NO_BAR = {"csr_net"}                     # a 90-day CSR change is not comparable to one session's
 
 
 def stats(rows):
@@ -95,4 +96,18 @@ def build(groups):
             vals = [x.get(c["key"]) for _, x, _ in data if x.get(c["key"]) is not None]
             cells.append((v, _level(v, vals, c["better"])))
         out.append(dict(label=lbl, extra=extra, cells=cells))
+    if len(out) == 2:                   # session vs usual: how far the session is from usual, + = better (the bars)
+        out[0]["delta"] = [None if c["key"] in NO_BAR else _delta(a[0], b[0], c["better"])
+                          for a, b, c in zip(out[0]["cells"], out[1]["cells"], cols)]
     return dict(cols=cols, rows=out)
+
+
+def _delta(v, u, better):
+    """Session vs usual as -1..1 (+ = better, ±50% or more = full bar); None when there is nothing to compare."""
+    if v is None or u is None or better is None or not isinstance(v, (int, float)) or not isinstance(u, (int, float)):
+        return None
+    base = abs(u) if u else 1
+    d = (v - u) / base
+    if better == "lo":
+        d = -d
+    return max(-1.0, min(1.0, round(d * 2, 3)))

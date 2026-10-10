@@ -15,6 +15,7 @@
   <b id="synctitle">Pulling games…</b> <span id="syncn">{{ p.matches_done }}/{{ p.matches_total or '?' }}</span>
   <div class="bar"><i id="syncbar" style="width:{{ (100 * p.matches_done / p.matches_total) if p.matches_total else 3 }}%"></i></div>
   <small id="syncsub">This page fills in by itself.</small></div>
+{% if not d.sessions %}{# placeholders where the stats will appear (2026-10-10) #}<div class="skel" aria-hidden="true"><div class="skel-tiles">{% for _ in range(6) %}<i></i>{% endfor %}</div>{% for _ in range(5) %}<i class="skel-row"></i>{% endfor %}</div>{% endif %}
 {% elif p.sync_state == 'private' %}
 <div class="alert"><b>No Halo Infinite matches found for {{ p.gamertag }}.</b> Either they haven't played recently, or their match history is hidden (Xbox → Settings → Privacy → "Others can see your game and app history"). We'll check again next time this page is opened.</div>
 {% elif p.sync_state == 'error' %}
@@ -38,7 +39,7 @@
 {% elif tab == 'records' %}
 {% if d.insights %}<h2 class="hub-h2">Records</h2>
 <section class="insights">{% for i in d.insights %}
-  <div class="ins"><span>{{ i.label }}</span><b>{{ i.big }}</b><small>{{ i.sub }}</small></div>
+  <div class="ins{{ ' fresh' if i.fresh }}"><span>{{ i.label }}{% if i.fresh %} <em class="newchip">NEW</em>{% endif %}</span><b>{{ i.big }}</b><small>{{ i.sub }}</small></div>
 {% endfor %}</section>
 {% endif %}
 {% if not d.insights %}<p class="muted">Records appear once a few sessions have loaded.</p>{% endif %}

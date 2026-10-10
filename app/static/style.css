@@ -1365,3 +1365,57 @@ html.dragging-split iframe{pointer-events:none}
  table.heat-in td[class*="h-"],table.heat-in td[style*="background"]{animation:heatIn .9s ease-out both}
  @keyframes heatIn{from{background-color:transparent}}
 }
+/* session vs usual (_player_table.html / _live_vs.html .dbar): a thin bar from the middle — right/green = better than
+   usual, left/red = worse, full width at ±50%. Grows in once (motion.js adds .heat-in to the table) */
+.ptable td.hasbar{position:relative}
+.dbar{position:absolute;bottom:2px;height:3px;width:var(--w);border-radius:2px;pointer-events:none}
+.dbar.up{left:50%;background:rgba(74,222,128,.75);transform-origin:left}
+.dbar.dn{right:50%;background:rgba(248,113,113,.75);transform-origin:right}
+.lvm-t{position:relative;overflow:hidden}.lvm-t .dbar{bottom:0;height:3px}
+@media (prefers-reduced-motion:no-preference){.dbar{animation:dbarIn .7s .25s cubic-bezier(.2,.7,.2,1) both}@keyframes dbarIn{from{transform:scaleX(0)}}}
+/* records set in the last week: NEW chip + one shine across the card */
+.ins.fresh{position:relative;overflow:hidden;border-color:rgba(255,166,77,.55)!important}
+.newchip{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;background:var(--acc,#ff8a3d);color:#140d06;font-style:normal;font-size:9.5px;font-weight:900;letter-spacing:.08em;vertical-align:1px}
+@media (prefers-reduced-motion:no-preference){
+ .ins.fresh::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,220,170,.22) 50%,transparent 65%);transform:translateX(-100%);animation:shine 1.4s .5s ease-out 1 both;pointer-events:none}
+ @keyframes shine{to{transform:translateX(100%)}}}
+/* copy-link buttons: a ✓ on the button itself for a moment (base.html), as well as the toast */
+.copied{position:relative;color:transparent!important}
+.copied::after{content:"✓";position:absolute;inset:0;display:grid;place-items:center;color:#7ee2a0;font-weight:900;font-size:1.05em}
+@media (prefers-reduced-motion:no-preference){.copied::after{animation:copiedPop .35s cubic-bezier(.2,1.6,.4,1) both}@keyframes copiedPop{from{transform:scale(.3);opacity:0}}}
+/* first load of a new player: the progress bar fills smoothly between polls (2.5s) with a moving sheen, and grey
+   placeholders stand where the stats will appear */
+.sync .bar i{transition:width 2.4s linear;background-size:200% 100%;background-image:linear-gradient(90deg,#ff8a3d,#ffc08a,#ff8a3d)}
+.skel{margin:14px 0}.skel-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+.skel-tiles i,.skel-row{display:block;border-radius:12px;background:linear-gradient(90deg,#1c1814 25%,#262019 50%,#1c1814 75%);background-size:200% 100%}
+.skel-tiles i{height:64px}.skel-row{height:38px;margin-bottom:8px;border-radius:8px}
+@media (prefers-reduced-motion:no-preference){
+ .sync .bar i{animation:sheen 1.6s linear infinite}.skel-tiles i,.skel-row{animation:sheen 1.4s ease-in-out infinite}
+ @keyframes sheen{from{background-position:200% 0}to{background-position:-200% 0}}}
+/* adding / removing a player: the names glide to their new places (each name is its own transition group, set in
+   _hub_head.html and squad.html), a new one fades in */
+@media (prefers-reduced-motion:no-preference){::view-transition-group(*){animation-timing-function:cubic-bezier(.2,.7,.2,1)}}
+/* Customize the live view (_customize.html, customize.js) */
+.laypop{position:relative}.laypop>summary{list-style:none;cursor:pointer}.laypop>summary::-webkit-details-marker{display:none}
+.laycard{position:absolute;right:0;top:calc(100% + 8px);z-index:40;width:min(360px,calc(100vw - 24px));display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:14px;background:#17130f;border:1px solid var(--line);box-shadow:0 14px 40px rgba(0,0,0,.6)}
+.laycard fieldset{border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.laycard legend{width:100%;margin-bottom:6px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}.laycard legend small{text-transform:none;letter-spacing:0;font-weight:500;margin-left:4px}
+.laycard label{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:0 10px;border-radius:999px;border:1px solid var(--line);font-size:13px;cursor:pointer;position:relative}
+.laycard label:has(input:checked){border-color:var(--acc2);background:rgba(255,138,61,.12)}.laycard label:has(input:disabled){opacity:.45;cursor:default}
+.laycard input{accent-color:var(--acc)}
+.pingrid{display:flex;flex-wrap:wrap;gap:6px}.pingrid label[data-order]:not([data-order=""])::after{content:attr(data-order);position:absolute;top:-6px;right:-4px;min-width:16px;height:16px;border-radius:8px;background:var(--acc);color:#140d06;font-size:10px;font-weight:900;display:grid;place-items:center}
+.layfoot{display:flex;justify-content:flex-end;gap:8px}
+@media(max-width:1199px){.laycard .lay-desk{display:none}}
+@media(max-width:700px){.laycard{position:fixed;left:12px;right:12px;top:auto;bottom:calc(12px + env(safe-area-inset-bottom));width:auto;max-height:70dvh;overflow:auto}}
+html.lay-chat-hidden #twchat,html.lay-chat-hidden .chattab{display:none!important}
+html.lay-novs #livevs{display:none!important}
+@media(min-width:1200px){html.lay-chat-right .colside.side2>#twchat{order:2;grid-column:2}html.lay-chat-right .colside.side2>#onair{grid-column:1}}
+.lvm .lvm-grid .lvm-x.lvm-pin{display:flex}.lvm-t.lvm-pin{border-color:rgba(255,138,61,.5)}
+.oa-unpinned .lab{opacity:.8}
+/* the header's menus (⋯, Twitch, Customize) open over the page below: view-transition-name makes .hub-head its own
+   stacking layer, so lift it above the content (2026-10-10: the Customize card was drawing behind the video) */
+.hub-head{position:relative;z-index:35}
+.laycard label{white-space:nowrap;justify-content:flex-start;width:auto;flex:none}
+.laycard input[type=radio],.laycard input[type=checkbox]{width:16px;height:16px;min-height:0;margin:0;padding:0;flex:none}
+html:has(.laypop[open]) .chattab{display:none!important}
+@media(max-width:400px){.laybtn{font-size:0!important;padding:0 10px!important}.laybtn::before{content:"⚙";font-size:15px}}

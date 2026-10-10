@@ -125,3 +125,24 @@ class PlayerTableTests(unittest.TestCase):
         two=player_table.build([('This session',[row('x',1,kills=10)],None),('Usual',[row('y',1,kills=10.2)],'')])
         self.assertEqual(two['rows'][0]['cells'][[x['key'] for x in two['cols']].index('kills_pg')][1],'h-avg')  # <3% apart
         self.assertIsNone(player_table.build([('A',[],None)]))
+
+
+class VsUsualBarTests(unittest.TestCase):
+    """2026-10-10: the session row of a session-vs-usual table carries a -1..1 bar per column (+ = better)."""
+    def test_direction_clamp_and_skips(self):
+        import player_table
+        from test_companion import row
+        t=player_table.build([('This session',[row('x',1,kills=15,deaths=4)],None),('Usual',[row('y',1,kills=10,deaths=8)],'')])
+        k=[c['key'] for c in t['cols']]
+        d=t['rows'][0]['delta']
+        self.assertEqual(d[k.index('kills_pg')],1.0)                       # +50% kills = full bar, better
+        self.assertGreater(d[k.index('deaths_pg')],0)                       # fewer deaths = better
+        self.assertIsNone(d[k.index('games')])                              # no "better" for game count
+        self.assertNotIn('delta',t['rows'][1])
+        three=player_table.build([('A',[row('a',1)],None),('B',[row('b',1,pid=2)],None),('C',[row('c',1,pid=3)],None)])
+        self.assertTrue(all('delta' not in r for r in three['rows']))       # squads: no bars
+
+    def test_fresh_records(self):
+        import time,analytics
+        self.assertTrue(analytics._fresh(time.time()-3*86400))
+        self.assertFalse(analytics._fresh(time.time()-9*86400))

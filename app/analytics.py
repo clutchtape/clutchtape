@@ -283,7 +283,8 @@ def insights(rows, maps, sess):
     nights = [x for x in sess if x["games"] >= 3]
     if nights:
         n = max(nights, key=lambda x: x["kda"])
-        out.append({"label": "Best night", "big": n["record"], "sub": f"KDA {n['kda']} on {datetime_fmt(n['start'])}"})
+        out.append({"label": "Best night", "big": n["record"], "sub": f"KDA {n['kda']} on {datetime_fmt(n['start'])}",
+                    "fresh": _fresh(n["start"])})
     _, longest = streaks(rows)
     if longest >= 3:
         out.append({"label": "Longest win streak", "big": f"{longest} in a row", "sub": "in the games we loaded"})
@@ -291,8 +292,15 @@ def insights(rows, maps, sess):
     if decent:
         g = max(decent, key=lambda r: kda(r["kills"], r["deaths"], r["assists"]))
         out.append({"label": "Best game", "big": f"{g['kills']}/{g['deaths']}/{g['assists']}",
-                    "sub": f"{g['map'] or 'Unknown map'} · {datetime_fmt(g['started_at'])}", "match": g["match_id"]})
+                    "sub": f"{g['map'] or 'Unknown map'} · {datetime_fmt(g['started_at'])}", "match": g["match_id"],
+                    "fresh": _fresh(g["started_at"])})
     return out
+
+
+def _fresh(ts, days=7):
+    """A record set in the last week gets a NEW chip and a one-time shine on the Records tab (2026-10-10)."""
+    import time as _t
+    return bool(ts) and _t.time() - ts < days * 86400
 
 
 def datetime_fmt(ts):

@@ -1,5 +1,6 @@
 {# Player stats table (2026-10-10): needs pt = player_table.build(). One row per player (or session vs usual), per-game
-   numbers, heat by rank (h-ex best … h-poor worst). Keeps the .nightper class for the phone layout (swipe, pinned name). #}
+   numbers, heat by rank (h-ex best … h-poor worst). Session-vs-usual tables (2 rows) also get a small bar in the session
+   row: right/green = better than usual, left/red = worse, full at ±50% (player_table._delta). Keeps the .nightper class for the phone layout (swipe, pinned name). #}
 {% from "_pt_macros.html" import ptval %}
 <div class="tablewrap"><table class="nightper ptable scrollx"><thead><tr><th data-stick{% if pt_tip %} title="{{ pt_tip }}"{% endif %}>{{ pt_head or 'Player' }}</th>{% for c in pt.cols %}<th{% if c.help %} title="{{ c.help }}{{ ' · lower is better' if c.better == 'lo' }}"{% endif %}>{{ c.label }}</th>{% endfor %}</tr></thead>
-<tbody>{% for r in pt.rows %}<tr><td class="name"{% if r.extra %} title="{{ r.extra }}"{% endif %}>{{ r.label }}{% if r.extra %}<small>{{ r.extra }}</small>{% endif %}</td>{% for c in pt.cols %}{% set v, cls = r.cells[loop.index0] %}<td class="{{ cls }}">{{ ptval(c, v) }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>
+<tbody>{% for r in pt.rows %}<tr><td class="name"{% if r.extra %} title="{{ r.extra }}"{% endif %}>{{ r.label }}{% if r.extra %}<small>{{ r.extra }}</small>{% endif %}</td>{% for c in pt.cols %}{% set v, cls = r.cells[loop.index0] %}{% set dl = r.delta[loop.index0] if r.delta else none %}<td class="{{ cls }}{{ ' hasbar' if dl }}">{{ ptval(c, v) }}{% if dl %}<i class="dbar {{ 'up' if dl > 0 else 'dn' }}" style="--w:{{ (dl|abs * 46)|round(1) }}%" aria-hidden="true"></i>{% endif %}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>

@@ -1,0 +1,28 @@
+{# Customize the live view (2026-10-10): layout (chat beside/below/hidden, which side, session table on/off) and
+   pinned stats for the live box (and the phone stat tiles). Remembered per device; customize.js applies it, base.html
+   sets the layout classes before first paint. Shown in the hub actions while someone is live. #}
+{% set PIN_STATS = [('kda', 'KDA'), ('dmg_pm', 'Dmg/min'), ('sc_pct', 'Score %'), ('csr', 'CSR'), ('kd', 'K/D'),
+  ('kills_pg', 'Kills/game'), ('deaths_pg', 'Deaths/game'), ('xk_pg', 'xK±'), ('dmg_diff_pg', 'Dmg ±'), ('dmg_ka', 'Dmg/KA'),
+  ('dmg_share', 'Dmg %'), ('win_pct', 'Win %'), ('acc', 'Accuracy'), ('hs_pct', 'Headshot %'), ('life', 'Avg life')] %}
+<details class="laypop">
+  <summary class="pill laybtn" title="Arrange the live view and pick the stats you care about">⚙ Customize</summary>
+  <form class="laycard" aria-label="Customize the live view">
+    <fieldset class="lay-desk"><legend>Chat</legend>
+      <label><input type="radio" name="chat" value="auto" checked> Auto</label>
+      <label><input type="radio" name="chat" value="beside"> Beside stats</label>
+      <label><input type="radio" name="chat" value="below"> Below stats</label>
+      <label><input type="radio" name="chat" value="hidden"> Hidden</label>
+    </fieldset>
+    <fieldset class="lay-desk"><legend>Chat side</legend>
+      <label><input type="radio" name="side" value="left" checked> Left</label>
+      <label><input type="radio" name="side" value="right"> Right</label>
+    </fieldset>
+    <fieldset><legend>Under the video</legend>
+      <label><input type="checkbox" name="vs" checked> Session vs usual table</label>
+    </fieldset>
+    <fieldset class="lay-pins"><legend>Pinned stats <small>up to 6, in the order you pick them</small></legend>
+      <div class="pingrid">{% for k, l in PIN_STATS %}<label><input type="checkbox" name="pin" value="{{ k }}"> {{ l }}</label>{% endfor %}</div>
+    </fieldset>
+    <div class="layfoot"><button type="button" class="secondary" data-layreset>Reset</button><button type="button" class="primary" data-layclose>Done</button></div>
+  </form>
+</details>
