@@ -1126,3 +1126,17 @@ a.sessbtn:hover{border-color:var(--acc2);color:var(--acc2)}.sessbtn.off{opacity:
 /* live stats card on narrow screens: keep the record on one line, nothing past the edge */
 .oa-rec b{white-space:nowrap}.oa-card,.oa-grid{min-width:0}.oa-card{overflow-wrap:anywhere}
 @media(max-width:360px){.oa-rec{flex-wrap:wrap;row-gap:2px}}
+/* phones: live chat is a drawer from the right edge (heat.js adds the tab + close) */
+.chattab,.twchat .chatx,.chatshade{display:none}
+@media(max-width:700px){
+ .cols #twchat{position:fixed;top:0;right:0;bottom:0;z-index:70;width:min(88vw,420px);height:100dvh!important;margin:0;border-radius:16px 0 0 16px;
+  transform:translateX(105%);transition:transform .25s ease;box-shadow:-12px 0 40px rgba(0,0,0,.6);padding:10px 10px calc(10px + env(safe-area-inset-bottom))}
+ html.chat-open .cols #twchat{transform:none}
+ .twchat .chatx{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;margin-left:4px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:20px;line-height:1;cursor:pointer}
+ .chattab{display:flex;align-items:center;gap:6px;position:fixed;right:0;top:50%;z-index:65;transform:translateY(-50%);writing-mode:vertical-rl;padding:14px 8px;border-radius:12px 0 0 12px;border:1px solid #9146ff;border-right:0;background:#9146ff;color:#fff;font-weight:800;font-size:13px;letter-spacing:.06em;box-shadow:-4px 0 18px rgba(0,0,0,.45);cursor:pointer}
+ .chattab i{width:8px;height:8px;border-radius:50%;background:#ff4d4d;box-shadow:0 0 0 2px rgba(255,255,255,.35)}
+ html.chat-open .chattab{display:none}
+ .chatshade{display:block;position:fixed;inset:0;z-index:69;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .25s}
+ html.chat-open .chatshade{opacity:1;pointer-events:auto}
+}
+@media(max-width:700px){.twchat .ph{flex-wrap:nowrap;margin-bottom:8px}.twchat .ph>.muted{display:none}.twchat .ph .vod{margin-left:auto;white-space:nowrap}}

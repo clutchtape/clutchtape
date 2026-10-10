@@ -240,3 +240,26 @@ document.addEventListener('toggle', function (e) {
   var ms = document.querySelector('#mediasec.live'), kinds = document.querySelector('nav.kinds'); if (!ms || !kinds) return;
   ms.after(kinds); kinds.classList.add('after-live');
 })();
+
+/* phones: live chat as a drawer from the right edge — a "Chat" tab on the edge opens it over the page (the video keeps
+   playing); ×, a tap outside, Back or a swipe right closes it */
+(function () {
+  var chat = document.getElementById('twchat'); if (!chat) return;
+  var html = document.documentElement, ms = document.getElementById('mediasec');
+  var tab = document.createElement('button'); tab.type = 'button'; tab.className = 'chattab'; tab.setAttribute('aria-label', 'Open live chat'); tab.innerHTML = '<i></i>Chat';
+  var shade = document.createElement('div'); shade.className = 'chatshade';
+  var x = document.createElement('button'); x.type = 'button'; x.className = 'chatx'; x.setAttribute('aria-label', 'Close chat'); x.textContent = '×';
+  var ph = chat.querySelector('.ph'); if (ph) ph.appendChild(x);
+  document.body.append(tab, shade);
+  function open(on) { html.classList.toggle('chat-open', on); tab.setAttribute('aria-expanded', String(on));
+    if (on) { try { history.pushState({ chat: 1 }, ''); } catch (e) {} } }
+  function close() { if (!html.classList.contains('chat-open')) return; html.classList.remove('chat-open'); if (history.state && history.state.chat) history.back(); }
+  tab.onclick = function () { open(true); }; x.onclick = close; shade.onclick = close;
+  window.addEventListener('popstate', function () { html.classList.remove('chat-open'); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+  var sx = null; chat.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; }, { passive: true });
+  chat.addEventListener('touchend', function (e) { if (sx != null && e.changedTouches[0].clientX - sx > 70) close(); sx = null; }, { passive: true });
+  /* no tab while the stream section is collapsed */
+  function sync() { tab.hidden = !!(ms && !ms.open); if (tab.hidden) close(); }
+  if (ms) ms.addEventListener('toggle', sync); sync();
+})();
