@@ -205,7 +205,8 @@ document.addEventListener('toggle', function (e) {
 
 /* live, two columns: the right column (live stats + chat) is exactly as tall as the left (video + session table), and a
    handle between stats and chat resizes both together — drag it, one grows and the other shrinks; double-click resets.
-   The split is remembered per device. Phones/tablets: chat is a drawer / sits under the stats, so none of this runs. */
+   The split is remembered per device. Phones/tablets: chat is a drawer / sits under the stats, so none of this runs.
+   A right side ≥680px wide puts chat and stats side by side instead (.colside.side2). */
 (function () {
   var chat = document.getElementById('twchat'), player = document.getElementById('player'); if (!chat || !player) return;
   var side = chat.parentElement, html = document.documentElement, split = null, KEY = 'ct-livesplit';
@@ -216,10 +217,15 @@ document.addEventListener('toggle', function (e) {
   function on() { return window.innerWidth >= 1200 && !html.classList.contains('statsonly') && oa() && player.offsetHeight > 200; }
   function fit() {
     var o = oa();
-    if (!on()) { chat.style.removeProperty('--chat-h'); if (o) { o.style.height = ''; o.classList.remove('split'); } bar.hidden = true; return; }
+    if (!on()) { side.classList.remove('side2'); chat.style.removeProperty('--chat-h'); if (o) { o.style.height = ''; o.classList.remove('split'); } bar.hidden = true; return; }
+    var vs = document.getElementById('livevs'), total = player.offsetHeight + (vs && vs.offsetHeight ? vs.offsetHeight + 12 : 0);
+    /* 2026-10-10: when the right side is wide enough for both (screens are wider than tall, so a height-limited video
+       leaves width over), chat and live stats sit side by side, chat on the left, both the full height. No handle. */
+    var two = side.clientWidth >= 680;
+    side.classList.toggle('side2', two);
+    if (two) { bar.hidden = true; o.style.height = total + 'px'; o.classList.add('split'); chat.style.setProperty('--chat-h', total + 'px'); return; }
     if (bar.parentElement !== side || bar.nextElementSibling !== chat) side.insertBefore(bar, chat);
     bar.hidden = false;
-    var vs = document.getElementById('livevs'), total = player.offsetHeight + (vs && vs.offsetHeight ? vs.offsetHeight + 12 : 0);
     o.style.height = ''; o.classList.remove('split'); var natural = o.scrollHeight, gaps = bar.offsetHeight;   /* measure without the size container */
     var h = Math.max(150, Math.min(split || natural, total - gaps - 220));
     o.style.height = h + 'px'; o.classList.add('split');
@@ -277,6 +283,14 @@ document.addEventListener('toggle', function (e) {
   var cf = chat.querySelector('iframe[data-src]'), narrow = matchMedia('(max-width:700px)');
   function loadChat() { if (cf && !cf.getAttribute('src')) cf.src = cf.dataset.src; }
   if (!narrow.matches) loadChat(); else narrow.addEventListener('change', function (e) { if (!e.matches) { loadChat(); close(); } });
+  /* squad with several members live: one chat tab per channel */
+  chat.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-chatch]'); if (!b || !cf) return; var ch = b.dataset.chatch;
+    cf.dataset.src = 'https://www.twitch.tv/embed/' + encodeURIComponent(ch) + '/chat?parent=' + encodeURIComponent(cf.dataset.host || location.hostname) + '&darkpopout';
+    if (cf.getAttribute('src')) cf.src = cf.dataset.src; cf.title = 'Twitch chat for ' + ch;
+    var po = chat.querySelector('.ph a.vod'); if (po) po.href = 'https://www.twitch.tv/popout/' + encodeURIComponent(ch) + '/chat?popout=';
+    [].forEach.call(chat.querySelectorAll('[data-chatch]'), function (x) { var on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-selected', String(on)); });
+  });
   var tab = document.createElement('button'); tab.type = 'button'; tab.className = 'chattab'; tab.setAttribute('aria-label', 'Open live chat'); tab.innerHTML = '<i></i>Chat';
   var x = document.createElement('button'); x.type = 'button'; x.className = 'chatx'; x.setAttribute('aria-label', 'Close chat'); x.textContent = '×';
   var ph = chat.querySelector('.ph'); if (ph) ph.appendChild(x);

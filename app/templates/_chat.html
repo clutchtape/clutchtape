@@ -1,7 +1,11 @@
 {# Live Twitch chat (2026-10-10): next to the player while the channel is live. Needs onair (web._onair).
    Height follows the player (heat.js chatFit); www.twitch.tv is allowed in the CSP frame-src.
-   data-src, not src: heat.js loads it when shown (on phones only when the drawer opens; a hidden chat blocks autoplay). #}
-{% if onair and onair.channel %}<section class="panel twchat" id="twchat">
-  <div class="ph"><h2><span class="oa-live"><i></i>LIVE</span> Chat</h2><span class="muted">{{ onair.channel }}</span><a class="vod" href="https://www.twitch.tv/popout/{{ onair.channel }}/chat?popout=" target="_blank" rel="noopener">Pop out ↗</a></div>
-  <iframe class="twchat-frame" title="Twitch chat for {{ onair.channel }}" data-src="https://www.twitch.tv/embed/{{ onair.channel }}/chat?parent={{ request.host.split(':')[0] }}&darkpopout"></iframe>
+   data-src, not src: heat.js loads it when first shown (on phones when the chat sheet opens).
+   Squad with 2+ members live (onair.streams): one tab per channel; heat.js swaps the chat and Pop out link. #}
+{% if onair and onair.channel %}{% set host = request.host.split(':')[0] %}<section class="panel twchat" id="twchat">
+  <div class="ph"><h2><span class="oa-live"><i></i>LIVE</span> Chat</h2>
+    {% if onair.streams and onair.streams|length > 1 %}<span class="chtabs" role="tablist" aria-label="Whose chat">{% for s in onair.streams if s.channel %}<button type="button" role="tab" class="chtab{{ ' on' if s.channel == onair.channel }}" aria-selected="{{ 'true' if s.channel == onair.channel else 'false' }}" data-chatch="{{ s.channel }}" title="{{ s.gamertag }}">{{ s.channel }}</button>{% endfor %}</span>
+    {% else %}<span class="muted">{{ onair.channel }}</span>{% endif %}
+    <a class="vod" href="https://www.twitch.tv/popout/{{ onair.channel }}/chat?popout=" target="_blank" rel="noopener">Pop out ↗</a></div>
+  <iframe class="twchat-frame" title="Twitch chat for {{ onair.channel }}" data-host="{{ host }}" data-src="https://www.twitch.tv/embed/{{ onair.channel }}/chat?parent={{ host }}&darkpopout"></iframe>
 </section>{% endif %}

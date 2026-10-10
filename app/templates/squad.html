@@ -78,6 +78,9 @@
 {% include "_statsboard.html" %}<section class="panel player{{ ' is-live' if onair }}" id="player">
   <div class="ph"><h2>Twitch</h2><button type="button" class="secondary" data-fullscreen="#player">Full screen</button><span class="muted" id="playerlabel">{{ plabel }}</span></div>
   <div class="embed"><div id="tplayer"></div></div>
+  {% if onair and onair.streams and onair.streams|length > 1 %}{# 2+ squad members live: livemulti.js plays them all at once #}
+  <div class="lm-bar" id="lmbar" data-streams='{{ onair.streams|tojson }}'><span class="lm-lab">🔊 Sound</span>{% for s in onair.streams %}<button type="button" class="lm-aud{{ ' on' if loop.first }}" data-i="{{ loop.index0 }}" aria-pressed="{{ 'true' if loop.first else 'false' }}" title="Hear {{ s.gamertag }} ({{ s.channel }})">{{ s.gamertag }}</button>{% endfor %}<button type="button" class="lm-mode" data-lmmode><span class="lm-one">One stream</span><span class="lm-all">All {{ onair.streams|length }} streams</span></button></div>
+  {% endif %}
   <div class="elog inplayer" id="elog"></div>
 </section>
 {% with squad_view = True %}{% include "_live_vs.html" %}{% endwith %}
@@ -121,6 +124,9 @@
 {% include "_statsboard.html" %}<section class="panel player{{ ' is-live' if onair }}" id="player">
   <div class="ph"><h2>Twitch</h2><button type="button" class="secondary" data-fullscreen="#player">Full screen</button><span class="muted" id="playerlabel">{{ plabel }}</span></div>
   <div class="embed"><div id="tplayer"></div></div>
+  {% if onair and onair.streams and onair.streams|length > 1 %}{# 2+ squad members live: livemulti.js plays them all at once #}
+  <div class="lm-bar" id="lmbar" data-streams='{{ onair.streams|tojson }}'><span class="lm-lab">🔊 Sound</span>{% for s in onair.streams %}<button type="button" class="lm-aud{{ ' on' if loop.first }}" data-i="{{ loop.index0 }}" aria-pressed="{{ 'true' if loop.first else 'false' }}" title="Hear {{ s.gamertag }} ({{ s.channel }})">{{ s.gamertag }}</button>{% endfor %}<button type="button" class="lm-mode" data-lmmode><span class="lm-one">One stream</span><span class="lm-all">All {{ onair.streams|length }} streams</span></button></div>
+  {% endif %}
   <div class="elog inplayer" id="elog"></div>
 </section>
 {% with squad_view = True %}{% include "_live_vs.html" %}{% endwith %}
@@ -162,6 +168,7 @@
 <script nonce="{{ csp_nonce }}" src="https://player.twitch.tv/js/embed/v1.js"></script>
 <script nonce="{{ csp_nonce }}" src="/static/twitch-shim.js?v=2"></script>
 <script nonce="{{ csp_nonce }}" src="/static/mobile-embed.js?v=8"></script>
+<script nonce="{{ csp_nonce }}" src="/static/livemulti.js?v=2"></script>
 <script nonce="{{ csp_nonce }}" src="/static/archiveplayer.js?v=3"></script>
 <script nonce="{{ csp_nonce }}" src="/static/clipsaver.js?v=2"></script>
 <script nonce="{{ csp_nonce }}">if(!window.ClutchSave||!ClutchSave.supported)document.documentElement.classList.add("nosave")</script>
@@ -545,7 +552,7 @@ var log=ClutchLog.init({seek:function(s){clearInterval(window.__goIv);try{player
 var pendingT=0;window.CT_SIDE={go:function(a,b){go(a,b)},player:player};
 setInterval(function(){if(player&&curVideo){try{var t=player.getCurrentTime();log.update(curVideo,t>1?t:pendingT)}catch(e){}}},400);
 function secs(t){var m=String(t).match(/(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/)||[];return (+m[1]||0)*3600+(+m[2]||0)*60+(+m[3]||0)}
-function go(id,t){if(window.ctOpenMedia)window.ctOpenMedia();ensurePlayer();pendingT=secs(t);var prevVideo=curVideo;curVideo=id;var want=secs(t);
+function go(id,t){if(window.ctOpenMedia)window.ctOpenMedia();if(window.ctLiveMulti)ctLiveMulti.solo(0);ensurePlayer();pendingT=secs(t);var prevVideo=curVideo;curVideo=id;var want=secs(t);
   if(String(prevVideo)===String(id)&&player.getCurrentTime()>0){try{player.seek(want)}catch(e){}}
   else{player.setVideo('v'+id,want);}
   /* Twitch ignores the start time when switching videos: keep seeking until the player is really there */

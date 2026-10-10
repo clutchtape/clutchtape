@@ -13,7 +13,9 @@ const cols=player.closest('.cols'),two=live&&innerWidth>=1200&&cols,padX=player.
   gap=cols?parseFloat(getComputedStyle(cols).columnGap)||16:16,maxW=two?cols.clientWidth-380-gap-padX:width;
 /* live two-column: size from the widest the video could be (the column then shrinks to fit it), never from its
    current width, or narrowing the column would shrink the target again on the next pass */
-const want=Math.round(maxW*9/16)+(live?0:44+16)+tl+26;   /* live: no title row either */
+/* squad multistream (livemulti.js): the box holds a grid of videos, height/width = embed.dataset.ar, plus its sound bar */
+const ar=+(embed?.dataset.ar)||9/16,lmbar=player.querySelector('.lm-bar'),lmH=lmbar?lmbar.offsetHeight+8:0;
+const want=Math.round(maxW*ar)+(live?0:44+16)+tl+26+lmH;   /* live: no title row either */
 /* 2026-10-10 (live): the whole video shows on first load without scrolling — fit the screen from where the player sits on
    the page. Only when that would leave less than half the video (phones, where the width sets the size) is it sized
    to the screen below the site header, and on load the page scrolls there by itself (live only, see below). */
@@ -26,7 +28,7 @@ player.style.setProperty('--watch-height',Math.min(want,Math.max(260,avail))+'px
 player.style.setProperty('--timeline-height',tl+'px');
 /* live, two columns: the left column is exactly as wide as the 16:9 video at that height (no black bars beside it);
    the space left over goes to the right column (live stats + chat) */
-if(cols){if(two){const h=Math.min(want,Math.max(260,avail))-26,mainW=Math.round(Math.min(h*16/9,maxW)+padX);
+if(cols){if(two){const h=Math.min(want,Math.max(260,avail))-26-lmH,mainW=Math.round(Math.min(h/ar,maxW)+padX);
   cols.style.setProperty('grid-template-columns',mainW+'px minmax(380px,1fr)','important');}else cols.style.removeProperty('grid-template-columns');}   /* the .cols.video-layout rules are !important */player.style.scrollMarginTop=anchor+'px';}
 function schedule(){if(!queued){queued=true;requestAnimationFrame(fit)}}
 addEventListener('resize',fit);addEventListener('load',schedule);window.visualViewport?.addEventListener('resize',schedule);document.addEventListener('fullscreenchange',schedule);

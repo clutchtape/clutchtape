@@ -605,7 +605,15 @@ def squad(slugs, short=False, code=None, game=None):
                 c["watch"].append({"who": gt_of[pid], "channel": chans.get(slug_of[pid]), "video": m.group(1),
                                    "t": f"{h}h{mi}m{s}s", "sec": h * 3600 + mi * 60 + s, "url": link,
                                    "match": c["match_id"], "film_ms": c["t_ms"]})
-    first = next(iter(chans.values()), None)
+    # 2026-10-10: everyone in the squad who is streaming right now. The player starts on a live channel (it used to take
+    # the first channel even when another member was the one live), and with 2+ live the page plays them all at once.
+    lives = []
+    for slug, u in users.items():
+        st = _cached("stream", u["id"], 60, lambda u=u: twitch.stream(u["id"]))
+        if st:
+            lives.append((slug, st))
+    lives.sort(key=lambda x: x[1].get("started") or time.time())        # earliest first: its "this stream" covers everyone's
+    first = chans[lives[0][0]] if lives else next(iter(chans.values()), None)
     g.kind_used = kind
     psrc = plabel = pcfg = None
     if first:
@@ -644,11 +652,12 @@ def squad(slugs, short=False, code=None, game=None):
     periods = _periods({gt[pid]: [m["members"][pid] for m in together_games if pid in m["members"]] for pid in gt},
                        [m["started_at"] for m in together_games]) if tab == "records" else None
     onair = None
-    for slug, u in users.items():
-        st = _cached("stream", u["id"], 60, lambda u=u: twitch.stream(u["id"]))
-        if st:
-            onair = _onair([(m, [m["id"]] + [a["id"] for a in _alts(m["id"])]) for m in ps], st, chans.get(slug))
-            break
+    if lives:
+        slug0, st0 = lives[0]
+        onair = _onair([(m, [m["id"]] + [a["id"] for a in _alts(m["id"])]) for m in ps], st0, chans.get(slug0))
+        gt_slug = {p["slug"]: p["gamertag"] for p in ps}
+        onair["streams"] = [{"channel": chans.get(sl), "gamertag": gt_slug.get(sl), "title": st.get("title"),
+                             "viewers": st.get("viewers")} for sl, st in lives]
     return render_template("squad.html", sb=_live_board(night if data.get("s_idx") == 0 and _is_current(night) else [], ps) if tab == "latest" else None, sess_current=bool(night) and data.get("s_idx") == 0 and _is_current(night), pt=_squad_table(night, ps) if tab == "latest" else None, raw=raw_view.build(night, squad=[(p["id"], p["gamertag"]) for p in ps]) if tab == "latest" else None, session_picks=session_watch.for_sessions(data["nights"], [p["id"] for p in ps], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(night, [p["id"] for p in ps]) if tab == "latest" else {}, tab=tab, kpis=kp, adv=adv, periods=periods, pidgt=gt, onair=onair, **extra, comparison=comparison, recap_matches=session_review.recap_matches(data.get('night') or []), recap_names=[p['gamertag'] for p in ps], gtmap={p["slug"]: p["gamertag"] for p in ps}, pcfg=pcfg, vm=vm, og=og, share_url=share_url, d=data, ps=ps, chans=chans, tw=first, psrc=psrc, plabel=plabel, host=request.host.split(":")[0],
                            slugs=",".join(names), vods=vods, sq_base=("/sq/" + code) if code else None, open_game=game)
 

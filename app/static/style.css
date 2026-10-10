@@ -1316,3 +1316,26 @@ html.dragging-split iframe{pointer-events:none}
  .lvm-more{display:block;width:100%;margin-top:8px;min-height:40px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font-weight:700;font-size:13px;cursor:pointer}
  .lvm-more .lv-on,html.lvall .lvm-more .lv-off{display:none}html.lvall .lvm-more .lv-on{display:inline}
 }
+/* live, wide right side (heat.js .side2): chat and live stats side by side, chat on the left, both full height */
+@media(min-width:1200px){
+ .colside.side2{display:grid!important;grid-template-columns:minmax(330px,1fr) minmax(340px,1fr);column-gap:12px;align-items:start}
+ .colside.side2>#twchat{order:-1;grid-column:1}.colside.side2>#onair{grid-column:2;margin:0}
+ .colside.side2>*:not(#twchat):not(#onair){grid-column:1/-1}
+ .colside.side2>.sidesplit{display:none}
+}
+/* squad live multistream (livemulti.js): every live member at once, nothing drawn over the videos */
+.embed.lm{background:#000}
+.embed.lm>.lm-grid{display:grid;grid-template-columns:repeat(var(--lmc,2),minmax(0,1fr));grid-auto-rows:minmax(0,1fr);gap:4px;width:100%;height:100%}
+.lm-cell{position:relative;min-width:0;min-height:0;background:#000}.lm-cell[hidden]{display:none}
+.lm-cell>div,.lm-cell iframe{width:100%!important;height:100%!important}
+.lm-bar{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:8px;flex:0 0 auto}
+.lm-lab{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--mute);margin-right:2px}
+.lm-aud,.lm-mode{min-height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-weight:700;font-size:12.5px;cursor:pointer}
+.lm-aud.on{border-color:#9146ff;background:rgba(145,70,255,.22);color:#fff}
+.lm-aud.on::before{content:"🔊 "}
+.lm-mode{margin-left:auto}.lm-mode .lm-all,.lm-bar.one .lm-mode .lm-one{display:none}.lm-bar.one .lm-mode .lm-all{display:inline}
+.chtabs{display:inline-flex;gap:4px;flex-wrap:wrap}
+.chtab{min-height:30px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--mute);font-weight:700;font-size:12px;cursor:pointer}
+.chtab.on{border-color:#9146ff;color:#fff;background:rgba(145,70,255,.22)}
+@media(max-width:480px){.lm-bar{padding:0 12px}}
+@media(max-width:1199px){#player.lm-on:not(:fullscreen){height:auto!important}#player.lm-on:not(:fullscreen) .embed{flex:none;height:auto!important}}
