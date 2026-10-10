@@ -178,3 +178,8 @@
     [].forEach.call(document.querySelectorAll('details.hub-more[open]'), function (d) { d.open = false; d.querySelector('summary').focus(); });
   });
 })();
+
+/* "+ Add player" (player and squad headers): opening it puts the cursor in the gamertag box */
+document.addEventListener('toggle', function (e) {
+  var d = e.target; if (d.classList && d.classList.contains('addmem') && d.open) { var i = d.querySelector('input[name=gamertag]'); if (i) i.focus(); }
+}, true);

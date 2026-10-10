@@ -1049,3 +1049,4 @@ button.primary,button.secondary{align-items:center;justify-content:center;text-a
 .rawsquad .rawtot:last-child td{border-bottom:2px solid rgba(255,140,60,.35)}
 .rawtable .stk.rg-core b{white-space:nowrap}
 .hub-more.edge-left .hub-menu{right:auto;left:0}
+@media(max-width:700px){.addmem.soloadd{display:block;margin:6px 0 0}.addmem.soloadd form{margin:6px 0 0}}
