@@ -19,7 +19,7 @@
     let primary = game ? [2, 3, 4] : session ? [0, labels.indexOf('Record'), labels.indexOf('Games'), labels.indexOf('Win %')] : [0];
     /* 2026-10-09: game cards lead with the numbers people scan for (solo: K/D/A, KDA, Dmg/min, SC%; squad: every
        player's K/D/A · KDA line) instead of hiding them behind "More stats" */
-    if (game) labels.forEach((l, i) => { if (/^(K\/D\/A|KDA|Dmg\/min|SC%)$/i.test(l) || /K\/D\/A\s*·\s*KDA/i.test(l)) primary.push(i); });
+    if (game) labels.forEach((l, i) => { if (/^(K\/D\/A|KDA|Dmg\/min|SC%|Dmg\/KA|Dmg ±)$/i.test(l) || /K\/D\/A\s*·\s*KDA/i.test(l)) primary.push(i); });
     if (!game && !session) {
       ['Games', 'SC%', 'KDA', 'Dmg/min', 'WIN%', 'Win%','K/D'].forEach(label => {
         const i = labels.findIndex(l => l.toLowerCase() === label.toLowerCase());

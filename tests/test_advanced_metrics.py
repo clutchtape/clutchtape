@@ -52,3 +52,18 @@ class Tiles(unittest.TestCase):
 
 if __name__=='__main__':
     unittest.main()
+
+
+class BreakdownTests(unittest.TestCase):
+    def test_session_vs_usual_modes_and_medals(self):
+        import web
+        from test_companion import row
+        day=86400
+        sess=[row('s1',100*day,kills=20,deaths=5,mode='Slayer',medals='{"Perfect": 2}'),row('s2',100*day-900,mode='Oddball',win=False,medals='{"Perfect": 1, "Boxer": 1}')]
+        usual=[row(f'u{i}',100*day-day*(i+1),kills=8,deaths=8) for i in range(6)]+[row('old',100*day-200*day,kills=99)]
+        b=web._breakdown(sess,sess+usual)
+        self.assertEqual(b['base_games'],6)                     # the 200-day-old game and the session itself are left out
+        kda=next(v for v in b['vs'] if v['label']=='KDA');self.assertTrue(kda['good']);self.assertGreater(kda['delta'],0)
+        self.assertEqual({m['name'] for m in b['modes']},{'Slayer','Oddball'})
+        self.assertEqual(b['medals'][0],('Perfect',3))
+        self.assertEqual(web._breakdown(sess,sess)['base_games'],0)   # too few earlier games: no comparison

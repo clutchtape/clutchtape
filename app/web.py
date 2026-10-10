@@ -876,6 +876,44 @@ def _kpis(matches, per=None):
     return tiles
 
 
+BASE_DAYS = 90
+
+
+def _breakdown(matches, rows):
+    """Session breakdown panel (no Twitch needed): this session vs the player's usual over the last 90 days,
+    the session split by mode, and its medals. rows = the player's games under the current filter, newest first."""
+    if not matches:
+        return None
+    a = analytics._agg(matches)
+    ids = {m["match_id"] for m in matches}
+    cutoff = min(m["started_at"] for m in matches) - BASE_DAYS * 86400
+    base_rows = [r for r in rows if r["match_id"] not in ids and r["started_at"] >= cutoff]
+    b = analytics._agg(base_rows) if len(base_rows) >= 5 else None
+    # (label, key, unit, higher_is_better, help)
+    spec = [("SC%", "sc_pct", "%", True, "Share of the team's personal score"),
+            ("KDA", "kda", "", True, "Kills + assists/3 - deaths, per game"),
+            ("Dmg/min", "dmg_pm", "", True, "Damage per minute"),
+            ("Dmg ±", "dmg_diff_pg", "", True, "Damage dealt minus taken, per game"),
+            ("Dmg/KA", "dmg_ka", "", False, "Damage per kill + assist (lower is better)"),
+            ("Dmg%", "dmg_share", "%", True, "Share of the team's damage"),
+            ("Accuracy", "acc", "%", True, None),
+            ("Headshots", "hs_pct", "%", True, "Headshot kills / kills"),
+            ("Life", "life", "s", True, "Average life"),
+            ("Win%", "win_pct", "%", True, None)]
+    vs = []
+    for label, key, unit, up, help_ in spec:
+        now, usual = a.get(key), (b or {}).get(key)
+        if now is None:
+            continue
+        delta = None if usual is None else round(now - usual, 1)
+        # within 3% of usual reads as normal, not a red/green swing
+        good = None if not delta or abs(delta) < 0.03 * max(abs(usual), 1) else (delta > 0) == up
+        vs.append(dict(label=label, now=now, usual=usual, unit=unit, delta=delta, good=good, help=help_))
+    modes = analytics.group(matches, "mode")
+    return dict(vs=vs, base_games=len(base_rows) if b else 0, days=BASE_DAYS, modes=modes,
+                medals=analytics.medals(matches, top=10), agg=a)
+
+
 def _signed(v, unit=""):
     return None if v is None else f"{v:+g}{unit}"
 
@@ -1131,7 +1169,7 @@ def profile(slug):
     comparison = session_review.comparison(data['sessions'], data['s_idx'], 'recent' if request.args.get('compare') == 'recent' else 'previous')
     tab = _tab()
     extra = _hub_board(p["slug"]) if tab == "analysis" else {}
-    return render_template("profile.html", session_picks=session_watch.for_sessions(data["sessions"], [p["id"] for p in [p] + alts], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(s["matches"] if s else [], [p["id"]] + [a["id"] for a in alts]) if tab == "latest" else {}, tab=tab, onair=onair, alts=alts, kpis=_kpis(s["matches"]) if s else [], adv=_adv_kpis({p["gamertag"]: s["matches"]}) if s else [], sess_agg=analytics._agg(s["matches"]) if s else None, periods=_periods({p["gamertag"]: data["rows"]}, solo=True) if tab == "records" else None, **extra, comparison=comparison, recap_matches=session_review.recap_matches(s['matches'] if s else []), recap_names=[p['gamertag']], pcfg=pcfg, vm=vm, og=og, p=p, d=data, clips=clips, vods=vods, tw=tw, psrc=psrc, plabel=plabel,
+    return render_template("profile.html", session_picks=session_watch.for_sessions(data["sessions"], [p["id"] for p in [p] + alts], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(s["matches"] if s else [], [p["id"]] + [a["id"] for a in alts]) if tab == "latest" else {}, tab=tab, onair=onair, alts=alts, kpis=_kpis(s["matches"]) if s else [], adv=_adv_kpis({p["gamertag"]: s["matches"]}) if s else [], sess_agg=analytics._agg(s["matches"]) if s else None, brk=_breakdown(s["matches"], data["rows"]) if s and tab == "latest" else None, periods=_periods({p["gamertag"]: data["rows"]}, solo=True) if tab == "records" else None, **extra, comparison=comparison, recap_matches=session_review.recap_matches(s['matches'] if s else []), recap_names=[p['gamertag']], pcfg=pcfg, vm=vm, og=og, p=p, d=data, clips=clips, vods=vods, tw=tw, psrc=psrc, plabel=plabel,
                            host=request.host.split(":")[0])
 
 

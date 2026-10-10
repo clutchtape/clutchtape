@@ -993,3 +993,31 @@ details.an-fold>section{border:0;padding:0;background:none;margin-top:8px}
 .doc-form input{min-height:46px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:16px}
 .doc-form button{min-height:46px;padding:0 18px}
 .errpage{text-align:center;padding:60px 0}.errpage h1{font-size:44px;margin:0}.errpage p{color:var(--mute)}
+/* Bubbles and buttons: text centered both ways everywhere (2026-10-10). Pills had min-height with block layout, so text sat at the top. */
+.pill,a.pill,.hub-actions .pill{display:inline-flex!important;align-items:center;justify-content:center;text-align:center;gap:.3em;line-height:1.15}
+a.secondary,a.primary{display:inline-flex;align-items:center;justify-content:center;text-align:center}
+button.primary,button.secondary{align-items:center;justify-content:center;text-align:center}
+.pill small{line-height:1.15}
+/* Game log: session row inside the table so totals line up with the game columns (desktop); phones keep the swipe totals */
+.gamelog .glsess td{background:rgba(255,140,60,.07);border-bottom:2px solid rgba(255,140,60,.35);font-size:13px;padding-top:9px;padding-bottom:9px}
+.gamelog .glsess td:first-child{box-shadow:inset 3px 0 0 #fb8b4b}
+@media(min-width:701px){.solo-log .nightper{display:none}.solo-log .tablewrap:has(> .nightper){display:none}}
+@media(max-width:700px){.gamelog .glsess{display:none}}
+/* wide screens: a few advanced columns by default */
+@media(min-width:1280px){.statfold .xc.xw{display:table-cell}}
+/* map cell: badges inline, one line per game */
+@media(min-width:701px){.gamelog .watch-cues{display:inline-flex;flex-wrap:nowrap;margin:0 0 0 6px;vertical-align:middle}.gamelog tbody td:nth-child(3){white-space:nowrap}}
+/* session breakdown */
+.brk{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;margin-top:16px;align-items:start}
+.brk .panel{margin:0}.brk-side{display:grid;gap:16px;min-width:0}
+.vsgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}@media(max-width:1279px){.vsgrid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}}
+.vs{display:flex;flex-direction:column;gap:3px;padding:10px 12px;border:1px solid #393027;border-radius:10px;background:#16130f}
+.vs-l{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#a99f93}.vs-n{font-size:22px;line-height:1.1}
+.vs-d{font-size:12px;color:#a99f93}.vs-d small{color:#8f877d;margin-left:2px;font-size:11px}
+.vs.good .vs-d{color:#5fd38d}.vs.bad .vs-d{color:#f17b6b}
+.brk table.brkmodes{width:100%;border-collapse:collapse;font-size:13px}.brk table.brkmodes th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#a99f93;text-align:left;font-weight:600;padding:6px 8px}
+.brk table.brkmodes td{padding:7px 8px;border-top:1px solid #2c2620}
+.medlist{display:flex;flex-wrap:wrap;gap:6px}.med{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border:1px solid #393027;border-radius:999px;font-size:12px;background:#16130f}.med b{color:#f4a270}
+@media(max-width:900px){.brk{grid-template-columns:1fr}}
+@media(max-width:700px){.vsgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.vs-n{font-size:19px}.brk table.brkmodes{font-size:12px}.brk table.brkmodes th,.brk table.brkmodes td{padding:6px 4px}}
+.companion form button.primary{justify-content:center}
