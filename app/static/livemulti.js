@@ -62,11 +62,13 @@
     if (a) { aud = +a.dataset.i; if (mode === 'one') { shape(); playing(); } sound(); }
     if (m) { mode = mode === 'all' ? 'one' : 'all'; try { localStorage.setItem('ct-livemulti', mode); } catch (x) {} shape(); playing(); sound(); }
   });
-  /* stats-only: no videos at all, so stop the extra players too */
-  new MutationObserver(function () { if (html.classList.contains('statsonly')) players.forEach(function (p, i) { if (p && i) try { p.pause(); } catch (e) {} }); else { make(); playing(); } })
+  /* stats-only: no videos at all, so stop the extra players too; back to the stream: start them again once the
+     transition animation is over (Twitch ignores play() while the video is covered) */
+  new MutationObserver(function () { if (html.classList.contains('statsonly')) players.forEach(function (p, i) { if (p && i) try { p.pause(); } catch (e) {} }); else { make(); [700, 1500, 3000, 5000].forEach(function (t) { setTimeout(function () { if (!html.classList.contains('statsonly')) playing(); }, t); }); } })
     .observe(html, { attributes: true, attributeFilter: ['class'] });
   window.addEventListener('resize', function () { if (!wide.matches || embed.style.aspectRatio) shape(); });
   wide.addEventListener('change', shape);
-  window.ctLiveMulti = { solo: function (i) { aud = i || 0; mode = 'one'; shape(); playing(); sound(); } };
+  window.ctLiveMulti = { solo: function (i) { aud = i || 0; mode = 'one'; shape(); playing(); sound(); },
+    players: function () { var vis = shown(); return players.filter(function (p, i) { return p && i && vis.indexOf(i) >= 0; }); } };
   shape();
 })();

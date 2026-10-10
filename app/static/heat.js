@@ -336,13 +336,18 @@ document.addEventListener('toggle', function (e) {
     function apply() { html.classList.toggle('statsonly', on);
       try { localStorage.setItem('ct-statsonly', on ? '1' : '0'); } catch (x) {}
       if (on) { try { window.__sp && window.__sp.pause(); } catch (x) {} html.classList.remove('chat-open'); }
-      else { if (window.CTInitSide) window.CTInitSide(); try { window.__sp && window.__sp.play(); } catch (x) {} }
+      else { if (window.CTInitSide) window.CTInitSide(); }
       window.dispatchEvent(new Event('resize')); if (window.ctSideFit) window.ctSideFit(); sync(); }
     /* the video blurs away and the live dashboard rises into its place (View Transitions; instant where unsupported) */
     var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    /* back to the stream: start it once the animation is over (the transition layer covers the video, and Twitch ignores
+       play() on a covered player), then keep nudging for a few seconds — the hidden player was reset and reloads */
+    function resume() { if (on) return; var n = 0, iv = setInterval(function () { n++;
+      try { var p = window.__sp; if (p && !p.isPaused() && p.getCurrentTime() > 0) { clearInterval(iv); return; } if (p) p.play(); } catch (x) {}
+      if (n > 20 || html.classList.contains('statsonly')) clearInterval(iv); }, 500); }
     if (document.startViewTransition && !calm) { html.classList.add(on ? 'vt-to-stats' : 'vt-to-stream'); var vt = document.startViewTransition(apply);
-      vt.finished.finally(function () { html.classList.remove('vt-to-stats', 'vt-to-stream'); }); }
-    else apply();
+      vt.finished.finally(function () { html.classList.remove('vt-to-stats', 'vt-to-stream'); resume(); }); }
+    else { apply(); resume(); }
   });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', sync); else sync();
   new MutationObserver(sync).observe(document.body, { childList: true, subtree: true });
@@ -354,3 +359,18 @@ document.addEventListener('click', function (e) {
   var on = document.documentElement.classList.toggle('lvall');
   try { localStorage.setItem('ct-lvall', on ? '1' : '0'); } catch (x) {}
 });
+
+/* live: a muted stream gets paused while the tab is in the background (browser power saving / Twitch). Coming back to
+   the tab starts every stream that was playing again — at the live edge — retrying while the player wakes up. */
+(function () {
+  if (!document.getElementById('player')) return;
+  function all() { var l = window.__sp ? [window.__sp] : []; if (window.ctLiveMulti) l = l.concat(window.ctLiveMulti.players()); return l; }
+  var was = [];
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { was = all().filter(function (p) { try { return !p.isPaused(); } catch (e) { return false; } }); return; }
+    if (document.documentElement.classList.contains('statsonly')) { was = []; return; }
+    var list = was; was = []; if (!list.length) return; var n = 0, iv = setInterval(function () { n++;
+      var left = list.filter(function (p) { try { if (p.isPaused()) { p.play(); return true; } } catch (e) {} return false; });
+      if (!left.length || n > 12 || document.hidden) clearInterval(iv); }, 500);
+  });
+})();
