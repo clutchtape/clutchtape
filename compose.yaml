@@ -1,0 +1,74 @@
+# Clutchtape: Halo Infinite stats for you and your squad.
+#   cp .env.example .env    # set SECRET_KEY and ADMIN_PASSWORD at least
+#   docker compose up -d --build
+#   open http://localhost:8140   (admin: http://localhost:8140/admin)
+services:
+  clutchtape:
+    build: .
+    image: clutchtape:local
+    container_name: clutchtape
+    depends_on:
+      storage-init:
+        condition: service_completed_successfully
+    ports: ["8140:8140"]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      HALO_DATA_DIR: /data
+      DB_DIR: /db
+      PORT: "8140"
+    volumes:
+      - clutchtape-db:/db          # SQLite database (keep on a local disk, not a network share)
+      - clutchtape-data:/data      # Xbox login tokens, settings
+      - clutchtape-backups:/backups  # automatic SQLite snapshots every 6 hours
+    read_only: true
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=64m"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    deploy:
+      resources:
+        limits: {cpus: "1.0", memory: 1G}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8140/healthz',timeout=4)"]
+      interval: 30s
+      timeout: 6s
+      retries: 3
+      start_period: 15s
+
+  # One-shot: makes the volumes writable by the app's non-root user (uid 10001), then exits.
+  storage-init:
+    build: .
+    image: clutchtape:local
+    user: "0:0"
+    entrypoint: ["python", "/srv/app/init_storage.py"]
+    restart: "no"
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER]
+    security_opt: ["no-new-privileges:true"]
+    volumes:
+      - clutchtape-db:/db
+      - clutchtape-data:/data
+      - clutchtape-backups:/backups
+
+  # Optional health monitor: posts to a webhook (Discord/Slack-style, HTTPS) after 3 failed checks.
+  # Put the webhook URL in a file and mount it at /config/alert_webhook. Remove this service if you don't want it.
+  monitor:
+    image: clutchtape:local
+    depends_on: [clutchtape]
+    user: "10001:10001"
+    entrypoint: ["python", "/srv/monitor.py"]
+    restart: unless-stopped
+    environment:
+      HEALTH_URL: http://clutchtape:8140/readyz
+    read_only: true
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=4m"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    # volumes: ["./monitor-config:/config:ro"]
+
+volumes:
+  clutchtape-db:
+  clutchtape-data:
+  clutchtape-backups:

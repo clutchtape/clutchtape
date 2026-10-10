@@ -5,6 +5,7 @@
 *.sqlite-*
 *.env
 .env*
+!.env.example
 tokens.json
 api_config.json
 privacy_exclusions.json*
