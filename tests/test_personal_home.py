@@ -61,3 +61,11 @@ class PersonalHomeTests(AlertTests):
         db.run('UPDATE matches SET ranked=1,playlist=?','Ranked Arena')
         sessions=home_feed.build(f)
         self.assertEqual(len(sessions),1);self.assertIn('4-game losing stretch to review',sessions[0]['reasons']);self.assertTrue(sessions[0]['recommended']);self.assertIn('tab=sessions',sessions[0]['url'])
+
+    def test_home_retains_stats_review_without_video(self):
+        f=self.follow().json['follows'][0]
+        self.match('close-game',self.now,outcome='Win')
+        db.run("UPDATE matches SET ranked=1,playlist='Ranked Arena',mode='Slayer',team_score=50,enemy_score=49")
+        sessions=home_feed.build(f)
+        self.assertTrue(sessions[0]['recommended'])
+        self.assertIn('1 close game',sessions[0]['reasons'])

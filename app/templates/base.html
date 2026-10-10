@@ -19,7 +19,7 @@
   <meta property="og:image" content="{{ og.image if og and og.image else request.host_url ~ 'og/home.png?v=1' }}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:type" content="website"><meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=152">
 {% block head %}{% endblock %}
-<link rel="stylesheet" href="/static/mobile.css?v=23">
+<link rel="stylesheet" href="/static/mobile.css?v=25">
 <link rel="stylesheet" href="/static/app-controls.css?v=2">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="ClutchTape">
@@ -29,7 +29,7 @@
   {% if request.endpoint != 'index' %}  <form class="navsearch" method="post" action="/add" role="search"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="twitch" value=""><input name="gamertag" maxlength="20" required placeholder="Look up a gamertag…" aria-label="Look up a gamertag" autocomplete="off"><button type="submit">Go</button></form>{% endif %}
   <nav><a href="/about">How it works</a>{% if tip_url %}<a class="tip" href="{{ tip_url }}" target="_blank" rel="noopener">☕ Tip jar</a>{% endif %}</nav></header>
 <main>{% block content %}{% endblock %}</main>
-<footer class="foot">Fan-made demo. Not affiliated with Microsoft, Xbox or 343 Industries. Uses public Halo Infinite match data only. <button type="button" class="linkbtn foot-btn" id="nav-alerts" aria-haspopup="dialog">Alerts</button> · <button type="button" class="linkbtn foot-btn" id="nav-install">Install app</button> · <a href="/privacy">Privacy &amp; removal</a></footer>
+<footer class="foot">Fan-made demo. Not affiliated with Microsoft, Xbox or 343 Industries. Uses public Halo Infinite match data only. <button type="button" class="linkbtn foot-btn" id="nav-alerts" aria-haspopup="dialog">Alerts</button> · <button type="button" class="linkbtn foot-btn" id="nav-install">Install app</button> · <a href="/privacy">Privacy &amp; removal</a> · <!--email_off--><a href="mailto:support@clutchtape.com">Contact support</a><!--/email_off--></footer>
 <script nonce="{{ csp_nonce }}">window.urlState=function(k,v){try{var u=new URL(location.href);if(v==null||v==='')u.searchParams.delete(k);else u.searchParams.set(k,v);history.replaceState(null,'',u.pathname+u.search+u.hash)}catch(e){}};
 window.restoreVod=function(f,host,label){var v=new URLSearchParams(location.search).get('vod');if(!v||!f)return;var m=v.match(/^(\d+)@([0-9hms]+)$/);
   if(m){f.src='https://player.twitch.tv/?video=v'+m[1]+'&parent='+host+'&time='+m[2]+'&autoplay=true';if(label)label.textContent='Playing the broadcast at that match'}};

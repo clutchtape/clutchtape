@@ -3,7 +3,7 @@
 Halo Infinite stats for players and squads, with games linked to the right spot in each player's Twitch VOD.
 
 [clutchtape.com](https://clutchtape.com) is a demo. The code is public so people can see how it works and build their
-own sites on Halo data. Copy any of it.
+own sites on Halo data. The code is available under the [MIT License](LICENSE).
 
 ## How it works
 
@@ -104,3 +104,7 @@ Browser tests (`tests/*.mjs`) use Playwright against a running instance, e.g.
 `node tests/e2e.mjs http://localhost:8140`. Some need a seeded squad; the squad codes in them are placeholders.
 
 Pull requests are welcome, but forking it and building something of your own is the main point.
+
+## Contact
+
+Questions or feedback: [support@clutchtape.com](mailto:support@clutchtape.com).

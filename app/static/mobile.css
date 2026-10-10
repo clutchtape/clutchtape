@@ -156,3 +156,23 @@ body:has(>.mobile-player-surface)>.multi.focus .mgrid,body:has(>.mobile-player-s
 @media(max-width:700px){#mediasec #player .elog.inplayer{min-height:0!important;height:auto!important}#mediasec #player .elog.inplayer .etl{margin:0}}
 @media(max-width:700px){.tr-chip,.tr-chip.ct-player-tag{min-height:30px!important;padding:0 9px!important;font-size:12px!important;box-shadow:none!important}.tr-head select{max-width:60vw}}
 @media(max-width:700px){.top{flex-wrap:wrap!important}.top .navsearch{flex:1 1 100%!important;order:3;margin:2px 0 6px!important}.top nav{margin-left:auto}}
+
+/* Comfortable page controls on phones; preserve the video/timeline geometry. */
+@media(max-width:700px){
+  .hub-id.squadid a.mem{min-height:44px}
+  .hub-id.squadid .memx{width:44px;height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center}
+  .hub-id.squadid .addmem summary{min-height:44px}
+  .hub-actions .pill,.hub-actions .share,.hub-actions button{min-height:44px!important}
+  main button:not(.multi button):not(.etl button),main select:not(.multi select),main summary:not(.multi summary){min-height:44px}
+  main a.vod,main a.pill,.mobile-cards .mobile-identity .mobile-expand{min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center}
+  .mobile-sort select{min-height:44px}
+  .tr-chip,.tr-chip.ct-player-tag{min-height:44px!important}
+  #mediasec #player .ph button{min-height:44px}
+  .foot button,.foot a{min-height:44px!important;min-width:44px!important;display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:0 6px}
+  .fine a{display:inline-flex;align-items:center;min-height:44px;min-width:44px}
+}
+@media(max-width:700px){
+  .lookup .lookup-actions button{min-height:44px!important}
+  .mobile-cards .mobile-identity>a,.gamelog .ph a{min-height:44px;display:inline-flex;align-items:center}
+  button[aria-label="Scroll the table for more columns"]{min-width:44px}
+}

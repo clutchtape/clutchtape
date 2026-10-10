@@ -44,7 +44,7 @@ def build(follow):
         if worst >= 3:
             reasons.append(f'{worst}-game losing stretch to review')
         score = pick.get('score', 0)+(5 if net >= 15 else 0)+(3 if worst >= 3 else 0)
-        result.append(dict(label=follow['label'], url=follow['url']+('&' if '?' in follow['url'] else '?')+urlencode({'session':games[-1]['match_id'],'tab':'sessions'}), at=s['start'], record=s['record'], games=len(games), reasons=reasons, score=score, recommended=pick.get('recommended', False) or net >= 15 or worst >= 3))
+        result.append(dict(label=follow['label'], url=follow['url']+('&' if '?' in follow['url'] else '?')+urlencode({'session':games[-1]['match_id'],'tab':'sessions'}), at=s['start'], record=s['record'], games=len(games), reasons=reasons, score=score, recommended=pick.get('interesting', False) or net >= 15 or worst >= 3))
     return result
 
 

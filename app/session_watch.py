@@ -69,17 +69,19 @@ def for_sessions(sessions, player_ids, vod_map=None):
         if longest >= 3:
             reasons.append(f'{longest}-game win streak')
         standout = close >= 2 or clips >= 6 or longest >= 4
-        worth = standout or close >= 1 or clips >= 3 or longest >= 3
+        available = len(set(unique) & recorded)
+        interesting = standout or close >= 1 or clips >= 3 or longest >= 3
+        worth = bool(available) and interesting
         result[games[-1]['match_id']] = dict(
-            label='Worth a look' if worth else 'No strong signal yet',
-            recommended=worth, reasons=reasons, recorded=len(set(unique) & recorded),
+            label=('Stats only' if not available else 'Worth a look' if worth else 'No strong signal yet'),
+            recommended=worth, interesting=interesting, reasons=reasons, recorded=available,
             standout=standout, score=close * 3 + min(clips, 30) + min(longest, 6) * 2,
         )
     # Distinguish a few sessions even when most nights contain something interesting.
-    ranked = sorted((p for p in result.values() if p['standout']), key=lambda p: p['score'], reverse=True)
+    ranked = sorted((p for p in result.values() if p['standout'] and p['recorded']), key=lambda p: p['score'], reverse=True)
     for pick in ranked[:3]:
         pick['label'] = 'Top pick'
-    peak = max((p['score'] for p in result.values()), default=1) or 1
+    peak = max((p['score'] for p in result.values() if p['recommended']), default=1) or 1
     for pick in result.values():
         pick['heat'] = max(1, min(5, round(pick['score'] / peak * 5))) if pick['recommended'] else 0
     return result

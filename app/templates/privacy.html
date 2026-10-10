@@ -11,20 +11,22 @@
 
 <h2>Twitch</h2>
 <ul>
-<li>If you add a Twitch channel, it's remembered only in your browser. It isn't saved on our server and isn't put in links you share.</li>
+<li>If you add a Twitch channel, it's remembered only in your browser. It isn't put in links you share or shown to other visitors. If you enable streaming alerts, the channel is also stored with that device's follow settings.</li>
 <li>The only channels everyone sees are the featured streamers on the home page.</li>
 </ul>
 
-<h2>Things saved in your browser</h2>
+<p>Twitch videos are embedded from Twitch. Loading an embed connects your browser to Twitch and its service providers, which may use cookies, collect usage data and show advertising under <a href="https://www.twitch.tv/p/en/legal/privacy-notice/" rel="noopener">Twitch’s privacy notice</a>.</p>
+
+<h2 id="alerts">Things saved in your browser</h2>
 <ul>
 <li>Saved players and squads, player colors and your Twitch channels stay in this browser.</li>
-<li>Alerts (optional): the players you follow and your browser's notification address are stored on our server for that one device. Unfollow to remove them.</li>
+<li>Alerts (optional): the players and Twitch channels you follow and your browser's notification address are stored on our server for that one device. Unfollow to remove them.</li>
 </ul>
 
 <h2>What we log</h2>
 <ul>
 <li>When you look up a new gamertag, your IP address and the time are kept for 24 hours to limit abuse.</li>
-<li>No accounts, no ads, no trackers.</li>
+<li>No accounts. Clutchtape does not add its own advertising or analytics trackers. Embedded Twitch players have their own data practices, described above.</li>
 </ul>
 
 <h2 id="remove">Remove your profile</h2>
@@ -32,4 +34,6 @@
 {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
 <form method="post" class="doc-form"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><label>Your gamertag<input name="gamertag" required maxlength="20" autocomplete="off"></label><button type="submit">Request removal</button></form>
 <p class="muted">Requests are reviewed by hand. Never send passwords or ID documents.</p>
+<h2>Contact</h2>
+<p>For questions about your data or a removal request, email <!--email_off--><a href="mailto:support@clutchtape.com">support@clutchtape.com</a><!--/email_off-->.</p>
 </article>{% endblock %}
