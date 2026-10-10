@@ -1,0 +1,21 @@
+<dialog id="alerts-dialog" class="app-dialog" aria-labelledby="alerts-title">
+ <div class="app-dialog-head"><div><small>YOUR CLUTCHTAPE</small><h2 id="alerts-title">Alerts</h2></div><button type="button" data-close-dialog aria-label="Close alerts">✕</button></div>
+ <p>Follow players or squads for <strong>now streaming</strong> and <strong>session results</strong>. No sign-in needed.</p>
+ <p id="alerts-status" role="status" aria-live="polite">Loading your alert choices…</p>
+ <div class="alert-actions"><button type="button" id="alerts-current" hidden>Follow this page</button><button type="button" id="alerts-push">Enable phone alerts</button><button type="button" id="alerts-test" hidden>Send test alert</button></div>
+ <p class="app-help" id="alerts-support">Phone alerts can arrive while ClutchTape is closed. Your browser will ask permission when you enable them.</p>
+ <form id="alerts-add"><label for="alert-target">Follow another player or squad</label><div class="alert-add-row"><input id="alert-target" maxlength="1000" placeholder="Gamertag or ClutchTape link" required><button type="submit">Add</button></div></form>
+ <div id="alerts-saved" hidden><label for="alert-saved">Saved on this device</label><div class="alert-add-row"><select id="alert-saved" aria-label="Saved players and squads"></select><button type="button" id="alerts-add-saved">Follow</button></div></div>
+ <fieldset class="alert-types"><legend>Notify me about</legend><label><input type="checkbox" id="alerts-streams" checked> Now streaming</label><label><input type="checkbox" id="alerts-results" checked> Session results</label><label><input type="checkbox" id="alerts-games"> Each game result</label><p class="app-help">Game alerts are optional and arrive after match data syncs. One recap after 30 minutes without a completed game. Streaming alerts need a linked Twitch channel.</p></fieldset>
+ <fieldset class="alert-types"><legend>Quiet hours</legend><label><input type="checkbox" id="alerts-quiet"> Pause phone alerts overnight</label><div class="quiet-grid"><label>From<input type="time" id="alerts-quiet-start" value="22:00"></label><label>Until<input type="time" id="alerts-quiet-end" value="08:00"></label></div><label>Time zone<input id="alerts-zone" placeholder="America/New_York" maxlength="80"></label><p class="app-help">Uses the saved time zone, including daylight saving changes. The inbox still updates. Phone alerts wait until quiet hours end; alerts older than 12 hours expire. Test alerts bypass quiet hours.</p><button type="button" id="alerts-save-quiet">Save quiet hours</button></fieldset>
+ <h3>Following</h3><p class="app-help">Choose alert types for each player or squad. The switches above apply to everyone.</p><div id="alerts-following"></div>
+ <h3>Recent alerts <span id="alerts-unread"></span></h3><div id="alerts-inbox"></div>
+ <p class="app-help">Choices apply to this browser. Unfollow to stop a player’s alerts, or turn off phone alerts to keep only the in-site inbox. <a href="/privacy#alerts">Alert privacy</a></p>
+</dialog>
+<dialog id="install-dialog" class="app-dialog install-dialog" aria-labelledby="install-title">
+ <div class="app-dialog-head"><h2 id="install-title">Install ClutchTape</h2><button type="button" data-close-dialog aria-label="Close install instructions">✕</button></div>
+ <img src="/static/icon-192.png?v=2" width="72" height="72" alt="ClutchTape app icon">
+ <p>Keep your squad one tap away with an app icon and a dedicated window.</p><p id="install-instructions"></p><button type="button" id="install-native" hidden>Install app</button>
+ <p class="app-help">Stats and video need an internet connection. Notifications are optional and can be enabled under Alerts.</p>
+</dialog>
+<script nonce="{{ csp_nonce }}" id="app-csrf" type="application/json">{{ csrf_token()|tojson }}</script>

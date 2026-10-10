@@ -1,0 +1,18 @@
+{% if comparison %}
+<section class="panel session-comparison" id="comparison">
+  <div class="ph"><h2>Session comparison</h2>
+    <form method="get" action="{{ request.path }}#comparison" class="compare-form">
+      {% for k, v in request.args.items() if k not in ('compare','watch','vod') %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+      <label for="compare-mode">Compare with</label>
+      <select id="compare-mode" name="compare"><option value="previous" {{ 'selected' if comparison.mode == 'previous' }}>Previous session</option><option value="recent" {{ 'selected' if comparison.mode == 'recent' }}>Previous 5 sessions</option></select>
+      <button type="submit" class="secondary">Compare</button>
+    </form>
+  </div>
+  <p class="muted">Selected: {{ comparison.start|dt('%b %-d') }} · {{ comparison.current.games }} games · {{ comparison.current.record }}
+    {% if comparison.baseline %}<br>Baseline: {{ comparison.prior_start|dt('%b %-d') }}{% if comparison.prior_count > 1 %}–{{ comparison.prior_end|dt('%b %-d') }}{% endif %} · {{ comparison.prior_count }} earlier session{{ 's' if comparison.prior_count != 1 }} · {{ comparison.baseline.games }} games · {{ comparison.baseline.record }}{% endif %}</p>
+  {% if comparison.baseline %}
+  <div class="compare-grid">{% for metric in comparison.metrics %}<div class="compare-metric"><span>{{ metric.label }}</span><b>{{ metric.value if metric.value is not none else '—' }}{{ metric.suffix if metric.value is not none }}</b><small>vs {{ metric.old if metric.old is not none else '—' }}{{ metric.suffix if metric.old is not none }}</small><strong class="{{ 'pos' if metric.delta is not none and metric.delta > 0 else 'neg' if metric.delta is not none and metric.delta < 0 }}">{{ '%+g'|format(metric.delta) if metric.delta is not none else '—' }}{{ metric.delta_suffix if metric.delta is not none }}</strong></div>{% endfor %}</div>
+  <p class="muted review-note">Same game-type filter on both sides. Win rate excludes ties and unfinished games; accuracy is weighted by shots and damage by time. {% if comparison.squad %}Performance averages use participating player-games; squad results count each match once. {% endif %}Small samples can swing sharply.</p>
+  {% else %}<p class="muted">No earlier session in this game-type filter yet. Your comparison will appear once another session is available.</p>{% endif %}
+</section>
+{% endif %}

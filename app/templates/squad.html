@@ -1,0 +1,581 @@
+{% extends "base.html" %}
+{% block title %}{{ ps|map(attribute='gamertag')|join(' + ') }} — Clutchtape squad{% endblock %}
+{% block head %}{% if tab == 'analysis' %}<link rel="stylesheet" href="/static/companion.css?v=4"><link rel="stylesheet" href="/static/growth.css?v=1"><link rel="stylesheet" href="/static/analysis.css?v=4"><link rel="stylesheet" href="/static/dense.css?v=2">{% endif %}{% endblock %}
+{% block content %}
+{% set hub_title = ps|map(attribute="gamertag")|join(" + ") %}{% set save_label = hub_title %}{% set hub_slugs = slugs %}
+{% set hub_meta %}{% for p in ps %}{% set rest = ps|rejectattr('slug', 'equalto', p.slug)|map(attribute='slug')|list %}<span class="memchip"><a class="mem" href="/p/{{ p.slug }}{{ ('?tw=' ~ chans[p.slug]) if chans[p.slug] }}">{{ p.gamertag }}</a><a class="memx" href="{{ ('/squad/' ~ rest|join(',')) if rest|length > 1 else ('/p/' ~ rest[0]) }}" title="Remove {{ p.gamertag }} from this squad" aria-label="Remove {{ p.gamertag }}">×</a></span>{% endfor %}{% if ps|length < 6 %}<details class="addmem"><summary>+ Add player</summary><form method="post" action="/add"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="squad" value="{{ ps|map(attribute='slug')|join(',') }}"><input name="gamertag" maxlength="15" required placeholder="Gamertag" aria-label="Gamertag to add" autocomplete="off"><input type="hidden" name="twitch" value=""><button type="submit">Add</button></form></details>{% endif %}{% if d.games %}<span class="dot">·</span>{{ d.games }} games together{% endif %}{% endset %}
+{% set hub_badges %}{% endset %}{% set hub_squad = True %}
+{% include "_hub_head.html" %}
+{% include "_onair.html" %}
+{% set pending = ps|rejectattr('sync_state','in',['ready','error','private'])|list %}
+{% if pending %}
+<div class="sync" id="sync" role="status" data-slugs="{{ pending|map(attribute='slug')|join(',') }}">
+  <b id="synctitle">Pulling games for {{ pending|map(attribute='gamertag')|join(', ') }}…</b> <span id="syncn"></span>
+  <div class="bar"><i id="syncbar" style="width:3%"></i></div>
+  <small>This page fills in by itself.</small></div>
+{% endif %}
+{% for p in ps if p.sync_state == 'private' %}<div class="alert">We couldn't read {{ p.gamertag }}'s match history. It may be private in Xbox privacy settings.</div>{% endfor %}
+
+<section class="multi" id="multi" hidden role="dialog" aria-label="Watch together">
+  <div class="mbar"><b id="multititle">Watch together</b><span class="mtip">🔊 For sound, click the speaker icon on a video</span>
+    <div class="mctl"><button type="button" data-fullscreen="#multi">Full screen</button><button type="button" id="moptions" class="mobile-quick" aria-expanded="false" aria-controls="mobile-options">More</button><button type="button" id="mplay">▶ Play all</button><button type="button" id="mpause">❚❚ Pause</button><button type="button" id="msync" title="Line everyone up to the first player">⟲ Resync</button><button type="button" id="mlayout" class="mdesk" aria-pressed="false" title="Switch between equal sizes and one big angle">◧ One big</button><button type="button" id="mobile-moments" class="mobile-quick" aria-expanded="false">Moments</button><button type="button" id="mlogbtn" class="mdesk" aria-pressed="true" title="Show or hide the game stats and event log">☰ Stats &amp; log</button></div>
+    <label class="mobile-views">View <select id="mobile-views" aria-label="Visible streams"><option value="1">1 stream</option><option value="2" selected>2 streams</option><option value="all">All streams</option></select></label>
+    <div class="mctl mskip" role="group" aria-label="Skip all angles">{% for s in (-300,-60,-30,-10,10,30,60,300) %}<button type="button" data-skip="{{ s }}" title="{{ 'Back' if s < 0 else 'Forward' }} {{ (s|abs // 60 ~ ' minute' ~ ('s' if s|abs > 60 else '')) if s|abs >= 60 else (s|abs ~ ' seconds') }} on every angle">{{ '−' if s < 0 else '+' }}{{ (s|abs // 60 ~ 'm') if s|abs >= 60 else (s|abs ~ 's') }}</button>{% endfor %}</div>
+    <div class="mctl"><button type="button" id="mlink" hidden title="Share this playback moment and player">🔗 Share moment</button><button type="button" id="msave" class="savebtn" title="Record all angles in your browser and save the video (nothing is uploaded)">⬇ Save</button><button type="button" id="mhelp" class="mobile-quick" aria-label="Playback help" aria-expanded="false">?</button><button type="button" id="mclose">✕ Close</button></div></div>
+  <aside id="mobile-options" class="mobile-options" hidden aria-label="Playback controls"><button type="button" id="moptions-close">Done</button><button type="button" data-open-alerts>Alerts</button><button type="button" data-open-install>Install app</button></aside>
+  <aside id="mhelp-panel" class="playback-help" hidden aria-label="Playback help"><button type="button" id="mhelp-close" aria-label="Close playback help">✕</button><b>Playback help</b><p>If a video shows a large play button, tap inside that video. Start all cannot always unlock Twitch on Android.</p><p>These details show what the player reports. Copy them when reporting a problem.</p><button type="button" id="mhelp-copy">Copy playback details</button><pre id="mhelp-info"></pre></aside>
+  <div id="mobile-game-nav" class="mobile-game-nav"></div>
+  <div class="mwrap"><button type="button" class="mstart" id="mstart" hidden>▶ Tap to play all</button><div class="mgrid" id="mgrid"></div><div class="mlog"><div class="mgame" id="mgame" hidden></div><details class="multi-event-details"><summary>Event feed</summary><div class="elog" id="mlog"></div></details><details class="multi-moments"><summary>Clips &amp; stretches</summary><div id="mpicks"></div></details></div></div>
+  <div class="mtl" id="mtl"></div>
+</section>
+{% set live_rows = [] %}{% for m in d.members %}{% set _ = live_rows.append({"slug": m.p.slug, "gamertag": m.p.gamertag, "live": m.live}) %}{% endfor %}{% set live_slugs = ps|map(attribute="slug")|join(",") %}{% if not tw and live_rows|selectattr('live')|selectattr('live.active')|list %}{% include "_live.html" %}{% endif %}
+{% if tab == 'analysis' %}
+{% include "_board_body.html" %}
+{% elif tab == 'sessions' %}
+{% with sess_list = d.nights, sess_sel = d.s_idx %}{% include "_hub_sessions.html" %}{% endwith %}
+{% elif tab == 'records' %}
+
+{% if d.together %}
+{% if d.best_maps %}
+<section class="panel"><div class="ph"><h2>Best maps together</h2></div>
+  <div class="tablewrap"><table><thead><tr><th>Map</th><th>Games</th><th>Wins</th><th>Win%</th></tr></thead>
+  <tbody>{% for x in d.best_maps %}<tr><td>{{ x.name }}</td><td>{{ x.games }}</td><td>{{ x.wins }}</td><td>{{ x.win_pct }}%</td></tr>{% endfor %}</tbody></table></div></section>
+{% endif %}
+{% elif not pending %}
+<div class="alert">No games found where these players were on the same team yet.</div>
+{% endif %}
+{% if periods %}{% include "_periods.html" %}{% endif %}
+{% include "_hub_tools.html" %}
+{% else %}
+{% if tab == 'latest' %}
+{% set gamelog_block %}
+{% if d.together %}
+{% if d.night %}
+<section class="panel latest gamelog statfold" id="latest">
+  <div class="ph"><h2>Game log</h2><span class="muted">{{ 'Latest night together' if d.s_idx == 0 else 'Night together' }} · {{ d.night_start|dt('%a %b %-d') }}{% if d.nights|length > 1 %} · <a href="{{ tab_url('sessions') }}">All sessions →</a>{% endif %}</span><button type="button" class="allstats-btn" data-allstats aria-pressed="false"><span class="as-off">All stats</span><span class="as-on">Key stats</span></button>{% include "_stat_help.html" %}</div>
+  {# player columns ordered by that night's score share, best first #}
+  {% set mrows = [] %}{% for m in d.members %}{% set a0 = (d.night_per or {}).get(m.pid) %}{% set _ = mrows.append({'m': m, 'sc': a0.sc_pct if a0 and a0.sc_pct is not none else -1}) %}{% endfor %}
+  {% set memo = mrows|sort(attribute='sc', reverse=True)|map(attribute='m')|list %}
+  {% if d.night_per %}<div class="tablewrap"><table class="nightper heat"><thead><tr><th>Session totals</th>{% with head=True , more=True %}{% include "_agg_cols.html" %}{% endwith %}</tr></thead><tbody>
+  {% set per_rows = [] %}{% for m in memo %}{% set a = d.night_per.get(m.pid) %}{% if a %}{% set _ = per_rows.append({'m': m, 'a': a, 'sc': a.sc_pct if a.sc_pct is not none else -1}) %}{% endif %}{% endfor %}
+  {% for row in per_rows|sort(attribute='sc', reverse=True) %}{% set m, a = row.m, row.a %}{% if a %}<tr><td class="name">{{ m.p.gamertag }}</td>{% with head=False , more=True %}{% include "_agg_cols.html" %}{% endwith %}</tr>{% endif %}{% endfor %}
+  </tbody></table></div>{% endif %}
+  <div class="tablewrap"><table class="night heat heat-text">
+    <thead><tr><th data-pin>#</th><th data-pin>Time</th><th data-pin>Map · Mode</th><th data-pin>Result</th><th data-pin>Score</th><th class="xc">Len</th><th class="xc" title="Your team's MMR minus the enemy's (negative = underdog)">Lobby</th>{% for m in memo %}<th data-heat title="SC% coloured per player: green = their best games, red = their worst">{{ m.p.gamertag }} <small>K/D/A · KDA</small></th>{% endfor %}<th data-pin></th></tr></thead>
+    <tbody>{% for g in d.night|reverse %}{% set g0 = g.members.values()|first %}{% set gs = {'n': loop.index, 'of': loop.length, 'map': g.map or 'Unknown map', 'mode': g.mode or '', 'res': g.outcome or '', 'score': ((g.team_score|round|int|string) ~ '–' ~ (g.enemy_score|round|int|string if g.enemy_score is not none else '?')) if g.team_score is not none else '', 'len': ('%d:%02d'|format((g.duration_s or 0)//60, (g.duration_s or 0)%60)) if g.duration_s else '', 'lobby': g0.mmr_edge if g0 else none, 'cues': (watch_cues or {}).get(g.match_id, []), 'p': []} %}{% for m in memo %}{% set r = g.members.get(m.pid) %}{% if r %}{% set _ = gs.p.append({'who': m.p.gamertag, 'k': r.kills, 'd': r.deaths, 'a': r.assists, 'kda': r.kda, 'dpm': r.dmg_pm, 'dka': r.dmg_ka, 'dd': r.dmg_diff, 'sc': r.sc_pct, 'sh': r.dmg_share, 'acc': (r.accuracy|round(1)) if r.accuracy is not none else none, 'obj': r.obj, 'csr': r.csr_d, 'xk': r.xk, 'xd': r.xd, 'life': r.life, 'hs': r.hs_pct, 'dmg': r.damage_dealt, 'taken': r.damage_taken, 'score': r.personal_score, 'headshots': r.headshots, 'seconds': r.duration_s, 'fired': r.shots_fired, 'hit': r.shots_hit, 'spree': r.max_spree, 'callouts': r.callouts, 'extra': r.extra_stats}) %}{% endif %}{% endfor %}<tr class="{{ g.outcome|lower }} match-row" data-mid="{{ g.match_id[:8] }}" data-gstats='{{ gs|tojson }}' data-match="/match/{{ g.match_id }}?player={{ ps[0].slug }}" {% if g.watch %}data-gwatch='{{ g.watch|tojson }}' data-dur="{{ g.duration_s or 600 }}" data-name="squad-{{ (g.map or '')|replace(' ','') }}-{{ g.started_at|dt('%b%d-%H%M') }}" title="Open full match details"{% endif %}>
+      <td class="gnum">{{ loop.index }}</td><td>{{ g.started_at|dt('%-I:%M %p') }}</td><td><a href="/match/{{ g.match_id }}?player={{ ps[0].slug }}">{{ g.map or '—' }} ↗</a> <span class="muted">· {{ g.mode or '' }}</span>{% with watch_match=g %}{% include "_watch_cues.html" %}{% endwith %}</td>
+      <td><b class="res {{ g.outcome|lower }}">{{ g.outcome }}</b></td>
+      <td>{% if g.team_score is not none %}{{ g.team_score|round|int }}–{{ g.enemy_score|round|int if g.enemy_score is not none else '?' }}{% else %}—{% endif %}</td>
+      <td class="glen xc">{{ '%d:%02d'|format((g.duration_s or 0)//60, (g.duration_s or 0)%60) if g.duration_s else '—' }}</td>
+      {% set g1 = g.members.values()|first %}<td class="xc {{ 'pos' if g1.mmr_edge and g1.mmr_edge > 0 else 'neg' if g1.mmr_edge and g1.mmr_edge < 0 }}">{{ '{:+}'.format(g1.mmr_edge) if g1.mmr_edge is not none else '—' }}</td>
+      {% for m in memo %}{% set r = g.members.get(m.pid) %}
+      {% if r %}<td data-val="{{ r.sc_pct if r.sc_pct is not none else '' }}" class="kdacell{{ ' cellvod' if g.vod.get(m.p.slug) }}" {% if g.vod.get(m.p.slug) %}data-vod="{{ g.vod.get(m.p.slug) }}" title="Watch {{ m.p.gamertag }}'s stream of this game"{% endif %}><b>{{ r.kills }}</b>/{{ r.deaths }}/{{ r.assists }}<small>{% if r.sc_pct is not none %}<b>{{ r.sc_pct }}% SC</b> · {% endif %}{{ r.kda|kda }} KDA{% if r.dmg_pm is not none %} · {{ r.dmg_pm }}/min{% endif %}{% if r.dmg_ka is not none %} · {{ r.dmg_ka }}/KA{% endif %}{% if r.obj %} · {{ r.obj }}{% endif %}</small></td>{% else %}<td class="kdacell none">—</td>{% endif %}{% endfor %}
+      <td>{% if g.watch|length > 1 %}<button type="button" class="vod watch" data-watch='{{ g.watch|tojson }}' data-dur="{{ g.duration_s or 600 }}" data-name="match-{{ g.match_id }}">▶ All angles</button> {% endif %}{% for slug, link in g.vod.items() %}<a class="vod" href="{{ link }}" target="_blank" rel="noopener">▶ {{ gtmap.get(slug, slug) }}</a> {% endfor %}</td></tr>{% endfor %}</tbody></table></div>
+</section>
+{% endif %}
+{% endif %}
+{% endset %}
+{% set media_block %}
+<div class="cols {{ 'stats-layout' if not tw else 'video-layout' }}"><div class="colmain">
+{% if tw %}
+<section class="panel player" id="player">
+  <div class="ph"><h2>Twitch</h2><button type="button" class="secondary" data-fullscreen="#player">Full screen</button><span class="muted" id="playerlabel">{{ plabel }}</span></div>
+  <div class="embed"><div id="tplayer"></div></div>
+  <div class="elog inplayer" id="elog"></div>
+</section>
+<div class="tracker-quiet">{% include "_live.html" %}</div>
+{% endif %}
+{% set tw2 = d.teamwork %}
+{% if tw2.good or tw2.bad %}
+<section class="panel" id="teamwork">
+  <div class="ph"><h2>Teamwork</h2>
+    <div class="tabs" role="tablist"><button type="button" class="tab on" data-tab="good" role="tab">Best team plays <small>{{ tw2.good|length }}</small></button><button type="button" class="tab" data-tab="bad" role="tab">Worst moments <small>{{ tw2.bad|length }}</small></button></div></div>
+  <p class="muted tnote">Found from kill/death timing in the match films.{{ ' Click Watch together to see everyone at once.' if chans|length > 1 else '' }}{% if tw2.pending %} {{ tw2.pending }} recent game{{ '' if tw2.pending == 1 else 's' }} still being analyzed.{% endif %}</p>
+  {% for cls, lst in [('good', tw2.good), ('bad', tw2.bad)] %}
+  <div class="twlist {{ cls }}" data-list="{{ cls }}" {% if cls == 'bad' %}hidden{% endif %}>
+    {% for c in lst %}<div class="mo">
+      <span class="sc" title="Score">{{ c.score }}</span>
+      <div class="mtxt"><b>{{ c.label }}</b>
+        <small>{{ c.map or 'Unknown map' }}{% if c.mode %} · {{ c.mode }}{% endif %} · {{ c.match_started|dt('%b %-d') }} · <span class="res {{ c.outcome|lower }}">{{ c.outcome }}</span> · film {{ (c.t_ms // 60000) }}:{{ '%02d'|format((c.t_ms // 1000) % 60) }}</small></div>
+      <button type="button" class="vod linkbtn" data-link="{{ share_url ~ ('&' if '?' in share_url else '?') ~ 'watch=' ~ c.key if c.watch else request.host_url ~ 'live/' ~ slugs ~ '?kind=' ~ cur_kind ~ '&match=' ~ c.match_id ~ '&at=' ~ (c.t_ms//1000) ~ '#recap' }}" title="Copy a link to this moment" aria-label="Copy link to this moment">🔗</button>
+      {% if c.watch|length > 1 %}<button type="button" class="vod watch" data-key="{{ c.key }}" data-dur="{{ c.dur_s }}" data-name="squad-{{ (c.map or '')|replace(' ','') }}-{{ c.label|replace(' · ','-')|replace(' ','')|replace('(','')|replace(')','')|replace(',','') }}" data-watch='{{ c.watch|tojson }}'>▶ Watch together <small>{{ c.watch|length }}</small></button>
+      {% elif c.watch %}<span class="acts"><a class="vod" href="{{ c.watch[0].url }}" target="_blank" rel="noopener">▶ Watch</a><button type="button" class="vod savebtn" data-href="{{ c.watch[0].url }}" data-dur="{{ c.dur_s }}" data-name="squad-{{ (c.map or '')|replace(' ','') }}-{{ c.label|replace(' · ','-')|replace(' ','') }}">⬇ Save</button></span>
+      {% else %}<a class="vod" href="{{ tab_url('analysis', match=c.match_id, at=c.t_ms//1000) }}#recap">Review events ↗</a>{% endif %}
+    </div>{% else %}<p class="muted">None found yet.</p>{% endfor %}
+  </div>{% endfor %}
+</section>
+{% endif %}
+{% if not d.together and not pending %}<div class="alert">No games found where these players were on the same team yet.</div>{% endif %}
+</div><aside class="colside">
+{% set d2 = {'moments': d.moments, 'clips_pending': d.clips_pending, 'squad': true, 'plays': d.plays} %}
+{% with d = d2 %}{% include "_moments.html" %}{% if not tw %}{% include "_plays.html" %}{% endif %}{% endwith %}
+</aside></div>
+{% endset %}
+{# stream & clips fold above the data (2026-10-08): collapsed by default, expands in place; static/mediatoggle.js #}
+{% if tw or d.moments or d.plays or d.teamwork.good or d.teamwork.bad %}<details class="mediasec{{ ' live' if onair }}" id="mediasec"><summary class="mediabar"><span class="caret" aria-hidden="true">▶</span>
+  {% if onair %}<span class="oa-live"><i></i>LIVE</span> <b>Watch the stream</b>{% elif tw %}<b>Stream &amp; clips</b>{% else %}<b>Team plays &amp; best plays</b>{% endif %}
+  <span class="muted">{% set nclip = (d.moments|length if d.moments else 0) %}{% if tw %}{{ 'live now' if onair else 'latest broadcast' }} · {% endif %}{{ nclip }} clip{{ '' if nclip == 1 else 's' }}</span></summary>
+{{ media_block }}</details>{% endif %}
+{% include "_hub_kpis.html" %}{{ gamelog_block }}
+{% if not tw %}{% with d = {'plays': d.session_plays, 'squad': true, 'in_session': true} %}{% include "_plays.html" %}{% endwith %}{% endif %}
+{% else %}
+<div class="cols {{ 'stats-layout' if not tw else 'video-layout' }}"><div class="colmain">
+{% if tw %}
+<section class="panel player" id="player">
+  <div class="ph"><h2>Twitch</h2><button type="button" class="secondary" data-fullscreen="#player">Full screen</button><span class="muted" id="playerlabel">{{ plabel }}</span></div>
+  <div class="embed"><div id="tplayer"></div></div>
+  <div class="elog inplayer" id="elog"></div>
+</section>
+<div class="tracker-quiet">{% include "_live.html" %}</div>
+{% endif %}
+{% set tw2 = d.teamwork %}
+{% if tw2.good or tw2.bad %}
+<section class="panel" id="teamwork">
+  <div class="ph"><h2>Teamwork</h2>
+    <div class="tabs" role="tablist"><button type="button" class="tab on" data-tab="good" role="tab">Best team plays <small>{{ tw2.good|length }}</small></button><button type="button" class="tab" data-tab="bad" role="tab">Worst moments <small>{{ tw2.bad|length }}</small></button></div></div>
+  <p class="muted tnote">Found from kill/death timing in the match films.{{ ' Click Watch together to see everyone at once.' if chans|length > 1 else '' }}{% if tw2.pending %} {{ tw2.pending }} recent game{{ '' if tw2.pending == 1 else 's' }} still being analyzed.{% endif %}</p>
+  {% for cls, lst in [('good', tw2.good), ('bad', tw2.bad)] %}
+  <div class="twlist {{ cls }}" data-list="{{ cls }}" {% if cls == 'bad' %}hidden{% endif %}>
+    {% for c in lst %}<div class="mo">
+      <span class="sc" title="Score">{{ c.score }}</span>
+      <div class="mtxt"><b>{{ c.label }}</b>
+        <small>{{ c.map or 'Unknown map' }}{% if c.mode %} · {{ c.mode }}{% endif %} · {{ c.match_started|dt('%b %-d') }} · <span class="res {{ c.outcome|lower }}">{{ c.outcome }}</span> · film {{ (c.t_ms // 60000) }}:{{ '%02d'|format((c.t_ms // 1000) % 60) }}</small></div>
+      <button type="button" class="vod linkbtn" data-link="{{ share_url ~ ('&' if '?' in share_url else '?') ~ 'watch=' ~ c.key if c.watch else request.host_url ~ 'live/' ~ slugs ~ '?kind=' ~ cur_kind ~ '&match=' ~ c.match_id ~ '&at=' ~ (c.t_ms//1000) ~ '#recap' }}" title="Copy a link to this moment" aria-label="Copy link to this moment">🔗</button>
+      {% if c.watch|length > 1 %}<button type="button" class="vod watch" data-key="{{ c.key }}" data-dur="{{ c.dur_s }}" data-name="squad-{{ (c.map or '')|replace(' ','') }}-{{ c.label|replace(' · ','-')|replace(' ','')|replace('(','')|replace(')','')|replace(',','') }}" data-watch='{{ c.watch|tojson }}'>▶ Watch together <small>{{ c.watch|length }}</small></button>
+      {% elif c.watch %}<span class="acts"><a class="vod" href="{{ c.watch[0].url }}" target="_blank" rel="noopener">▶ Watch</a><button type="button" class="vod savebtn" data-href="{{ c.watch[0].url }}" data-dur="{{ c.dur_s }}" data-name="squad-{{ (c.map or '')|replace(' ','') }}-{{ c.label|replace(' · ','-')|replace(' ','') }}">⬇ Save</button></span>
+      {% else %}<a class="vod" href="{{ tab_url('analysis', match=c.match_id, at=c.t_ms//1000) }}#recap">Review events ↗</a>{% endif %}
+    </div>{% else %}<p class="muted">None found yet.</p>{% endfor %}
+  </div>{% endfor %}
+</section>
+{% endif %}
+{% if not d.together and not pending %}<div class="alert">No games found where these players were on the same team yet.</div>{% endif %}
+</div><aside class="colside">
+{% set d2 = {'moments': d.moments, 'clips_pending': d.clips_pending, 'squad': true, 'plays': d.plays} %}
+{% with d = d2 %}{% include "_moments.html" %}{% if not tw %}{% include "_plays.html" %}{% endif %}{% endwith %}
+</aside></div>
+{% endif %}
+
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if tab == 'analysis' %}<script nonce="{{ csp_nonce }}" src="/static/growth.js?v=2" defer></script><script nonce="{{ csp_nonce }}" src="/static/analysis.js?v=8" defer></script><script nonce="{{ csp_nonce }}" src="/static/analysis_trends.js?v=2" defer></script>{% endif %}
+{% if tab in ('latest', 'clips') %}
+<script nonce="{{ csp_nonce }}" src="https://player.twitch.tv/js/embed/v1.js"></script>
+<script nonce="{{ csp_nonce }}" src="/static/twitch-shim.js?v=2"></script>
+<script nonce="{{ csp_nonce }}" src="/static/mobile-embed.js?v=8"></script>
+<script nonce="{{ csp_nonce }}" src="/static/archiveplayer.js?v=3"></script>
+<script nonce="{{ csp_nonce }}" src="/static/clipsaver.js?v=2"></script>
+<script nonce="{{ csp_nonce }}">if(!window.ClutchSave||!ClutchSave.supported)document.documentElement.classList.add("nosave")</script>
+<script nonce="{{ csp_nonce }}" src="/static/eventlog.js?v=25"></script><script nonce="{{ csp_nonce }}" src="/static/multistats.js?v=2"></script>
+<script nonce="{{ csp_nonce }}">window.CT_SQ={{ {'base': sq_base, 'game': open_game}|tojson }};window.CT_VM={{ vm|tojson }};window.CT_NAMES={{ ps|map(attribute="gamertag")|list|tojson }};</script>
+<script nonce="{{ csp_nonce }}">window.addEventListener('load',function(){var sp=new URLSearchParams(location.search);if(sp.get('tab')==='bad'){var t0=document.querySelector('#teamwork .tab[data-tab="bad"]');if(t0)t0.click()}var k=sp.get('watch');if(!k)return;
+ var b=document.querySelector('button.watch[data-key="'+k+'"]');var row=b&&b.closest('.mo')||document.querySelector('[data-link$="watch='+k+'"]');
+ if(!row)return;var bad=row.closest('.twlist.bad');if(bad){var tb=document.querySelector('#teamwork .tab[data-tab="bad"]');if(tb)tb.click()}
+ if(b){setTimeout(function(){b.click()},400)}else{row.scrollIntoView({block:'center'});row.classList.add('flash')}});</script>
+<script nonce="{{ csp_nonce }}">
+(function(){var host=location.hostname,multi=document.getElementById('multi');if(!multi)return;
+function q(id){return document.getElementById(id)}
+var grid=document.getElementById('mgrid'),players=[],targets=[],mlist=[],mlogT=null,playbackPaused=false;
+function playWanted(p){if(!playbackPaused&&!multi.hidden){try{if(p.isPaused()){var i=players.indexOf(p),st=playerState[i];if(st&&st.plain){if(st.ready)makePlayer(i,p.getCurrentTime()||targets[i])}else p.play()}}catch(e){}}}
+var seekVersion=0,seekRetry=null,focusAngle=null,seekIntent=null,mobileReplaceTimer=null,mobileLoadVersion=0;
+var mlog=ClutchLog.init({seek:seekAllSeconds,onClip:focusClipPlayer,el:q('mlog'),bar:q('mtl'),picks:q('mpicks'),vm:window.CT_VM,names:window.CT_NAMES});
+
+function focusClipPlayer(name){
+  var i=mlist.findIndex(function(w){return String(w.who).toLowerCase()===String(name).toLowerCase()});
+  if(i<0)return;
+  if(multi.classList.contains('focus')){if(focusAngle)focusAngle(i,true);return;}
+  bigIdx=i;bigMode=true;try{localStorage.setItem('ct-mlayout','big')}catch(e){}
+  layout(true);layoutChanged();if(curRow)showGame(curRow);
+}
+var playerState=[],referenceIdx=0,quietUntil=0,driftT=null,offs=[];
+function replaceMobilePlayers(wants,indices){
+  clearTimeout(mobileReplaceTimer);var load=++mobileLoadVersion,version=seekVersion;
+  indices=indices||wants.map(function(_,i){return i});
+  // Replace explicitly requested positions as one cancellable batch; old SDK
+  // listeners and browsing contexts are detached before the new players load.
+  indices.forEach(function(i){var p=players[i],st=playerState[i];if(p&&p.destroy){try{p.destroy()}catch(e){}}if(st){st.ready=false;st.advancing=false;st.replacing=true;st.pending=wants[i]}});
+  mobileReplaceTimer=setTimeout(function(){mobileReplaceTimer=null;if(multi.hidden||playbackPaused||load!==mobileLoadVersion||version!==seekVersion)return;indices.forEach(function(i){makePlayer(i,wants[i])})},1000);
+}
+function commandSeek(i,to){var p=players[i],st=playerState[i];if(!p||!st)return;if(st.plain){makePlayer(i,to);return;}st.pending=to;if(!st.ready)return;st.commandAt=Date.now();try{p.seek(to);st.pending=null}catch(e){}}
+function playerTime(i){var p=players[i],st=playerState[i]||{},at=0;try{at=p.getCurrentTime()}catch(e){}return at>0?at:Number.isFinite(st.pending)?st.pending:Number.isFinite(st.initialTime)?st.initialTime:targets[i]}
+function activeAngle(i){return !multi.classList.contains('focus')||mobileVisible.includes(i)}
+var mobileVisible=[],mobileMode='2',paintMobile=null;try{mobileMode=localStorage.getItem('ct-mobile-views')||'2'}catch(e){}
+if(!['1','2','all'].includes(mobileMode))mobileMode='2';
+function seekAllSeconds(s,video){
+  if(!players.length||!Number.isFinite(s))return;
+  var mapped=video==null?-1:mlist.findIndex(function(w){return String(w.video)===String(video)}),ri=mapped>=0?mapped:(players[focusIdx]?focusIdx:0),pos=s-targets[ri],version=++seekVersion;
+  playbackPaused=false;seekIntent={pos:pos,at:Date.now()};clearInterval(seekRetry);quietUntil=Date.now()+6000;q('mstart').hidden=true;
+  var wants=targets.map(function(t){return Math.max(0,t+pos)}),began=Date.now(),tries=0;
+  if(multi.classList.contains('focus')&&playerState.some(function(st){return st&&st.plain})){replaceMobilePlayers(wants);return;}
+  players.forEach(function(p,i){if(playerState[i])playerState[i].resumeSeekUntil=Date.now()+5000;commandSeek(i,wants[i]);if(activeAngle(i)){if(playerState[i])playerState[i].blocked=false;try{p.play()}catch(e){}}});
+  seekRetry=setInterval(function(){
+    if(version!==seekVersion||multi.hidden||playbackPaused||++tries>6){clearInterval(seekRetry);seekRetry=null;seekIntent=null;return}
+    var settled=true;
+    players.forEach(function(p,i){var st=playerState[i];if(!st||!st.ready){settled=false;return}if(!activeAngle(i)||st.blocked)return;
+      try{if(p.isPaused()){settled=false;if(tries<=2)p.play();}var want=wants[i]+(Date.now()-began)/1000;if(Math.abs(p.getCurrentTime()-want)>4){settled=false;if(Date.now()-st.commandAt>2400)commandSeek(i,want)}}catch(e){settled=false}
+    });
+    if(settled){clearInterval(seekRetry);seekRetry=null;seekIntent=null}
+  },1500);
+}
+var bigMode=false,bigIdx=0;try{bigMode=localStorage.getItem('ct-mlayout')==='big';multi.classList.toggle('nolog',localStorage.getItem('ct-mlog')==='off')}catch(e){}q('mlogbtn').setAttribute('aria-pressed',String(!multi.classList.contains('nolog')));
+/* Size every angle to the largest exact-16:9 box that fits: equal grid, or one big angle + the rest stacked beside it */
+function videoPositions(){return Array.from(grid.querySelectorAll('.mcell')).map(function(el){return {el:el,rect:el.getBoundingClientRect()}})}
+function animateVideos(before){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  // Animate the frame and name, never the iframe's opacity/scale: Twitch checks those for visibility.
+  before.forEach(function(item){var el=item.el;if(el.classList.contains('thumb'))return;
+    el.animate([{outline:'2px solid #ffc478',outlineOffset:'3px'},{outline:'2px solid transparent',outlineOffset:'0px'}],{duration:550,easing:'ease-out'});
+    var label=el.querySelector('.mtop b');if(label)label.animate([{transform:'translateX(-14px)'},{transform:'translateX(0)'}],{duration:350,easing:'ease-out'});
+  });
+}
+function layout(animate){if(multi.classList.contains('focus')){if(paintMobile)paintMobile();return;}var before=animate?videoPositions():null;layoutNow();if(before)animateVideos(before)}
+function layoutNow(){var cells=[].slice.call(grid.querySelectorAll('.mcell')),n=cells.length;if(!n)return;
+  var W=grid.clientWidth-2,H=grid.clientHeight-2,gap=6,lab=22;
+  function size(c,w){var v=c.querySelector('.mvid');v.style.width=Math.floor(w)+'px';v.style.height=Math.floor(w*9/16)+'px'}
+  cells.forEach(function(c,i){c.style.gridColumn=c.style.gridRow=c.style.justifySelf=c.style.width='';c.classList.toggle('big',bigMode&&n>1&&i===bigIdx);c.classList.toggle('small',bigMode&&n>1&&i!==bigIdx)});
+  q('mlayout').textContent=bigMode?'▦ Equal':'◧ One big';q('mlayout').setAttribute('aria-pressed',String(bigMode));
+  if(bigMode&&n>1){var k=n-1;
+    /* two arrangements; keep whichever shows more video. side: big left, the rest stacked right (column as tall as the big one) */
+    var c=(k-1)*(lab+gap)*16/9,sb=Math.min((W-gap+c/k)*k/(k+1),(H-lab)*16/9),ss=Math.max(0,Math.min(W-sb-gap,(sb-c)/k,((H-gap*(k-1))/k-lab)*16/9));
+    /* below: big on top, the rest in a row underneath */
+    var bs=Math.min((W-gap*(k-1))/k,W*0.5),bb=Math.min(W,(H-lab*2-gap-bs*9/16)*16/9);
+    if(bb<bs*1.4){bs=Math.min(bs,(H-lab*2-gap)*16/9/2.4);bb=Math.min(W,(H-lab*2-gap-bs*9/16)*16/9)}   /* keep the big one clearly bigger */
+    var side=sb>=bb;   /* whichever makes the big angle biggest */
+    if(side){
+      grid.style.gridTemplateColumns=Math.floor(sb)+'px '+Math.floor(ss)+'px';grid.style.gridTemplateRows='repeat('+k+',auto)';
+      var r=1;cells.forEach(function(c,i){if(i===bigIdx){c.style.gridColumn='1';c.style.gridRow='1 / span '+k;size(c,sb)}else{c.style.gridColumn='2';c.style.gridRow=String(r++);size(c,ss)}})}
+    else{
+      grid.style.gridTemplateColumns='repeat('+k+','+Math.floor(bs)+'px)';grid.style.gridTemplateRows='auto auto';
+      var col=1;cells.forEach(function(c,i){if(i===bigIdx){c.style.gridColumn='1 / -1';c.style.gridRow='1';c.style.justifySelf='center';size(c,bb)}else{c.style.gridColumn=String(col++);c.style.gridRow='2';size(c,bs)}})}
+    return}
+  var best=null;
+  for(var cols=1;cols<=n;cols++){var rows=Math.ceil(n/cols),cw=(W-gap*(cols-1))/cols,ch=(H-gap*(rows-1))/rows-lab;
+    var vw=Math.min(cw,ch*16/9);if(vw>0&&(!best||vw>best.vw))best={cols:cols,rows:rows,vw:vw}}
+  if(!best)return;
+  grid.style.gridTemplateColumns='repeat('+best.cols+','+Math.floor(best.vw)+'px)';grid.style.gridTemplateRows='repeat('+best.rows+',auto)';
+  cells.forEach(function(c){size(c,best.vw)});
+  var left=n%best.cols;if(left===1&&best.cols>1){var last=cells[n-1];last.style.gridColumn='1 / -1';last.style.justifySelf='center';last.style.width=Math.floor(best.vw)+'px'}}
+q('mlayout').addEventListener('click',function(){bigMode=!bigMode;try{localStorage.setItem('ct-mlayout',bigMode?'big':'equal')}catch(e){}layout(true);layoutChanged();if(curRow)showGame(curRow)});
+q('mlogbtn').addEventListener('click',function(){var off=!multi.classList.contains('nolog');multi.classList.toggle('nolog',off);this.setAttribute('aria-pressed',String(!off));try{localStorage.setItem(multi.classList.contains('focus')?'ct-mobile-stats':'ct-mlog',off?'off':'on')}catch(e){}layout()});
+window.addEventListener('resize',function(){if(!multi.classList.contains('focus'))layout()});
+if(window.ResizeObserver)new ResizeObserver(function(){if(!multi.hidden&&!multi.classList.contains('focus'))layout()}).observe(grid);
+function fmtT(sec){sec=Math.max(0,Math.floor(sec));return Math.floor(sec/3600)+'h'+Math.floor(sec%3600/60)+'m'+(sec%60)+'s'}
+/* One lifecycle per embed. Readiness and explicit seeks own positioning; buffering never rebuilds it. */
+function makePlayer(i,sec){var holder=q('mv'+i);if(!holder)return;var old=players[i];if(old&&old.destroy){try{old.destroy()}catch(e){}}if(multi.classList.contains('focus')&&!activeAngle(i)){holder.replaceChildren();playerState[i]={plain:true,ready:false,events:[],commands:[],createdAt:Date.now()};players[i]={dormant:true,getCurrentTime:function(){return sec},isPaused:function(){return true},getMuted:function(){return true},getQualities:function(){return []},isArchive:function(){return false},pause:function(){},setMuted:function(){},seek:function(to){sec=to},play:function(){if(activeAngle(i))makePlayer(i,sec)}};window.__mp=players;return players[i];}
+  var id='mv'+i+'x'+Date.now();holder.innerHTML='<div id="'+id+'" style="width:100%;height:100%"></div>';
+  var st=playerState[i]={ready:false,pending:null,commandAt:Date.now(),blocked:false,lastTime:null,lastMuted:true,offTicks:0,correctedAt:0,started:false,createdAt:Date.now(),events:[],commands:[],sampleTime:null,sampleAt:0,advancing:false,initialTime:sec};
+  var Plain=multi.classList.contains('focus')&&window.ClutchMobileEmbed&&ClutchMobileEmbed.Player;st.plain=!!Plain;
+  var p=new (Plain||Twitch.Player)(id,{video:mlist[i].video,time:fmtT(sec),parent:[host],autoplay:!playbackPaused&&activeAngle(i),muted:true,width:'100%',height:'100%'});
+  players[i]=p;window.__mp=players;
+  // Preserve the SDK call and return value; record only our commands, separately
+  // from provider events, so a device-only stop can be attributed correctly.
+  ['play','pause','seek','setMuted'].forEach(function(method){var original=p[method];p[method]=function(){st.commands.push({command:method,args:Array.from(arguments),after:Math.round((Date.now()-st.createdAt)/100)/10});if(st.commands.length>24)st.commands.shift();return original.apply(p,arguments)}});
+
+  function current(){return players[i]===p&&!multi.hidden}
+  function on(event,fn){if(event)p.addEventListener(event,function(){if(current()){st.events.push({event:event,after:Math.round((Date.now()-st.createdAt)/100)/10});if(st.events.length>12)st.events.shift();fn()}})}
+  on(Twitch.Player.READY,function(){st.ready=true;if(st.pending!=null)commandSeek(i,st.pending);if(playbackPaused){try{p.pause()}catch(e){}}else if(activeAngle(i)&&!st.plain){try{p.play()}catch(e){}}});
+  on(Twitch.Player.PLAYBACK_BLOCKED,function(){st.blocked=true;mobilePlaybackStatus(i);q('mstart').hidden=playbackPaused||multi.classList.contains('focus')});
+  on(Twitch.Player.PLAYING,function(){st.blocked=false;st.started=true;st.resumeRequestedAt=0;st.lastTime=p.getCurrentTime();mobilePlaybackStatus(i)});
+  // Mobile provider pauses (visibility, startup, policy) are local to that embed.
+  // Only the explicit toolbar Pause command is allowed to stop every mobile angle.
+  on(Twitch.Player.PAUSE,function(){if(multi.classList.contains('focus'))return;if(st.blocked||!st.ready||Date.now()-st.commandAt<2000||Date.now()<quietUntil)return;
+    if(i===referenceIdx||multi.classList.contains('focus')&&i===focusIdx){playbackPaused=true;clearInterval(seekRetry);players.forEach(function(other,j){if(j!==i){if(playerState[j])playerState[j].commandAt=Date.now();try{other.pause()}catch(e){}}})}
+  });
+  on(Twitch.Player.PLAY,function(){if(playbackPaused&&Date.now()-st.commandAt>1500){playbackPaused=false;referenceIdx=i;quietUntil=Date.now()+4000;players.forEach(function(other,j){if(j!==i&&activeAngle(j))playWanted(other)})}});
+  on(Twitch.Player.SEEK,function(){if(st.resumeSeekUntil>Date.now()){st.resumeSeekUntil=0;if(!playbackPaused&&!st.blocked){try{if(p.isPaused())p.play()}catch(e){}}return;}if(Date.now()-st.commandAt<2000||!st.ready)return;referenceIdx=i;quietUntil=Date.now()+5000;
+    // Twitch also emits SEEK during asynchronous startup. Never echo that event
+    // into more seeks; explicit timeline commands already position all angles.
+    // The drift monitor synchronizes confirmed, advancing playback instead.
+  });
+  return p;
+}
+function driftFix(){
+  if(multi.hidden||document.hidden||!players.length)return;
+  var now=Date.now(),changedSound=false;
+  players.forEach(function(p,i){var st=playerState[i];if(!st||!st.ready)return;try{var muted=p.getMuted();if(muted!==st.lastMuted){st.lastMuted=muted;changedSound=true;if(!muted){referenceIdx=i;players.forEach(function(other,j){if(j!==i){try{other.setMuted(true);if(playerState[j])playerState[j].lastMuted=true}catch(e){}}})}}}catch(e){}});
+  if(changedSound){quietUntil=now+5000;}
+  // On mobile, keep autoplay passive like the plain-iframe test. Only explicit
+  // timeline/skip/Resync actions seek; background drift must not interrupt playback.
+  if(multi.classList.contains('focus')||playbackPaused||now<quietUntil)return;
+  var ri=referenceIdx;if(!playerState[ri]||!playerState[ri].ready)ri=players.findIndex(function(p,i){return playerState[i]&&playerState[i].ready});if(ri<0)return;
+  var ref=players[ri],rs=playerState[ri],t;try{t=ref.getCurrentTime();if(ref.isPaused()||t<=0)return}catch(e){return}
+  var moved=rs.lastTime==null?0:t-rs.lastTime;rs.lastTime=t;if(moved<.2)return; // Buffering: wait for the reference, never chase another clock.
+  var pos=t-targets[ri];
+  players.forEach(function(p,i){var st=playerState[i];if(i===ri||!st||!st.ready||st.blocked)return;try{
+    var at=p.getCurrentTime(),advance=st.lastTime==null?0:at-st.lastTime;st.lastTime=at;
+    if(p.isPaused()||!p.getMuted()||advance<.2||now-st.commandAt<5000){st.offTicks=0;return}
+    st.offTicks=Math.abs(at-targets[i]-pos)>3?st.offTicks+1:0;
+    if(st.offTicks>=3&&now-st.correctedAt>10000){commandSeek(i,Math.max(0,targets[i]+pos));st.correctedAt=now;st.offTicks=0}
+  }catch(e){}});
+}
+function resumeAll(){if(!players.length||multi.hidden)return;playbackPaused=false;quietUntil=Date.now()+4000;q('mstart').hidden=true;
+  var mobile=multi.classList.contains('focus'),audible=[];
+  if(mobile&&playerState.some(function(st){return st&&st.plain})){var indices=[],wants=targets.slice();players.forEach(function(p,i){var st=playerState[i];if(!activeAngle(i)||!st||!st.ready&&!st.replacing)return;try{if(st.advancing&&!p.isPaused())return;wants[i]=playerTime(i);indices.push(i)}catch(e){}});if(indices.length)replaceMobilePlayers(wants,indices);return;}
+
+  // Match MultiTwitch: issue all play calls synchronously in the same user gesture.
+  if(mobile)players.forEach(function(p,i){if(!activeAngle(i))return;try{if(playerState[i]&&playerState[i].ready&&playerState[i].started&&!p.getMuted())audible.push(i);p.setMuted(true)}catch(e){}});
+  players.forEach(function(p,i){if(!activeAngle(i))return;var st=playerState[i];if(st){st.blocked=false;st.commandAt=Date.now();st.resumeRequestedAt=Date.now()}try{p.play()}catch(e){}});
+  audible.forEach(function(i){try{players[i].setMuted(false)}catch(e){}});
+  // Keep the iframe the user can tap. A timer cannot transfer activation into
+  // Twitch, and replacing a loading player discards its in-flight native start.
+
+}
+document.addEventListener('visibilitychange',function(){if(!document.hidden){quietUntil=Date.now()+5000}});
+function layoutChanged(){quietUntil=Date.now()+5000;}
+function startDrift(){clearInterval(driftT);quietUntil=Date.now()+5000;driftT=setInterval(driftFix,1000)}
+var movedControls=[];
+function mobileControls(enabled){
+  movedControls.forEach(function(x){x.marker.replaceWith(x.node)});movedControls=[];
+  q('mobile-options').hidden=true;q('moptions').setAttribute('aria-expanded','false');
+  if(!enabled)return;
+  ['#mobile-game-nav','#mgrid .angles','#msync','#mobile-moments','#mlogbtn','#mhelp','#multi .mskip'].forEach(function(sel){var node=multi.querySelector(sel);if(!node)return;var marker=document.createComment('mobile control');node.replaceWith(marker);movedControls.push({node:node,marker:marker});q('mobile-options').appendChild(node)});
+}
+q('moptions').onclick=function(){q('mobile-options').hidden=!q('mobile-options').hidden;this.setAttribute('aria-expanded',String(!q('mobile-options').hidden))};
+q('moptions-close').onclick=function(){q('mobile-options').hidden=true;q('moptions').setAttribute('aria-expanded','false')};
+q('mobile-options').addEventListener('click',function(e){if(e.target.closest('#mlogbtn,#mobile-moments,#mhelp,.angles button')){q('mobile-options').hidden=true;q('moptions').setAttribute('aria-expanded','false')}});
+var focusIdx=0;
+function narrow(){return innerWidth<900||innerHeight<520}
+/* Visible angle choices are separate from playback. Never pause another angle just
+   because it lost focus; keep the same embeds and only seek if a new angle is behind. */
+function destroyMobilePlayers(){players.forEach(function(p,i){if(playerState[i]&&playerState[i].plain&&p.destroy)p.destroy()})}
+function openFocus(list,startAt,angle){startAt=startAt||0;angle=angle||0;destroyMobilePlayers();if(multi.parentElement!==document.body)document.body.appendChild(multi);mobileControls(false);pauseSidePlayer();watchdog();startDrift();playerState=[];mlist=list;focusIdx=angle;referenceIdx=angle;clearInterval(mlogT);multi.hidden=false;multi.classList.add('focus');document.body.classList.add('noscroll');
+  try{var msp=localStorage.getItem('ct-mobile-stats');multi.classList.toggle('nolog',msp?msp!=='on':false)}catch(e){multi.classList.add('nolog')}   /* stats show inline under the videos by default (the owner: the most important part) */q('mlogbtn').setAttribute('aria-pressed',String(!multi.classList.contains('nolog')));
+  q('mplay').textContent='▶ Start all';q('mplay').title='Start visible streams; if blocked, tap Play inside each video';
+  q('multititle').textContent='Watch together';grid.innerHTML='';grid.style.gridTemplateColumns='';grid.style.gridTemplateRows='';players=[];targets=list.map(function(w){return w.sec});mobileVisible=[0,1].filter(i=>i<list.length);
+  var tabs=document.createElement('div');tabs.className='angles';tabs.setAttribute('aria-label','Choose focused player');
+  list.forEach(function(w,i){var b=document.createElement('button');b.type='button';b.textContent=w.who;b.dataset.gamertag=w.who;b.dataset.i=i;tabs.appendChild(b)});grid.appendChild(tabs);
+  var cells=list.map(function(w,i){var c=document.createElement('div');c.className='mcell';c.dataset.i=i;
+    c.innerHTML='<div class="mtop"><button type="button"><b></b></button></div><div class="mvid" id="mv'+i+'"></div>';c.querySelector('b').textContent=w.who;c.querySelector('button').onclick=function(){focusOn(i)};grid.appendChild(c);return c});
+  function paint(){
+    var count=mobileMode==='all'?list.length:Math.min(+mobileMode,list.length);
+    if(innerHeight<=520&&count>2)count=2;   /* landscape phone: 3+ angles get too short and Twitch pauses them; show 2, others via the angle buttons */
+    mobileVisible=mobileVisible.filter(i=>i<list.length);if(!mobileVisible.includes(focusIdx))mobileVisible.unshift(focusIdx);
+    mobileVisible=[focusIdx].concat(mobileVisible.filter(i=>i!==focusIdx));
+    for(var i=0;mobileVisible.length<count&&i<list.length;i++)if(!mobileVisible.includes(i))mobileVisible.push(i);
+    mobileVisible=mobileVisible.slice(0,count);multi.style.setProperty('--mobile-count',mobileVisible.length);multi.style.setProperty('--mobile-rows',Math.ceil(mobileVisible.length/2));multi.dataset.mobileViews=mobileMode;q('mobile-views').value=mobileMode;
+    cells.forEach(function(c,i){c.className='mcell '+(i===focusIdx?'main':'thumb')+(mobileVisible.includes(i)?' mobile-visible':'');c.querySelector('button').setAttribute('aria-pressed',String(i===focusIdx))});
+    Array.from(tabs.children).forEach(function(b){b.classList.toggle('on',+b.dataset.i===focusIdx);b.classList.toggle('visible',mobileVisible.includes(+b.dataset.i));b.setAttribute('aria-pressed',String(+b.dataset.i===focusIdx))});
+    var pos=0;players.some(function(p,i){if(p.dormant)return false;try{var at=playerTime(i);if(at>0){pos=at-targets[i];return true}}catch(e){}return false});
+    players.forEach(function(p,i){if(mobileVisible.includes(i)&&p.dormant)makePlayer(i,Math.max(0,targets[i]+pos));else if(!mobileVisible.includes(i)&&!p.dormant){var at=targets[i];try{at=p.getCurrentTime()||at}catch(e){}makePlayer(i,at)}});
+    requestAnimationFrame(fitStats);
+  }
+  paintMobile=paint;paint();mobileControls(true);if(window.ClutchMobileEmbed&&ClutchMobileEmbed.panels)ClutchMobileEmbed.panels(multi);
+  var opening=seekVersion;requestAnimationFrame(function(){if(opening!==seekVersion||multi.hidden)return;list.forEach(function(w,i){makePlayer(i,w.sec+startAt)})});
+  function focusOn(i,alreadySeeking){if(i===focusIdx||!players[i])return;var before=videoPositions(),previous=focusIdx,cur=players[previous],nxt=players[i],d=0;
+    try{d=seekIntent?seekIntent.pos+(Date.now()-seekIntent.at)/1000:playerTime(previous)-targets[previous]}catch(e){}
+    if(!mobileVisible.includes(i))mobileVisible=mobileVisible.map(j=>j===previous?i:j);
+    focusIdx=i;referenceIdx=i;quietUntil=Date.now()+5000;paint();
+    // A running, synced angle switches immediately, without another buffering seek.
+    if(!alreadySeeking&&playerState[i]&&playerState[i].ready){try{if(Math.abs(nxt.getCurrentTime()-(targets[i]+d))>2)commandSeek(i,Math.max(0,targets[i]+d))}catch(e){commandSeek(i,Math.max(0,targets[i]+d))}}
+    nxt=players[i];if(!playbackPaused){if(playerState[i]){playerState[i].blocked=false;playerState[i].commandAt=Date.now()}try{if(nxt.isPaused()){if(playerState[i]&&playerState[i].plain){if(playerState[i].ready)makePlayer(i,Math.max(0,targets[i]+d));}else nxt.play()}}catch(e){}}
+    animateVideos(before);
+  }
+  focusAngle=focusOn;tabs.addEventListener('click',function(e){var b=e.target.closest('button');if(b)focusOn(+b.dataset.i)});
+  mlogT=setInterval(function(){pauseSidePlayer();try{var f=players[focusIdx];if(f&&f.getCurrentTime)mlog.update(mlist[focusIdx].video,f.getCurrentTime())}catch(e){}},400);
+  multi.scrollTop=0;
+}
+var rotT;window.addEventListener('resize',function(){clearTimeout(rotT);rotT=setTimeout(function(){if(paintMobile&&multi.classList.contains('focus')&&!multi.hidden){var was=multi.dataset.rot,now=innerHeight<=520?'land':'port';if(was!==now){multi.dataset.rot=now;paintMobile();if(!playbackPaused)resumeAll();}}},250)});   /* rotating the phone re-picks how many angles fit */
+q('mobile-views').addEventListener('change',function(){mobileMode=this.value;try{localStorage.setItem('ct-mobile-views',mobileMode)}catch(e){}if(paintMobile)paintMobile();if(!playbackPaused)resumeAll();});
+/* Pause the page's own player first: left running behind the overlay it is a third HD stream, and Twitch then refused
+   autoplay for an angle (seen 2026-10-08: one angle stuck paused, "network error" on a slower connection). */
+function pauseSidePlayer(){try{if(window.__sp)window.__sp.pause()}catch(e){}}
+function open(list,startAt,angle){startAt=Number.isFinite(startAt)?Math.max(0,startAt):0;angle=Number.isInteger(angle)&&angle>=0&&angle<list.length?angle:0;
+  // Same broadcasts: retain ready embeds and seek, preserving the selected big angle.
+  if(!multi.hidden&&players.length===list.length&&list.every(function(w,i){return mlist[i]&&w.who===mlist[i].who&&String(w.video)===String(mlist[i].video)&&players[i]&&typeof players[i].seek==='function'})){
+    mlist=list;targets=list.map(function(w){return w.sec});offs=[];seekAllSeconds(targets[focusIdx]||targets[0]);mlog.update(list[focusIdx].video,targets[focusIdx]);return;
+  }
+  seekVersion++;clearInterval(seekRetry);seekRetry=null;playbackPaused=false;pauseSidePlayer();if(narrow())return openFocus(list,startAt,angle);destroyMobilePlayers();watchdog();startDrift();multi.classList.remove('focus');q('mplay').textContent='▶ Play all';q('mplay').title='Play all streams';focusIdx=angle;bigIdx=angle;if(startAt||angle)bigMode=true;mlist=list;clearInterval(mlogT);mlogT=setInterval(function(){try{if(players[0]&&players[0].getCurrentTime)mlog.update(mlist[focusIdx].video,players[0].getCurrentTime())}catch(e){}},400);grid.innerHTML='';players=[];playerState=[];targets=[];referenceIdx=0;multi.hidden=false;document.body.classList.add('noscroll');
+  grid.dataset.n=list.length;q('multititle').textContent='Watch together · '+list.length+' views';
+  var cells=list.map(function(w,i){var box=document.createElement('div');box.className='mcell';
+    box.innerHTML='<div class="mtop"><b></b><button type="button" class="mbig" data-big title="Make this angle the big one">⤢ Make big</button></div><div class="mvid" id="mv'+i+'"></div>';
+    box.querySelector('b').textContent=w.who;grid.appendChild(box);return box});
+  players.length=0;                                   /* placeholder so layout() counts every cell */
+  players.push.apply(players,list.map(function(){return {}}));
+  layout();void grid.offsetHeight;                     /* real sizes first: Twitch refuses autoplay in a box it cannot see */
+  players.length=0;
+  var opening=seekVersion;requestAnimationFrame(function(){requestAnimationFrame(function(){
+    if(opening!==seekVersion||multi.hidden)return;list.forEach(function(w,i){var box=cells[i];
+      targets[i]=w.sec;makePlayer(i,w.sec+startAt);
+      box.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;var pl=players[i];
+        if('big' in b.dataset){bigIdx=i;bigMode=true;try{localStorage.setItem('ct-mlayout','big')}catch(x){}layout(true);layoutChanged();if(curRow)showGame(curRow);return}
+      });
+    });layout()})});
+}
+function mobilePlaybackStatus(i){
+  if(!multi.classList.contains('focus'))return;
+  var cell=grid.querySelector('.mcell[data-i="'+i+'"]'),st=playerState[i];if(!cell||!st)return;
+  var label=cell.querySelector('.mobile-play-state');if(!label){label=document.createElement('small');label.className='mobile-play-state';label.setAttribute('role','status');cell.querySelector('.mtop').appendChild(label);}
+  var now=Date.now();try{var at=players[i].getCurrentTime();if(st.sampleAt&&now-st.sampleAt>=700){st.advancing=!players[i].isPaused()&&at>st.sampleTime+.1&&at-st.sampleTime<(now-st.sampleAt)/1000+2}st.sampleTime=at;st.sampleAt=now}catch(e){}
+  var waitingForTap=st.blocked||st.ready&&!st.advancing&&now-st.createdAt>8000;try{waitingForTap=waitingForTap||!playbackPaused&&st.resumeRequestedAt&&Date.now()-st.resumeRequestedAt>2000&&players[i].isPaused()}catch(e){}
+  label.textContent=playbackPaused?'Paused':waitingForTap?'Tap ▶ in video':st.advancing?'':'Loading…';label.hidden=!label.textContent;
+}
+function playbackDetails(){return {build:'android-surfaces-11',url:location.origin+location.pathname,userAgent:navigator.userAgent,viewport:[innerWidth,innerHeight],mode:mobileMode,paused:playbackPaused,sdk:window.Twitch.__shim?'fallback':'Twitch',players:players.map(function(p,i){var st=playerState[i]||{},r=q('mv'+i).getBoundingClientRect(),d={name:mlist[i].who,visible:activeAngle(i),size:[Math.round(r.width),Math.round(r.height)],meetsTwitchSize:r.width>=400&&r.height>=300,ready:st.ready,blocked:st.blocked,advancing:st.advancing,events:st.events,commands:st.commands,transport:st.plain?'plain-iframe-sdk':'legacy-sdk'};try{d.paused=p.isPaused();d.muted=p.getMuted();d.time=Math.round(p.getCurrentTime()*10)/10;d.qualities=p.getQualities().map(function(q){return {name:q.name,height:q.height}})}catch(e){d.error=String(e)}return d})}}
+function renderPlaybackHelp(){q('mhelp-info').textContent=JSON.stringify(playbackDetails(),null,2)}
+q('mhelp').onclick=function(){var panel=q('mhelp-panel');panel.hidden=!panel.hidden;this.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden)renderPlaybackHelp()};
+q('mhelp-close').onclick=function(){q('mhelp-panel').hidden=true;q('mhelp').setAttribute('aria-expanded','false');q('mhelp').focus()};
+q('mhelp-copy').onclick=async function(){try{await navigator.clipboard.writeText(JSON.stringify(playbackDetails(),null,2));this.textContent='Copied'}catch(e){this.textContent='Select the details below to copy'}};
+function watchdog(){var t0=Date.now(),seen=[];clearInterval(window.__wd);
+  window.__wd=setInterval(function(){if(multi.hidden){clearInterval(window.__wd);return}
+    if(playbackPaused){q('mstart').hidden=true;return}
+    if(document.hidden)return;
+    var st=players.map(function(p,i){mobilePlaybackStatus(i);if(!activeAngle(i))return true;try{return !p.isPaused()&&!(playerState[i]&&playerState[i].blocked)}catch(e){return false}});
+    if(!q('mhelp-panel').hidden)renderPlaybackHelp();
+    var stuck=!players.length||st.some(function(x){return !x});
+    q('mstart').hidden=multi.classList.contains('focus')||!(stuck&&Date.now()-t0>4000&&Date.now()>quietUntil);
+
+  },1000)}
+function close(fromPop){clearTimeout(mobileReplaceTimer);mobileLoadVersion++;mobileControls(false);q('mhelp-panel').hidden=true;q('mhelp').setAttribute('aria-expanded','false');seekIntent=null;seekVersion++;clearInterval(seekRetry);seekRetry=null;if(!fromPop&&/\/g\//.test(location.pathname)){try{history.pushState({},'',homeUrl||(SQ.base+(curRow?'?session='+curRow.dataset.mid:'')))}catch(e){}}showGame(null);if(document.fullscreenElement===multi)document.exitFullscreen().catch(function(){});playbackPaused=true;clearInterval(mlogT);clearInterval(driftT);urlState('watch',null);players.forEach(function(p){try{p.pause()}catch(x){}});destroyMobilePlayers();grid.innerHTML='';players=[];multi.hidden=true;document.body.classList.remove('noscroll')}
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!multi.hidden)close()});
+document.addEventListener('click',function(e){var tb=e.target.closest('button.tab');if(tb){document.querySelectorAll('#teamwork .tab').forEach(function(x){x.classList.toggle('on',x===tb)});document.querySelectorAll('#teamwork .twlist').forEach(function(l){l.hidden=l.dataset.list!==tb.dataset.tab});urlState('tab',tb.dataset.tab==='bad'?'bad':null);return}var b=e.target.closest('button.watch');if(b){try{window.__mdur=+b.dataset.dur||30;window.__mname=b.dataset.name;open(JSON.parse(b.dataset.watch));var gr=b.closest('tr[data-gstats]');showGame(gr,true);if(!gr)urlState('watch',b.dataset.key)}catch(x){}}});
+/* side panel: this game's stats per player + previous / next game from the game log */
+var curRow=null;
+function gameRows(){return [].slice.call(document.querySelectorAll('table.night tr[data-gstats]')).sort(function(a,b){return JSON.parse(a.dataset.gstats).n-JSON.parse(b.dataset.gstats).n})}   /* game order even if the table is sorted */
+function adjGame(tr,dir){var all=gameRows();for(var j=all.indexOf(tr)+dir;j>=0&&j<all.length;j+=dir){if(all[j].dataset.gwatch)return all[j]}return null}
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return '&#'+c.charCodeAt(0)+';'})}
+function sgn(v){return v==null?'':(v>0?'+':'')+v}
+/* every game has its own address: /sq/<code>/g/<first 8 of the match id> */
+var SQ=window.CT_SQ||{},homeUrl=null;
+function gameUrl(tr){return SQ.base&&tr&&tr.dataset.mid?SQ.base+'/g/'+tr.dataset.mid:null}
+function setGameUrl(tr,push){var u=gameUrl(tr);q('mlink').hidden=!u;if(!u||location.pathname===u)return;
+  if(homeUrl==null&&!/\/g\//.test(location.pathname))homeUrl=location.pathname+location.search;
+  try{history[push?'pushState':'replaceState']({g:tr.dataset.mid},'',u)}catch(e){}}
+function showGame(tr,push){var box=q('mgame'),changed=curRow&&tr&&curRow!==tr,oldCols={};box.querySelectorAll('.mgmatrix thead th[data-owner]').forEach(function(c){oldCols[c.dataset.owner]=c.getBoundingClientRect().left});curRow=tr||null;if(tr)setGameUrl(tr,push);if(!tr){box.hidden=true;box.innerHTML='';q('mobile-game-nav').innerHTML='';q('mlink').hidden=true;return}
+  var g=JSON.parse(tr.dataset.gstats),prev=adjGame(tr,-1),next=adjGame(tr,1),bigWho=bigMode&&mlist[bigIdx]?mlist[bigIdx].who:null;
+  g.p.sort(function(a,b){return (b.sc==null?-Infinity:b.sc)-(a.sc==null?-Infinity:a.sc)||a.who.localeCompare(b.who)});
+  g.p=g.p.map(ClutchStats.derive);
+  var h='<div class="mgnav"><button type="button" data-gnav="-1"'+(prev?'':' disabled')+' title="Previous game with video">◀ Prev</button><select class="mg-game-select" aria-label="Choose game">'+gameRows().map(function(row){var game=JSON.parse(row.dataset.gstats),cues=(game.cues||[]).map(function(c){return c.text}).join(' · ');return '<option value="'+esc(row.dataset.mid)+'"'+(row===tr?' selected':'')+(!row.dataset.gwatch?' disabled':'')+'>Game '+game.n+' · '+esc(game.res+' '+game.score+' · '+game.map+' · '+game.mode+(game.len?' · '+game.len:'')+(cues?' · ★ '+cues:'')+(!row.dataset.gwatch?' · No video':''))+'</option>'}).join('')+'</select><button type="button" data-gnav="1"'+(next?'':' disabled')+' title="Next game with video">Next ▶</button></div>'+
+    '<div class="mghead"><b class="res '+esc(g.res.toLowerCase())+'">'+esc(g.res)+'</b> '+esc(g.score)+' <span>· '+esc(g.map)+' · '+esc(g.mode)+(g.len?' · '+esc(g.len):'')+(g.lobby!=null?' · lobby '+esc(sgn(g.lobby)):'')+'</span></div>'+
+    '<div class="mg-caption">Score share ↓ <span>Heat: green better · blue magnitude · — missing</span></div><div class="mgtable"><table class="mgmatrix"><thead><tr><th>Stat</th>';
+  g.p.forEach(function(p){h+='<th data-owner="'+esc(p.who)+'"><button type="button" class="mgwho" data-gamertag="'+esc(p.who)+'" data-who="'+esc(p.who)+'">'+esc(p.who)+'</button></th>'});h+='</tr></thead><tbody>';
+  function heatAttrs(value,values,direction){var color=ClutchStats.heat(value,values,direction);return ' class="heat-'+color.kind+'" style="--heat:'+color.alpha+'"';}
+  ClutchStats.rows.forEach(function(st,idx){var vals=g.p.map(function(p){return st[1]==='obj'&&p.obj?parseFloat(p.obj):p[st[1]]});h+='<tr data-stat-index="'+idx+'"><th scope="row">'+st[0]+'</th>';
+    g.p.forEach(function(p){var v=p[st[1]],numeric=typeof v==='number'&&Number.isFinite(v),value=v==null?'—':numeric?Number(v).toLocaleString(undefined,{maximumFractionDigits:1})+(st[2]||''):v;
+      if(st[1]==='line'){h+='<td data-owner="'+esc(p.who)+'" class="heat-kda">'+['k','d','a'].map(function(key){return '<span'+heatAttrs(p[key],g.p.map(function(x){return x[key]}),key==='d'?-1:1)+'>'+esc(p[key]==null?'—':p[key])+'</span>'}).join('<i>/</i>')+'</td>';}
+      else{h+='<td data-owner="'+esc(p.who)+'"'+heatAttrs(st[1]==='obj'&&p.obj?parseFloat(p.obj):v,vals,st[3])+'>'+esc(value)+'</td>';}
+    });h+='</tr>';
+  });
+  box.innerHTML=h+'</tbody></table></div><div class="mgpager"><button type="button" data-stat-page="-1" aria-label="Previous statistics">‹ Stats</button><span></span><button type="button" data-stat-page="1" aria-label="More statistics">More ›</button></div>';box.hidden=false;q('mobile-game-nav').innerHTML='';if(multi.classList.contains('focus'))q('mobile-game-nav').appendChild(box.querySelector('.mgnav'));fitStats();
+  if(changed&&!matchMedia('(prefers-reduced-motion: reduce)').matches){box.querySelectorAll('.mgmatrix [data-owner]').forEach(function(cell){var old=oldCols[cell.dataset.owner],dx=old==null?0:old-cell.getBoundingClientRect().left;cell.animate([{transform:'translateX('+dx+'px) translateY(-3px)',opacity:.45,filter:'brightness(1.8)'},{transform:'translateX(0) translateY(0)',opacity:1,filter:'brightness(1)'}],{duration:650,delay:Math.min(120,cell.parentNode.rowIndex*9),easing:'cubic-bezier(.16,1,.3,1)',fill:'backwards'});});}
+}
+/* live K/D (2026-10-10): a "Now" row counting each player's kills/deaths up to the point the video is at,
+   from the match film (same events as the timeline). Approximate by a few seconds (stream delay). */
+var liveEv=null,liveMid=null,liveT=null;
+function liveRow(tr){clearInterval(liveT);if(!tr)return;var mm=(tr.dataset.match||'').match(/\/match\/([0-9a-f-]{36})/);if(!mm)return;
+  var mid=mm[1],box=q('mgame'),tb=box.querySelector('.mgmatrix tbody');if(!tb)return;
+  var owners=[].map.call(box.querySelectorAll('.mgmatrix thead th[data-owner]'),function(t){return t.dataset.owner});
+  var row=document.createElement('tr');row.className='mg-live';
+  row.innerHTML='<th scope="row" title="Kills / deaths so far at this point in the video (from the match film, ±a few seconds)">● Now K/D</th>'+owners.map(function(o){return '<td data-live="'+esc(o)+'">…</td>'}).join('');
+  tb.insertBefore(row,tb.firstChild);
+  function tick(){if(!liveEv||liveMid!==mid||!players.length)return;var ri=players[focusIdx]?focusIdx:0,t;try{t=(players[ri].getCurrentTime()-targets[ri]-(offs[ri]||0))*1000}catch(e){return}
+    var k={},d={};liveEv.forEach(function(e){if(e[1]>t)return;if(e[0]==='k'){k[e[2]]=(k[e[2]]||0)+1;if(e[3])d[e[3]]=(d[e[3]]||0)+1}else if(e[0]==='d'&&e[3])d[e[3]]=(d[e[3]]||0)+1});
+    row.querySelectorAll('[data-live]').forEach(function(c){var w=c.dataset.live,txt=(k[w]||0)+' / '+(d[w]||0);if(c.textContent!==txt){c.textContent=txt;c.classList.remove('bump');void c.offsetWidth;c.classList.add('bump')}})}
+  if(liveMid===mid&&liveEv)tick();else{liveMid=mid;liveEv=null;fetch('/api/match/'+mid+'/events').then(function(r){return r.ok?r.json():{e:[]}}).then(function(j){if(liveMid!==mid)return;liveEv=j.e||[];tick()}).catch(function(){})}
+  liveT=setInterval(tick,1000)}
+var _showGame=showGame;showGame=function(tr,push){_showGame(tr,push);liveRow(tr)};
+var statsPage=0,statsCapacity=20;
+function fitStats(){var box=q('mgame'),holder=box.querySelector('.mgtable');if(!holder||!holder.clientHeight)return;
+  var rows=Array.from(box.querySelectorAll('[data-stat-index]')),thead=box.querySelector('thead');
+  statsCapacity=Math.max(1,Math.floor((holder.clientHeight-thead.getBoundingClientRect().height-3)/18));
+  statsPage=Math.max(0,Math.min(statsPage,Math.ceil(rows.length/statsCapacity)-1));
+  rows.forEach(function(row,i){row.hidden=i<statsPage*statsCapacity||i>=(statsPage+1)*statsCapacity});
+  box.querySelector('.mgpager span').textContent=(statsPage*statsCapacity+1)+'–'+Math.min(rows.length,(statsPage+1)*statsCapacity)+' / '+rows.length;
+  box.querySelector('[data-stat-page="-1"]').disabled=statsPage===0;box.querySelector('[data-stat-page="1"]').disabled=(statsPage+1)*statsCapacity>=rows.length;
+}
+if(window.ResizeObserver)new ResizeObserver(fitStats).observe(q('mgame'));
+multi.addEventListener('click',function(e){var pager=e.target.closest('[data-stat-page]');if(pager){statsPage+=Number(pager.dataset.statPage);fitStats();return;}var nb=e.target.closest('[data-gnav]');
+  if(nb){navigateGame(adjGame(curRow,+nb.dataset.gnav));return}
+  var wb=e.target.closest('[data-who]');if(wb&&multi.classList.contains('focus')){var fi=mlist.findIndex(function(w){return w.who===wb.dataset.who});if(fi>=0&&focusAngle)focusAngle(fi);return;}if(wb&&!multi.classList.contains('focus')){var i=mlist.findIndex(function(w){return w.who===wb.dataset.who});if(i>=0){bigIdx=i;bigMode=true;try{localStorage.setItem('ct-mlayout','big')}catch(x){}layout(true);layoutChanged();showGame(curRow)}}});
+function navigateGame(t){if(!t||!t.dataset.gwatch)return;window.__mdur=+t.dataset.dur||600;window.__mname=t.dataset.name;showGame(t,true);open(JSON.parse(t.dataset.gwatch));}
+multi.addEventListener('change',function(e){if(e.target.matches('.mg-game-select'))navigateGame(rowFor(e.target.value))});
+Array.from(multi.querySelectorAll('.multi-event-details,.multi-moments')).forEach(function(details){details.addEventListener('toggle',function(){if(details.open&&multi.classList.contains('focus'))multi.querySelectorAll('.multi-event-details,.multi-moments').forEach(function(other){if(other!==details)other.open=false});fitStats();})});
+q('mobile-moments').onclick=function(){var d=multi.querySelector('.multi-moments');d.open=!d.open;};
+multi.querySelector('.multi-moments').addEventListener('toggle',function(){q('mobile-moments').setAttribute('aria-expanded',String(this.open));});
+multi.addEventListener('change',function(e){if(e.target.matches('.et-picks')&&multi.classList.contains('focus'))multi.querySelector('.multi-moments').open=false;});
+q('mplay').onclick=resumeAll;
+/* skip every angle by the same amount (keeps them in sync; works in the grid and on phones) */
+multi.addEventListener('click',function(e){var b=e.target.closest('[data-skip]');if(!b)return;var d=parseInt(b.dataset.skip,10);
+  var ri=players[focusIdx]?focusIdx:0;try{var at=seekIntent?targets[ri]+seekIntent.pos+(Date.now()-seekIntent.at)/1000:players[ri].getCurrentTime();seekAllSeconds(at+d)}catch(x){}});
+q('mpause').onclick=function(){clearTimeout(mobileReplaceTimer);mobileLoadVersion++;playbackPaused=true;seekIntent=null;clearInterval(seekRetry);q('mstart').hidden=true;players.forEach(function(p,i){if(playerState[i])playerState[i].commandAt=Date.now();p.pause()})};
+q('msync').onclick=function(){if(!players.length)return;var i=referenceIdx;try{seekAllSeconds(players[i].getCurrentTime(),mlist[i].video)}catch(e){}};
+q('mclose').onclick=function(){close()};
+q('mlink').onclick=function(){var u=new URL(gameUrl(curRow)||location.pathname,location.origin),i=multi.classList.contains('focus')?focusIdx:bigIdx;
+  var at=0;try{at=Math.max(0,Math.floor(playerTime(i)-targets[i]))}catch(e){}u.searchParams.set('at',String(at));if(mlist[i])u.searchParams.set('angle',mlist[i].who);
+  var tw=new URLSearchParams(location.search).get('tw')||new URLSearchParams((homeUrl||'').split('?')[1]||'').get('tw');if(tw)u.searchParams.set('tw',tw);
+  if(navigator.share&&matchMedia('(pointer:coarse)').matches){navigator.share({title:'ClutchTape · '+(mlist[i]?.who||'Squad moment'),url:u.href}).catch(function(){});return}
+  (navigator.clipboard?navigator.clipboard.writeText(u.href):Promise.reject()).then(function(){toast('Moment link copied')},function(){window.prompt('Copy this link',u.href)})};
+function openRow(tr,shared){if(!tr||!tr.dataset.gwatch)return false;window.__mdur=+tr.dataset.dur||600;window.__mname=tr.dataset.name;var list=JSON.parse(tr.dataset.gwatch),sp=new URLSearchParams(location.search),at=shared?Number(sp.get('at')):0,angle=shared?list.findIndex(w=>w.who===sp.get('angle')):0;open(list,Number.isFinite(at)?Math.min(Math.max(0,at),Math.max(0,(+tr.dataset.dur||600)-1)):0,angle);showGame(tr,false);return true}
+function rowFor(mid){return document.querySelector('table.night tr[data-mid="'+String(mid).replace(/[^0-9a-f]/g,'')+'"]')}
+/* back / forward between games and the squad page */
+window.addEventListener('popstate',function(){var m=location.pathname.match(/\/g\/([0-9a-f]{8})/);
+  if(m){var tr=rowFor(m[1]);if(tr&&tr!==curRow)openRow(tr)}else if(!multi.hidden)close(true)});
+/* opened from a shared game link */
+if(SQ.game){window.addEventListener('load',function(){var tr=rowFor(SQ.game);if(!tr)return;
+  if(!openRow(tr,true)){tr.scrollIntoView({block:'center'});tr.classList.add('flash')}})}
+document.addEventListener('click',function(e){
+  var cell=e.target.closest('td.cellvod[data-vod]');
+  if(cell&&window.CT_SIDE){var mm=cell.dataset.vod.match(/videos\/(\d+)\?t=([0-9hms]+)/);if(mm){urlState('vod',mm[1]+'@'+mm[2]);window.CT_SIDE.go(mm[1],mm[2])}return}
+  var tr=e.target.closest('tr.clickrow[data-gwatch]');if(!tr||e.target.closest('a,button'))return;
+  var list=JSON.parse(tr.dataset.gwatch);
+  if(list.length>1){window.__mdur=+tr.dataset.dur||600;window.__mname=tr.dataset.name;open(list);showGame(tr,true)}
+  else if(window.CT_SIDE){window.CT_SIDE.go(list[0].video,list[0].t)}});
+q('msave').onclick=function(){if(!window.ClutchSave)return;
+  ClutchSave.record({el:grid,seconds:window.__mdur||30,name:window.__mname||'clutchtape-squad',
+    unmute:function(){var f=players[focusIdx]||players[0];if(f)f.setMuted(false)},restore:function(){players.forEach(function(p){try{p.setMuted(true)}catch(e){}})},
+    seek:function(done){playbackPaused=false;players.forEach(function(p,i){try{p.seek(targets[i]);playWanted(p)}catch(e){}});
+      var n=0,iv=setInterval(function(){n++;var ok=players.every(function(p,i){try{return !p.isPaused()&&Math.abs(p.getCurrentTime()-targets[i])<4}catch(e){return false}});
+        if(ok||n>20){clearInterval(iv);setTimeout(done,700)}},300)}})};
+q('mstart').onclick=function(){resumeAll()};
+})();
+</script>
+{% if tw and pcfg %}
+<script nonce="{{ csp_nonce }}">
+(function(){var cfg={{ pcfg|tojson }},host=location.hostname,label=document.getElementById('playerlabel');
+var opts={parent:[host],autoplay:true,muted:true,width:'100%',height:'100%'};if(cfg.video){opts.video='v'+cfg.video;if(cfg.start)opts.time=cfg.start}else opts.channel=cfg.channel;
+var player=null,curVideo=cfg.video||null;
+function ensurePlayer(){
+  if(player)return player;
+  player=new Twitch.Player('tplayer',opts);window.__sp=player;
+  if(window.CT_SIDE)window.CT_SIDE.player=player;
+  function hush(){var fold=document.getElementById('mediasec');if(fold&&!fold.open){try{player.pause()}catch(e){}}}
+  player.addEventListener(Twitch.Player.PLAYING,hush);player.addEventListener(Twitch.Player.READY,hush);
+  return player;
+}
+window.CTInitSide=ensurePlayer;
+if(!document.getElementById('mediasec'))ensurePlayer();
+var log=ClutchLog.init({seek:function(s){clearInterval(window.__goIv);try{player.seek(s);if(player.isPaused())player.play()}catch(e){}},el:document.getElementById('elog'),vm:window.CT_VM,names:window.CT_NAMES});
+var pendingT=0;window.CT_SIDE={go:function(a,b){go(a,b)},player:player};
+setInterval(function(){if(player&&curVideo){try{var t=player.getCurrentTime();log.update(curVideo,t>1?t:pendingT)}catch(e){}}},400);
+function secs(t){var m=String(t).match(/(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/)||[];return (+m[1]||0)*3600+(+m[2]||0)*60+(+m[3]||0)}
+function go(id,t){if(window.ctOpenMedia)window.ctOpenMedia();ensurePlayer();pendingT=secs(t);var prevVideo=curVideo;curVideo=id;var want=secs(t);
+  if(String(prevVideo)===String(id)&&player.getCurrentTime()>0){try{player.seek(want)}catch(e){}}
+  else{player.setVideo('v'+id,want);}
+  /* Twitch ignores the start time when switching videos: keep seeking until the player is really there */
+  /* A Twitch pre-roll ad holds the stream at 0:00 for 15-30s and ignores seeks, so keep trying for up to 60s (was 12s: after an ad the clip started at the top of the VOD). One retry loop at a time; stop once the viewer scrubs themselves. */
+  clearInterval(window.__goIv);var tries=0,lastC=-1,iv=window.__goIv=setInterval(function(){tries++;try{var c=player.getCurrentTime();if(c>0&&Math.abs(c-want)<4){clearInterval(iv);return}if(lastC>0&&c>0&&Math.abs(c-lastC)>8&&Math.abs(c-want)>8){clearInterval(iv);return}if(c>0||tries>2)player.seek(want);lastC=c}catch(e){}if(tries>120)clearInterval(iv)},500);setTimeout(function(){try{player.play()}catch(e){}},300);
+  if(label)label.textContent='Playing the broadcast at that match';document.getElementById('player').scrollIntoView({behavior:'smooth',block:'start'})}
+var rv=new URLSearchParams(location.search).get('vod'),mm=rv&&rv.match(/^(\d+)@([0-9hms]+)$/);if(mm){opts.video='v'+mm[1];opts.time=mm[2];delete opts.channel;curVideo=mm[1];if(player)setTimeout(function(){go(mm[1],mm[2])},1200);}
+document.addEventListener('click',function(e){var sv=e.target.closest('.savebtn[data-href]');
+  if(sv){var mm=sv.dataset.href.match(/videos\/(\d+)\?t=([0-9hms]+)/);if(!mm||!window.ClutchSave)return;var want=secs(mm[2]);
+    ClutchSave.record({el:document.querySelector('#player .embed'),seconds:Math.min(120,+sv.dataset.dur||30),name:sv.dataset.name,
+      unmute:function(){player.setMuted(false)},restore:function(){player.setMuted(true)},
+      seek:function(done){go(mm[1],mm[2]);var n=0,iv=setInterval(function(){n++;try{var c=player.getCurrentTime();if((!player.isPaused()&&Math.abs(c-want)<3)||n>30){clearInterval(iv);setTimeout(done,600)}}catch(x){}},300)}});return}
+  var v=e.target.closest('a.vod');
+  if(v&&!e.metaKey&&!e.ctrlKey&&!e.shiftKey&&e.button===0){var m=v.href.match(/videos\/(\d+)\?t=([0-9hms]+)/);if(m){e.preventDefault();urlState('vod',m[1]+'@'+m[2]);go(m[1],m[2])}}});
+})();
+</script>
+{% endif %}
+{% if pending %}
+<script nonce="{{ csp_nonce }}">
+(function(){var el=document.getElementById('sync');if(!el)return;var slugs=el.dataset.slugs.split(',');
+function tick(){Promise.all(slugs.map(function(s){return fetch('/api/p/'+s+'/status').then(function(r){return r.json()})})).then(function(a){
+  var busy=a.filter(function(s){return s.state==='queued'||s.state==='syncing'});
+  var done=0,total=0;a.forEach(function(s){done+=s.done||0;total+=s.total||0});
+  document.getElementById('syncn').textContent=total?done+'/'+total:'';
+  if(total)document.getElementById('syncbar').style.width=Math.max(3,100*done/total)+'%';
+  if(busy.length)setTimeout(tick,2500);else location.reload()}).catch(function(){setTimeout(tick,5000)})}
+tick()})();
+</script>
+{% endif %}
+{% endif %}
+{% endblock %}

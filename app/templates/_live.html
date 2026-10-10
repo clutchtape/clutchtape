@@ -1,0 +1,27 @@
+{# Live strip: "tonight so far" from the newest session, auto-refreshed every 30s by static/live.js. Shown while a
+   player is live on Twitch or played in the last ~2h. Halo publishes a game's stats when it ends, so this updates per game. #}
+{% set lv_any = (pcfg and pcfg.live) or live_rows|selectattr('live')|selectattr('live.active')|list %}
+<section class="live {{ 'on' if lv_any else '' }}" id="live" data-slugs="{{ live_slugs }}" >
+  <details class="tracker-details"><summary class="tracker-toggle">Session tracker <span>{{ live_rows|length }} player{{ 's' if live_rows|length != 1 }} · recent results & stats</span></summary>
+  <div class="lvhead"><span class="lvdot"></span><b>Session tracker</b>
+    <span class="muted" id="lvsub">{% if pcfg and pcfg.live %}on Twitch now · {% endif %}checks for completed games automatically</span>
+    <button type="button" class="lvreload" id="lvreload" hidden>↻ New game — refresh tables</button></div>
+  <div class="lvgrid">
+  {% for r in live_rows %}{% set l = r.live %}
+    <div class="lvcard" data-slug="{{ r.slug }}">
+      {% if live_rows|length > 1 %}<div class="lvname">{{ r.gamertag }}</div>{% endif %}
+      <div class="lvrec"><b data-k="record">{{ l.record if l else '—' }}</b><span><span data-k="games">{{ l.games if l else 0 }}</span> games</span></div>
+      <div class="lvstats">
+        <div><b data-k="kda">{{ l.kda|kda if l else '—' }}</b><span>KDA / game</span></div>
+        <div><b data-k="kd">{{ l.kd if l else '—' }}</b><span>K/D</span></div>
+        <div><b data-k="rating">{{ l.rating or '—' if l else '—' }}</b><span>rating <i data-k="delta" class="{{ 'pos' if l and l.delta and l.delta > 0 else 'neg' if l and l.delta and l.delta < 0 }}">{{ ('%+d'|format(l.delta)) if l and l.delta is not none else '' }}</i></span></div>
+      </div>
+      <div class="lvpips" data-k="pips">{% if l %}{% for o in l.pips %}<i class="pip sm {{ o }}"></i>{% endfor %}{% endif %}</div>
+      <details class="lvdetails"><summary>Recent games</summary><div class="lvgames" data-k="games_list">{% if l %}{% for g in l.games_list %}<a href="/match/{{ g.match_id }}?player={{ r.slug }}" class="{{ g.outcome|lower }}">{{ g.map or '?' }} · <b>{{ g.k }}/{{ g.d }}/{{ g.a }}</b></a>{% endfor %}{% endif %}</div></details>
+      <div class="lvlast" data-k="last">{% if l %}Last: <b class="res {{ l.last.outcome|lower }}">{{ l.last.outcome }}</b> · {{ l.last.map or '' }} {{ l.last.mode or '' }} · {{ l.last.k }}/{{ l.last.d }}/{{ l.last.a }} · {{ (l.ended_ago // 60) }}m ago{% else %}No recent game yet. New results will appear here after Halo makes them available.{% endif %}</div>
+    </div>
+  {% endfor %}
+  </div>
+  <p class="muted" id="lvstatus" role="status">Checking for new results…</p>
+  </details>
+</section>

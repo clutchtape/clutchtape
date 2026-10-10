@@ -1,0 +1,49 @@
+"""2026-10-08 live panel: games since the stream started, and the 'probably another account' hint."""
+import sqlite3,time,unittest
+from unittest.mock import patch
+import db,web
+
+class OnAir(unittest.TestCase):
+    def setUp(self):
+        self.conn=sqlite3.connect(':memory:',isolation_level=None,check_same_thread=False);self.conn.row_factory=sqlite3.Row
+        self.p=patch.object(db,'conn',return_value=self.conn);self.p.start();db.init()
+        self.addCleanup(self.conn.close);self.addCleanup(self.p.stop)
+        self.conn.execute("INSERT INTO players(id,xuid,gamertag,slug,created_at) VALUES(1,'1','Pro','pro',0)")
+        self.player=dict(self.conn.execute('SELECT * FROM players').fetchone())
+    def g(self,ids=(1,)): return [(self.player,list(ids))]
+    def add(self,ago,outcome='Win',pid=1,kills=10,adv=None,pre=None,post=None):
+        self.conn.execute("INSERT INTO matches(player_id,match_id,started_at,duration_s,mode,outcome,kills,deaths,assists,damage_dealt,advanced,pre_csr,post_csr) VALUES(?,?,?,600,'Ranked:Slayer',?,?,5,2,3000,?,?,?)",
+                          (pid,f'm{pid}-{ago}',time.time()-ago,outcome,kills,adv,pre,post))
+    def test_quiet_when_live_in_halo_without_games(self):
+        o=web._onair(self.g(),{'started':time.time()-40*60,'halo':True,'title':'RANKED'},'pro')
+        self.assertTrue(o['quiet']);self.assertEqual(o['per'][0]['games'],0)
+    def test_not_quiet_early_or_other_game(self):
+        self.assertFalse(web._onair(self.g(),{'started':time.time()-5*60,'halo':True},'pro')['quiet'])
+        self.assertFalse(web._onair(self.g(),{'started':time.time()-60*60,'halo':False},'pro')['quiet'])
+    def test_counts_games_since_stream_start_including_pregame(self):
+        self.add(30*60);self.add(55*60,'Loss');self.add(5*3600)          # 5h-old game is from an earlier session
+        o=web._onair(self.g(),{'started':time.time()-45*60,'halo':True},'pro')
+        self.assertEqual(o['per'][0]['games'],2);self.assertFalse(o['quiet'])
+        self.assertEqual((o['per'][0]['a']['wins'],o['per'][0]['a']['losses']),(1,1))
+    def test_lobby_read_milestones_and_strip(self):
+        import json
+        self.add(10*86400,kills=30)                                                      # history: best 30 kills
+        self.add(50*60,adv=json.dumps({'team_mmr':1500,'enemy_mmr':1600}),pre=1480,post=1492)
+        self.add(35*60,kills=31,adv=json.dumps({'team_mmr':1600,'enemy_mmr':1500}),pre=1492,post=1503)
+        self.add(20*60,adv=json.dumps({'team_mmr':1500,'enemy_mmr':1510}),pre=1503,post=1511)
+        x=web._onair(self.g(),{'started':time.time()-60*60,'halo':True},'pro')['per'][0]
+        self.assertEqual((x['lobby']['dog'],x['lobby']['fav'],x['lobby']['even']),('1-0','1-0','1-0'))
+        texts=' | '.join(t for _,t in x['milestones'])
+        self.assertIn('+31 CSR tonight',texts);self.assertIn('Reached Onyx (1511)',texts);self.assertIn('3-game win streak',texts)
+        self.assertIn('Most kills in a game on record: 31',texts)
+        self.assertEqual(len(x['strip']),3);self.assertLess(x['strip'][0]['t'],x['strip'][-1]['t'])
+    def test_alt_games_fold_into_tonight(self):
+        self.conn.execute("INSERT INTO players(id,xuid,gamertag,slug,created_at) VALUES(2,'2','Pro Alt','pro-alt',0)")
+        self.add(20*60,pid=2)
+        self.assertEqual(web._onair(self.g((1,2)),{'started':time.time()-30*60,'halo':True},'pro')['per'][0]['games'],1)
+        self.assertEqual(web._onair(self.g((1,)),{'started':time.time()-30*60,'halo':True},'pro')['per'][0]['games'],0)
+    def test_offline_is_none(self):
+        self.assertIsNone(web._onair(self.g(),None,'pro'))
+
+if __name__=='__main__':
+    unittest.main()

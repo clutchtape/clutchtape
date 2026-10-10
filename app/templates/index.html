@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block robots %}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/dense.css?v=1"><link rel="stylesheet" href="/static/personal-home.css?v=2">{% endblock %}
+{% block content %}
+<div class="home-page">
+<section class="personal-home" aria-labelledby="personal-title" data-empty="true">
+ <div class="personal-heading"><div><h2 id="personal-title">Your players &amp; squads</h2></div><button type="button" data-open-alerts>Manage follows</button></div>
+ <p id="home-status" role="status">Loading your home…</p><button id="home-retry" type="button" hidden>Try again</button>
+ <section id="home-live-section" hidden><h2>Live from your follows</h2><div id="home-live" class="personal-grid"></div></section>
+ <section id="home-groups-section"><div id="home-cards" class="personal-grid"></div></section>
+ <section id="home-picks-section"><div class="personal-heading"><h2>Worth watching</h2><label>Sort <select id="home-sort"><option value="best">Strongest signals</option><option value="recent">Newest first</option></select></label></div><p class="muted">Based on the latest eight ranked sessions per saved or followed group: close finishes, detected clips, standout games, and streaks. Video availability is checked when you open a session.</p><div id="home-picks" class="personal-grid"></div><button type="button" id="home-more" hidden>Show more sessions</button></section>
+ <section id="home-alert-section"><div class="personal-heading"><h2>Recent alerts <span id="home-unread"></span></h2><button type="button" data-open-alerts>Open inbox</button></div><div id="home-inbox"></div></section>
+</section>
+
+{% if live_now %}<section class="livenow" aria-label="Live now"><div class="ln-head"><span class="oa-live"><i></i>LIVE NOW</span><span class="muted">Tracked streamers playing right now · tonight's results update as each game ends</span></div>
+<div class="ln-grid">{% for c in live_now %}<a class="ln-card" href="/p/{{ c.slug }}">
+  <div class="ln-top"><b>{{ c.gamertag }}</b><span class="muted">{{ '{:,}'.format(c.viewers) if c.viewers is not none else '' }} watching · {{ (c.uptime // 3600 ~ 'h ') if c.uptime >= 3600 }}{{ c.uptime % 3600 // 60 }}m</span></div>
+  <div class="ln-title">{{ c.title or c.channel }}</div>
+  {% if not c.halo %}<div class="muted ln-sub">Now: {{ c.game or 'something else' }}{% if c.halo_s %} · Halo earlier ({{ (c.halo_s // 3600 ~ 'h ') if c.halo_s >= 3600 }}{{ c.halo_s % 3600 // 60 }}m){% if c.games %} · {{ c.a.wins }}-{{ c.a.losses }}{% endif %}{% endif %}</div>
+  {% elif c.games %}<div class="ln-rec"><b>{{ c.a.wins }}-{{ c.a.losses }}</b> tonight · {{ c.a.kda|kda }} KDA{% if c.a.csr_net is not none %} · <span class="{{ 'pos' if c.a.csr_net > 0 else 'neg' if c.a.csr_net < 0 }}">{{ '{:+}'.format(c.a.csr_net) }} CSR</span>{% endif %}</div><div class="oa-pips">{% for o in c.pips %}<i class="pip sm {{ o }}"></i>{% endfor %}</div>
+  {% else %}<div class="muted ln-sub">{{ 'No games on this account yet tonight' if c.quiet else 'Waiting for the first game' }}</div>{% endif %}
+</a>{% endfor %}</div></section>{% endif %}
+<section class="panel saved-profiles" id="saved-profiles" aria-labelledby="saved-title" hidden><h2 id="saved-title">Saved</h2><p class="muted">On this device.</p><div id="saved-list"></div><p id="saved-status" role="status"></p></section>
+<div class="herowrap"><section class="hero">
+  <h1>Halo Infinite stats for you and your squad.</h1>
+  <p class="lede">Every ranked game, every session, your CSR. Add your squad to see who carries.</p>
+  {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
+  {% if not xbox_ok %}<div class="alert">Lookups are paused right now. Try again soon.</div>{% endif %}
+  <form class="lookup simple" method="post" action="/add" autocomplete="off" id="lookup">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+    {% for i in range(4) %}
+    {% set values = form_rows[i] if i < form_rows|length else {} %}
+    <div class="row prow" {% if i >= form_rows|length %}hidden{% endif %}>
+      <label class="grow"><span class="{{ 'sr-only' if not i }}">{{ 'Xbox gamertag' if not i else 'Squadmate ' ~ i }}</span><input name="gamertag" value="{{ values.get('gamertag', '') }}" {{ 'required autofocus' if not i }} maxlength="20" placeholder="{{ 'Your Xbox gamertag' if not i else 'Gamertag' }}"></label>
+      {% if twitch_on %}<label class="grow twf"><span>Twitch <em>optional</em></span><input name="twitch" value="{{ values.get('twitch', '') }}" maxlength="80" placeholder="twitch.tv/name"></label>{% else %}<input type="hidden" name="twitch" value="">{% endif %}
+      {% if i %}<button type="button" class="removemate" aria-label="Remove squadmate {{ i }}">Remove</button>{% endif %}
+      {% if not i %}<button type="submit" class="go">Show stats</button>{% endif %}
+    </div>{% endfor %}
+    <div class="lookup-actions">
+    <button type="button" class="addmate" id="addmate">+ Add squadmate</button>
+    {% if twitch_on %}<button type="button" class="addtw" id="addtw">+ Add Twitch <small>for auto clips</small></button>{% endif %}
+    </div>
+    <p id="lookup-status" role="status" class="muted" hidden></p>
+  </form>
+  <p class="fine">No sign-in. Stats are public by gamertag. <a href="/about#data">Privacy</a></p>
+  <script nonce="{{ csp_nonce }}" src="/static/lookup.js?v=1" defer></script>
+  <script nonce="{{ csp_nonce }}">(function(){var f=document.getElementById('lookup'),b=document.getElementById('addtw');if(!f||!b)return;
+    if([].some.call(f.querySelectorAll('input[name=twitch]'),function(i){return i.value}))f.classList.add('with-tw');
+    b.addEventListener('click',function(){f.classList.add('with-tw');var i=f.querySelector('.twf input');if(i)i.focus()})})();</script>
+  {% if test_links %}
+  <p class="try testlinks"><b>Your test links:</b>{% for t in test_links %} <a class="pill hot" href="{{ t.href }}">{{ t.label }} →</a>{% endfor %}</p>
+  {% endif %}
+  {% if featured or squads %}
+  <p class="try"><b>Try a pro:</b>
+    {% for f in featured %}<a class="pill" href="/p/{{ f.slug }}">{% if f.live %}<span class="livebadge">LIVE</span>{% endif %}{{ f.gamertag }}</a>{% endfor %}
+    {% for q in squads %}<a class="pill" href="{{ squad_url(q.slugs) }}">{% if q.live %}<span class="livebadge">LIVE</span>{% endif %}Pro squad</a>{% endfor %}
+    <a class="pill" href="/close">Close pro games</a></p>
+  {% endif %}
+</section>
+{% if demo %}
+<aside class="herocard" aria-label="Session stats example">
+  <p class="eyebrow">Example · {{ demo.gamertag }}'s last ranked session</p>
+  <div class="bigrec"><b>{{ demo.record }}</b><span>{{ demo.games }} games · {{ (demo.win_pct|round|int ~ '% wins') if demo.win_pct is not none else 'No decided games' }} · {{ demo.kda|kda }} KDA</span></div>
+  <div class="pips">{% for o in demo.pips %}<i class="pip {{ o }}"></i>{% endfor %}</div>
+  <div class="home-stat-grid">{% for label,value in demo.stats %}<div><span>{{ label }}</span><b>{{ value if value is not none else '—' }}</b></div>{% endfor %}</div>
+  <a class="pill" href="/p/{{ demo.slug }}">See the full page →</a>
+</aside>
+{% endif %}
+</div>
+
+
+
+</div>
+{% endblock %}
+
+{% block scripts %}<script nonce="{{ csp_nonce }}" src="/static/personal-home.js?v=3" defer></script>{% endblock %}

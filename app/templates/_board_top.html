@@ -1,0 +1,6 @@
+<div class="compact-summary">
+{% if b.players|length == 1 %}<h2 class="board-title">{{ b.title }}</h2>{% endif %}{% if b.summary %}<b>{{ b.summary.record if b.summary.wins+b.summary.losses else '—' }}</b><span>{{ b.summary.win_pct ~ '% W' if b.summary.win_pct is not none else 'No decided games' }}</span><span>{{ b.summary.games - b.summary.wins - b.summary.losses }} tied / unfinished</span>{% else %}<span>{{ 'Session not found' if b.missing else 'No shared games in this selection.' if b.players|length>1 else 'Ready when you are.' }}</span>{% endif %}
+{% for r in b.rank %}<span>{{ r.name if b.players|length>1 }} <b>{{ r.current }}</b> CSR <small>{{ '%+d'|format(r.delta) }}</small></span>{% endfor %}
+{% if b.latest %}<a class="text-link" href="/match/{{ b.latest.match_id }}?player={{ b.players[0].slug }}">Latest: {{ b.latest.map }} · {{ 'Did not finish' if b.latest.outcome in ('Dnf','Left') else b.latest.outcome }} ↗</a>{% endif %}
+{% if not b.summary and b.players|length>1 %}{% for p in b.players %}<a class="text-link" href="/live/{{ p.slug }}">{{ p.gamertag }} ↗</a>{% endfor %}{% endif %}
+</div>

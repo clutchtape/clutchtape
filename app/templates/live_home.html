@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Live dashboard — Clutchtape{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/companion.css?v=4"><link rel="stylesheet" href="/static/dense.css?v=1">{% endblock %}
+{% block content %}
+<div class="companion launch">
+  <div class="dashboard-heading"><h1>Dashboards</h1><a class="primary" href="/#lookup">Enter gamertag →</a></div>
+  <div class="launch-grid"><section class="board-panel"><h2>Demo players</h2><p class="muted">Fixed examples. Squad stats require shared games.</p>{% if request.args.get('error') %}<p role="alert">{{ request.args.error }}</p>{% endif %}
+  <form action="/live/open" method="post"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><div class="player-choices">{% for p in examples %}<label><input name="player" type="checkbox" value="{{ p.slug }}"><span>{{ p.gamertag }}</span></label>{% endfor %}</div><button type="submit" class="primary">Open dashboard <span>↗</span></button></form><a href="/#lookup" class="text-link">Look up your own gamertag →</a></section><section class="board-panel"><h2>Saved</h2><p class="muted">On this device.</p><div id="live-saved"></div><p class="fine" id="live-saved-status">No saved players yet.</p></section></div>
+</div>
+{% endblock %}
+

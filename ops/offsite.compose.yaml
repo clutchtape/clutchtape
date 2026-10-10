@@ -1,0 +1,20 @@
+# Optional: enable only after configuring an independent repository and testing a restore.
+services:
+  offsite:
+    image: restic/restic:0.19.1
+    profiles: [offsite]
+    user: "10001:10001"
+    entrypoint: ["/bin/sh", "/job/offsite.sh"]
+    restart: unless-stopped
+    read_only: true
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=64m"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      RESTIC_CACHE_DIR: /tmp/restic
+    volumes:
+      - ./ops/offsite.sh:/job/offsite.sh:ro
+      - ./offsite-config:/config:ro
+      - ./data/backups:/snapshots:ro
+      - ./data/service:/private-data:ro
+      - ./offsite-status:/status

@@ -1,0 +1,98 @@
+"""Per-page share images (Open Graph cards) for Discord/Reddit/X previews. 1200x630 PNG drawn with Pillow."""
+import io
+import os
+
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
+
+HERE = os.path.dirname(__file__)
+FB = os.path.join(HERE, "static", "fonts", "Inter-Bold.ttf")
+FR = os.path.join(HERE, "static", "fonts", "Inter-Regular.ttf")
+W, H = 1200, 630
+BG, INK, MUTE, ACC, WIN, LOSS, LINE = (12, 10, 9), (244, 239, 233), (154, 143, 134), (255, 122, 61), (74, 222, 128), (248, 113, 113), (48, 40, 35)
+
+
+def _f(path, size):
+    return ImageFont.truetype(path, size)
+
+
+def _fit(d, text, path, size, max_w):
+    while size > 18:
+        f = _f(path, size)
+        if d.textlength(text, font=f) <= max_w:
+            return f
+        size -= 2
+    return _f(path, size)
+
+
+def _base():
+    im = Image.new("RGB", (W, H), BG)
+    glow = Image.new("RGB", (W, H), BG)
+    g = ImageDraw.Draw(glow)
+    g.ellipse((-200, -260, 700, 420), fill=(70, 32, 14))
+    g.ellipse((800, 300, 1500, 900), fill=(40, 22, 14))
+    im = Image.blend(im, glow.filter(ImageFilter.GaussianBlur(120)), 0.9)
+    d = ImageDraw.Draw(im)
+    # brand: scope ring + wordmark
+    cx, cy, r = 78, 70, 24
+    d.arc((cx - r, cy - r, cx + r, cy + r), 0, 360, fill=ACC, width=6)
+    for a, b in (((cx, cy - r - 10), (cx, cy - r + 4)), ((cx, cy + r - 4), (cx, cy + r + 10)), ((cx - r - 10, cy), (cx - r + 4, cy)), ((cx + r - 4, cy), (cx + r + 10, cy))):
+        d.line((a, b), fill=ACC, width=5)
+    d.polygon([(cx - 7, cy - 11), (cx - 7, cy + 11), (cx + 12, cy)], fill=ACC)
+    f = _f(FB, 34)
+    d.text((122, 50), "Clutch", font=f, fill=INK)
+    d.text((122 + d.textlength("Clutch", font=f), 50), "tape", font=f, fill=ACC)
+    d.text((W - 60, 56), "Halo Infinite × Twitch", font=_f(FR, 24), fill=MUTE, anchor="ra")
+    return im, d
+
+
+def _stat(d, x, y, big, label, color=INK):
+    d.text((x, y), str(big), font=_f(FB, 64), fill=color)
+    d.text((x, y + 78), label.upper(), font=_f(FB, 20), fill=MUTE)
+
+
+def _pips(d, x, y, outs, size=22, gap=6):
+    for o in outs[-24:]:
+        col = WIN if o == "win" else LOSS if o == "loss" else (120, 110, 100)
+        d.rounded_rectangle((x, y, x + size, y + size * 1.6), radius=5, fill=col)
+        x += size + gap
+
+
+def _png(im):
+    b = io.BytesIO()
+    im.save(b, "PNG", optimize=True)
+    return b.getvalue()
+
+
+def player_card(gamertag, session, csr, kda_all, games, channel=None):
+    im, d = _base()
+    d.text((60, 150), gamertag, font=_fit(d, gamertag, FB, 96, W - 120), fill=INK)
+    sub = f"{games} games tracked" + (f"  ·  twitch.tv/{channel}" if channel else "")
+    d.text((62, 268), sub, font=_f(FR, 28), fill=MUTE)
+    if session:
+        w, l = (int(x) for x in session["record"].split("-"))
+        _stat(d, 60, 340, session["record"], "last session", WIN if w > l else LOSS if l > w else INK)
+        _stat(d, 360, 340, session["kda"], "KDA / game")
+        _stat(d, 620, 340, f"{session['win_pct']:.0f}%", "win rate")
+        if csr:
+            _stat(d, 880, 340, csr, "rating", ACC)
+        _pips(d, 62, 490, [m["outcome"].lower() for m in reversed(session["matches"])])
+    d.text((60, H - 56), "Stats, auto clips & VOD-synced timelines — clutchtape", font=_f(FR, 24), fill=MUTE)
+    return _png(im)
+
+
+def squad_card(names, record, games, win_pct, night, top_moment):
+    im, d = _base()
+    title = " + ".join(names)
+    d.text((60, 150), title, font=_fit(d, title, FB, 80, W - 120), fill=INK)
+    d.text((62, 255), "Squad · " + f"{games} games together", font=_f(FR, 28), fill=MUTE)
+    w, l = (int(x) for x in record.split("-"))
+    _stat(d, 60, 320, record, "together", WIN if w > l else LOSS if l > w else INK)
+    _stat(d, 380, 320, f"{win_pct}%", "win rate")
+    if night:
+        nw, nl = (int(x) for x in night["record"].split("-"))
+        _stat(d, 640, 320, night["record"], "last night", WIN if nw > nl else LOSS if nl > nw else INK)
+        _pips(d, 62, 470, [m["outcome"].lower() for m in reversed(night["matches"])])
+    if top_moment:
+        d.text((60, 530), "Best play: " + top_moment, font=_fit(d, "Best play: " + top_moment, FB, 30, W - 120), fill=ACC)
+    d.text((60, H - 50), "Watch every angle in sync — clutchtape", font=_f(FR, 24), fill=MUTE)
+    return _png(im)

@@ -1,0 +1,1 @@
+{% if kpis %}<section class="hubkpis" aria-label="Session summary">{% for t in kpis %}<div class="hubkpi{{ ' hot' if t.hot }}"{% if t.title %} title="{{ t.title }}"{% endif %}><b>{{ t.big }}</b><span>{{ t.label }}</span></div>{% endfor %}</section>{% endif %}

@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}{{ p.gamertag }} — Clutchtape{% endblock %}
+{% block head %}{% if tab == 'analysis' %}<link rel="stylesheet" href="/static/companion.css?v=4"><link rel="stylesheet" href="/static/growth.css?v=1"><link rel="stylesheet" href="/static/analysis.css?v=4"><link rel="stylesheet" href="/static/dense.css?v=2">{% endif %}{% endblock %}
+{% block content %}
+{% set a = d.all %}
+{% set hub_title = p.gamertag %}{% set save_label = p.gamertag %}{% set hub_slugs = p.slug %}
+{% set hub_meta %}{% if tw %}<a class="tw" href="https://twitch.tv/{{ tw }}" target="_blank" rel="noopener">● twitch.tv/{{ tw }}</a><span class="dot">·</span>{% endif %}{% if alts %}<span class="altchip" title="Games from linked accounts are included">+ {{ alts|map(attribute='gamertag')|join(', ') }}</span><span class="dot">·</span>{% endif %}{% if d.since %}{{ a.games }} games since {{ d.since|dt('%b %-d') }}<span class="dot">·</span>{% endif %}updated {{ p.last_synced|ago }}{% endset %}
+{% set hub_badges %}{% if d.csr_now %}<span class="pill hot">{{ d.csr_now }} <small>CSR<span class="pk"> · peak {{ d.csr_peak }}</span></small></span>{% endif %}{% if d.streak %}<span class="pill {{ 'w' if d.streak > 0 else 'l' }}">{{ d.streak|abs }}{{ 'W' if d.streak > 0 else 'L' }} <small>streak</small></span>{% endif %}{% endset %}
+{% include "_hub_head.html" %}
+{% include "_onair.html" %}
+{% if p.sync_state in ('private','error') %}<form method="post" action="/p/{{ p.slug }}/refresh" class="retry-profile"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><p class="muted">Halo could not provide this history. If your public-history settings changed or the service recovered, try again.</p><button class="secondary" type="submit">Retry public match history</button></form>{% endif %}
+
+{% if p.sync_state in ('queued','syncing') %}
+<div class="sync" id="sync" data-slug="{{ p.slug }}" role="status">
+  <b id="synctitle">Pulling games…</b> <span id="syncn">{{ p.matches_done }}/{{ p.matches_total or '?' }}</span>
+  <div class="bar"><i id="syncbar" style="width:{{ (100 * p.matches_done / p.matches_total) if p.matches_total else 3 }}%"></i></div>
+  <small id="syncsub">This page fills in by itself.</small></div>
+{% elif p.sync_state == 'private' %}
+<div class="alert"><b>No Halo Infinite matches found for {{ p.gamertag }}.</b> Either they haven't played recently, or their match history is hidden (Xbox → Settings → Privacy → "Others can see your game and app history"). We'll check again next time this page is opened.</div>
+{% elif p.sync_state == 'error' %}
+<div class="alert">Couldn't finish updating ({{ p.sync_error }}). Showing what we have; we'll retry on your next visit.</div>
+{% endif %}
+
+{% set player_block %}
+{% if tw %}
+<section class="panel player" id="player">
+  <div class="ph"><h2>Twitch</h2><button type="button" class="secondary" data-fullscreen="#player">Full screen</button><span class="muted" id="playerlabel">{{ plabel }}</span></div>
+  <div class="embed"><div id="tplayer"></div></div>
+  <div class="elog inplayer" id="elog"></div>
+</section>
+{% endif %}
+{% endset %}
+{% if tab == 'analysis' %}
+{% include "_board_body.html" %}
+{% elif tab == 'sessions' %}
+{% with sess_list = d.sessions, sess_sel = d.s_idx %}{% include "_hub_sessions.html" %}{% endwith %}
+{% elif tab == 'records' %}
+{% if d.insights %}<h2 class="hub-h2">Records</h2>
+<section class="insights">{% for i in d.insights %}
+  <div class="ins"><span>{{ i.label }}</span><b>{{ i.big }}</b><small>{{ i.sub }}</small></div>
+{% endfor %}</section>
+{% endif %}
+{% if not d.insights %}<p class="muted">Records appear once a few sessions have loaded.</p>{% endif %}
+{% if periods %}{% include "_periods.html" %}{% endif %}
+{% include "_hub_tools.html" %}
+{% else %}
+{% set live_rows = [{"slug": p.slug, "gamertag": p.gamertag, "live": d.live}] %}{% set live_slugs = p.slug %}{% if not tw and tab == 'latest' and (not a.games or (d.live and d.live.active)) %}{% include "_live.html" %}{% endif %}
+{% if a.games %}
+{% if tab == 'latest' %}
+{% set gamelog_block %}
+{% set s = d.latest_session %}
+{% if s %}
+<section class="panel latest gamelog statfold" id="latest">
+  <div class="ph"><h2>Game log</h2><span class="muted">{{ 'Latest session' if d.s_idx == 0 else 'Session' }} · {{ s.start|dt('%a %b %-d') }}{% if d.sessions|length > 1 %} · <a href="{{ tab_url('sessions') }}">All sessions →</a>{% endif %}</span><button type="button" class="allstats-btn" data-allstats aria-pressed="false"><span class="as-off">All stats</span><span class="as-on">Key stats</span></button>{% include "_stat_help.html" %}</div>
+  {% if sess_agg %}<div class="tablewrap"><table class="nightper"><thead><tr><th>Session totals</th>{% with head=True , more=True %}{% include "_agg_cols.html" %}{% endwith %}</tr></thead>
+  <tbody><tr><td class="name">{{ p.gamertag }}</td>{% with head=False, a=sess_agg , more=True %}{% include "_agg_cols.html" %}{% endwith %}</tr></tbody></table></div>{% endif %}
+  <div class="tablewrap"><table class="heat">
+    <thead><tr><th data-pin>#</th><th data-pin>Time</th><th data-pin>Map · Mode</th><th data-pin>Result</th><th data-pin>Score</th><th class="xc">Len</th><th data-heat title="Share of your team's personal score">SC%</th><th>K/D/A</th><th data-heat title="Kills + assists/3 - deaths">KDA</th><th data-heat title="Damage per minute">Dmg/min</th><th title="Damage per kill + assist (lower is better)">Dmg/KA</th><th title="Damage dealt minus taken">Dmg ±</th><th title="Mode objective: flag caps, ball time, hill time or zone caps">Obj</th><th class="xc" title="Share of your team's damage">Dmg%</th><th class="xc" title="Kills above or below what Halo expected for this lobby">xK±</th><th class="xc" title="Your team's MMR minus the enemy's (negative = underdog)">Lobby</th><th class="xc" title="Ranked CSR change">CSR</th><th class="xc" title="Average life">Life</th><th class="xc">Acc</th><th class="xc" title="Headshot kills / kills">HS%</th><th data-pin></th></tr></thead>
+    <tbody>{% for m in s.matches|reverse %}
+      <tr class="{{ m.outcome|lower }} match-row" data-match="/match/{{ m.match_id }}?player={{ p.slug }}"><td class="gnum">{{ loop.index }}</td><td>{{ m.started_at|dt('%-I:%M %p') }}</td>
+        <td><a href="/match/{{ m.match_id }}?player={{ p.slug if not m.alt else (alts|selectattr('gamertag','equalto',m.alt)|map(attribute='slug')|first) }}">{{ m.map or '—' }} ↗</a> <span class="muted">· {{ m.mode or '' }}</span>{% if m.alt %} <span class="altchip" title="Played on {{ m.alt }}">alt · {{ m.alt }}</span>{% endif %}{% with watch_match=m %}{% include "_watch_cues.html" %}{% endwith %}</td>
+        <td><b class="res {{ m.outcome|lower }}">{{ m.outcome }}</b></td>
+        <td>{% if m.team_score is not none %}{{ m.team_score|round|int }}–{{ m.enemy_score|round|int if m.enemy_score is not none else '?' }}{% else %}—{% endif %}</td>
+        <td class="glen xc">{{ '%d:%02d'|format((m.duration_s or 0)//60, (m.duration_s or 0)%60) if m.duration_s else '—' }}</td>
+        <td><b>{{ (m.sc_pct ~ '%') if m.sc_pct is not none else '—' }}</b></td>
+        <td><b>{{ m.kills }}</b>/{{ m.deaths }}/{{ m.assists }}</td>
+        <td><b>{{ m.kda|kda }}</b></td>{% include "_adv_cells.html" %}
+        <td>{% for r in d.rows if r.match_id == m.match_id and r.vod %}<a class="vod" href="{{ r.vod }}" target="_blank" rel="noopener">▶ VOD</a>{% endfor %}</td></tr>
+    {% endfor %}</tbody></table></div>
+</section>
+{% endif %}
+{% endset %}
+{% set media_block %}
+<div class="cols {{ 'stats-layout' if not tw else 'video-layout' }}"><div class="colmain">
+{{ player_block|safe }}
+{% if tab == 'latest' %}
+{% if tw %}<div class="tracker-quiet">{% include "_live.html" %}</div>{% endif %}
+{% else %}
+{% include "_moments.html" %}
+{% if not tw %}{% include "_plays.html" %}{% endif %}
+{% if tw and clips %}
+<section class="panel twclips"><div class="ph"><h2>Clips</h2><span class="muted">Click to play in the player above.</span></div>
+  <div class="clipgrid">{% for c in clips %}
+    <a class="clip" href="{{ c.url }}" data-clip="{{ c.id }}" target="_blank" rel="noopener"><img loading="lazy" src="{{ c.thumb }}" alt=""><span>{{ c.title }}</span><small>{{ c.views }} views</small></a>
+  {% endfor %}</div>
+  {% if clips|length > 4 %}<button type="button" class="clipmore" data-showall=".twclips">Show all {{ clips|length }} clips</button>{% endif %}</section>
+{% endif %}
+{% endif %}
+</div><aside class="colside">
+{% if tab == 'latest' %}
+{% include "_moments.html" %}
+{% if tw and clips %}
+<section class="panel twclips"><div class="ph"><h2>Clips</h2><span class="muted">Click to play in the player above.</span></div>
+  <div class="clipgrid">{% for c in clips %}
+    <a class="clip" href="{{ c.url }}" data-clip="{{ c.id }}" target="_blank" rel="noopener"><img loading="lazy" src="{{ c.thumb }}" alt=""><span>{{ c.title }}</span><small>{{ c.views }} views</small></a>
+  {% endfor %}</div>
+  {% if clips|length > 4 %}<button type="button" class="clipmore" data-showall=".twclips">Show all {{ clips|length }} clips</button>{% endif %}</section>
+{% endif %}
+{% endif %}
+</aside></div>
+{% endset %}
+{# stream & clips fold above the data (2026-10-08): collapsed by default, expands in place; static/mediatoggle.js #}
+{% if tw or d.moments %}<details class="mediasec{{ ' live' if onair }}" id="mediasec"><summary class="mediabar"><span class="caret" aria-hidden="true">▶</span>
+  {% if onair %}<span class="oa-live"><i></i>LIVE</span> <b>Watch the stream</b>{% elif tw %}<b>Stream &amp; clips</b>{% else %}<b>Best plays</b>{% endif %}
+  <span class="muted">{% set nclip = (clips|length if clips else 0) + (d.moments|length if d.moments else 0) %}{% if tw %}{{ 'live now' if onair else 'latest broadcast' }} · {% endif %}{{ nclip }} clip{{ '' if nclip == 1 else 's' }}</span></summary>
+{{ media_block }}</details>{% endif %}
+{% include "_hub_kpis.html" %}{{ gamelog_block }}
+{% if not tw %}{% with d = {'plays': d.session_plays, 'in_session': true} %}{% include "_plays.html" %}{% endwith %}{% endif %}
+{% else %}
+<div class="cols {{ 'stats-layout' if not tw else 'video-layout' }}"><div class="colmain">
+{{ player_block|safe }}
+{% if tab == 'latest' %}
+{% if tw %}<div class="tracker-quiet">{% include "_live.html" %}</div>{% endif %}
+{% else %}
+{% include "_moments.html" %}
+{% if not tw %}{% include "_plays.html" %}{% endif %}
+{% if tw and clips %}
+<section class="panel twclips"><div class="ph"><h2>Clips</h2><span class="muted">Click to play in the player above.</span></div>
+  <div class="clipgrid">{% for c in clips %}
+    <a class="clip" href="{{ c.url }}" data-clip="{{ c.id }}" target="_blank" rel="noopener"><img loading="lazy" src="{{ c.thumb }}" alt=""><span>{{ c.title }}</span><small>{{ c.views }} views</small></a>
+  {% endfor %}</div>
+  {% if clips|length > 4 %}<button type="button" class="clipmore" data-showall=".twclips">Show all {{ clips|length }} clips</button>{% endif %}</section>
+{% endif %}
+{% endif %}
+</div><aside class="colside">
+{% if tab == 'latest' %}
+{% include "_moments.html" %}
+{% if tw and clips %}
+<section class="panel twclips"><div class="ph"><h2>Clips</h2><span class="muted">Click to play in the player above.</span></div>
+  <div class="clipgrid">{% for c in clips %}
+    <a class="clip" href="{{ c.url }}" data-clip="{{ c.id }}" target="_blank" rel="noopener"><img loading="lazy" src="{{ c.thumb }}" alt=""><span>{{ c.title }}</span><small>{{ c.views }} views</small></a>
+  {% endfor %}</div>
+  {% if clips|length > 4 %}<button type="button" class="clipmore" data-showall=".twclips">Show all {{ clips|length }} clips</button>{% endif %}</section>
+{% endif %}
+{% endif %}
+</aside></div>
+{% endif %}
+
+{% else %}
+{{ player_block|safe }}
+{% if tw %}<div class="tracker-quiet">{% include "_live.html" %}</div>{% endif %}
+{% if p.sync_state == 'ready' %}
+<div class="alert">No games found for {{ p.gamertag }} under this filter.</div>
+{% endif %}
+{% endif %}
+{% endif %}
+{% endblock %}
+{% block scripts %}
+{% if tab == 'analysis' %}<script nonce="{{ csp_nonce }}" src="/static/growth.js?v=2" defer></script><script nonce="{{ csp_nonce }}" src="/static/analysis.js?v=8" defer></script><script nonce="{{ csp_nonce }}" src="/static/analysis_trends.js?v=2" defer></script>{% endif %}
+{% if tw and pcfg and tab in ('latest', 'clips') %}
+<script nonce="{{ csp_nonce }}" src="https://player.twitch.tv/js/embed/v1.js"></script>
+<script nonce="{{ csp_nonce }}" src="/static/twitch-shim.js?v=2"></script>
+<script nonce="{{ csp_nonce }}" src="/static/mobile-embed.js?v=8"></script>
+<script nonce="{{ csp_nonce }}" src="/static/archiveplayer.js?v=3"></script>
+<script nonce="{{ csp_nonce }}" src="/static/clipsaver.js?v=2"></script>
+<script nonce="{{ csp_nonce }}">if(!window.ClutchSave||!ClutchSave.supported)document.documentElement.classList.add("nosave")</script>
+<script nonce="{{ csp_nonce }}" src="/static/eventlog.js?v=25"></script>
+<script nonce="{{ csp_nonce }}">
+(function(){var cfg={{ pcfg|tojson }},host=location.hostname,label=document.getElementById('playerlabel');
+var opts={parent:[host],autoplay:true,muted:true,width:'100%',height:'100%'};if(cfg.video){opts.video='v'+cfg.video;if(cfg.start)opts.time=cfg.start}else opts.channel=cfg.channel;
+var player=null,curVideo=cfg.video||null;
+function ensurePlayer(){
+  if(player)return player;
+  player=new Twitch.Player('tplayer',opts);window.__sp=player;
+  if(window.CT_SIDE)window.CT_SIDE.player=player;
+  function hush(){var fold=document.getElementById('mediasec');if(fold&&!fold.open){try{player.pause()}catch(e){}}}
+  player.addEventListener(Twitch.Player.PLAYING,hush);player.addEventListener(Twitch.Player.READY,hush);
+  return player;
+}
+window.CTInitSide=ensurePlayer;
+if(!document.getElementById('mediasec'))ensurePlayer();
+var log=ClutchLog.init({seek:function(s){clearInterval(window.__goIv);try{player.seek(s);if(player.isPaused())player.play()}catch(e){}},el:document.getElementById('elog'),vm:{{ vm|tojson }},names:{{ [p.gamertag]|tojson }}});
+var pendingT=0;window.CT_SIDE={go:function(a,b){go(a,b)},player:player};
+setInterval(function(){if(player&&curVideo){try{var t=player.getCurrentTime();log.update(curVideo,t>1?t:pendingT)}catch(e){}}},400);
+function secs(t){var m=String(t).match(/(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/)||[];return (+m[1]||0)*3600+(+m[2]||0)*60+(+m[3]||0)}
+function go(id,t,note){if(window.ctOpenMedia)window.ctOpenMedia();ensurePlayer();pendingT=secs(t);var prevVideo=curVideo;curVideo=id;var want=secs(t);
+  if(String(prevVideo)===String(id)&&player.getCurrentTime()>0){try{player.seek(want)}catch(e){}}
+  else{player.setVideo('v'+id,want);}
+  /* Twitch ignores the start time when switching videos: keep seeking until the player is really there */
+  /* A Twitch pre-roll ad holds the stream at 0:00 for 15-30s and ignores seeks, so keep trying for up to 60s (was 12s: after an ad the clip started at the top of the VOD). One retry loop at a time; stop once the viewer scrubs themselves. */
+  clearInterval(window.__goIv);var tries=0,lastC=-1,iv=window.__goIv=setInterval(function(){tries++;try{var c=player.getCurrentTime();if(c>0&&Math.abs(c-want)<4){clearInterval(iv);return}if(lastC>0&&c>0&&Math.abs(c-lastC)>8&&Math.abs(c-want)>8){clearInterval(iv);return}if(c>0||tries>2)player.seek(want);lastC=c}catch(e){}if(tries>120)clearInterval(iv)},500);setTimeout(function(){try{player.play()}catch(e){}},300);
+  if(label)label.textContent=note||'Playing the broadcast at that match';document.getElementById('player').scrollIntoView({behavior:'smooth',block:'start'})}
+var rv=new URLSearchParams(location.search).get('vod'),mm=rv&&rv.match(/^(\d+)@([0-9hms]+)$/);if(mm){opts.video='v'+mm[1];opts.time=mm[2];delete opts.channel;curVideo=mm[1];if(player)setTimeout(function(){go(mm[1],mm[2])},1200);}
+document.addEventListener('click',function(e){var tr=e.target.closest('tr.clickrow[data-vod]');
+  if(tr&&!e.target.closest('a,button')){var m0=tr.dataset.vod.match(/videos\/(\d+)\?t=([0-9hms]+)/);if(m0){urlState('vod',m0[1]+'@'+m0[2]);go(m0[1],m0[2])}return}
+  var sv=e.target.closest('.savebtn[data-href]');
+  if(sv){var mm=sv.dataset.href.match(/videos\/(\d+)\?t=([0-9hms]+)/);if(!mm||!window.ClutchSave)return;var want=secs(mm[2]);
+    ClutchSave.record({el:document.querySelector('#player .embed'),seconds:Math.min(120,+sv.dataset.dur||30),name:sv.dataset.name,
+      unmute:function(){player.setMuted(false)},restore:function(){player.setMuted(true)},
+      seek:function(done){go(mm[1],mm[2]);var n=0,iv=setInterval(function(){n++;try{var c=player.getCurrentTime();if((!player.isPaused()&&Math.abs(c-want)<3)||n>30){clearInterval(iv);setTimeout(done,600)}}catch(x){}},300)}});return}
+  var v=e.target.closest('a.vod');
+  if(v&&!e.metaKey&&!e.ctrlKey&&!e.shiftKey&&e.button===0){var m=v.href.match(/videos\/(\d+)\?t=([0-9hms]+)/);if(m){e.preventDefault();urlState('vod',m[1]+'@'+m[2]);go(m[1],m[2])}}});
+})();
+</script>
+{% endif %}
+{% if p.sync_state in ('queued','syncing') %}
+<script nonce="{{ csp_nonce }}">
+(function(){var el=document.getElementById('sync');if(!el)return;var slug=el.dataset.slug;
+function tick(){fetch('/api/p/'+slug+'/status').then(function(r){return r.json()}).then(function(s){
+  var n=document.getElementById('syncn');
+  if(s.state==='queued'&&s.place>1){document.getElementById('synctitle').textContent='In line';n.textContent='#'+s.place;document.getElementById('syncsub').textContent='Busy right now. Your page starts loading when it is your turn.';}
+  else{document.getElementById('synctitle').textContent='Pulling games…';n.textContent=s.done+'/'+(s.total||'?');}
+  if(s.total)document.getElementById('syncbar').style.width=Math.max(3,100*s.done/s.total)+'%';
+  if(s.state==='syncing'||s.state==='queued'){setTimeout(tick,2500)}else{location.reload()}}).catch(function(){setTimeout(tick,5000)})}
+tick()})();
+</script>
+{% endif %}
+{% endblock %}

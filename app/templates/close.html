@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Clutch finishes' if view == 'finishes' else 'Close games to watch' }} — Clutchtape{% endblock %}
+{% block robots %}{% endblock %}
+{% block content %}
+{% set vw = 'finishes' if view == 'finishes' else '' %}
+{% macro q(mode=fam, type=kind, vid=video, v=vw) %}?{{ {'view': v, 'mode': mode, 'type': type, 'video': '1' if vid else ''}|urlencode }}{% endmacro %}
+<section class="cg-head">
+  <p class="eyebrow">Pro games · last {{ days }} days</p>
+  <h1>{{ 'Clutch finishes' if view == 'finishes' else 'Close games to watch' }}</h1>
+  <p class="muted">{% if view == 'finishes' %}The last 30 seconds of the pros' closest games, ranked: game-winning kills, objective scrambles and multikills when it mattered most.{% else %}Halo Infinite games from the pros we follow, matchmaking and scrims, ranked by how close they were. Decided by a kill, a cap or a few points.{% endif %}</p>
+  <nav class="cg-tabs" aria-label="View"><a class="{{ 'on' if view != 'finishes' }}" href="{{ q(v='') }}">Close games</a><a class="{{ 'on' if view == 'finishes' }}" href="{{ q(v='finishes') }}">Clutch finishes</a></nav>
+  <nav class="chips cg-filters" aria-label="Game type">{% for key, label in families %}<a class="chip{{ ' on' if fam == key }}" href="{{ q(mode=key) }}">{{ label }}</a>{% endfor %}</nav>
+  <nav class="chips cg-filters" aria-label="Filters">
+    <a class="chip{{ ' on' if not kind }}" href="{{ q(type='') }}">Scrims + matchmaking</a>
+    <a class="chip{{ ' on' if kind == 'scrim' }}" href="{{ q(type='scrim') }}">Scrims only</a>
+    <a class="chip{{ ' on' if kind == 'mm' }}" href="{{ q(type='mm') }}">Matchmaking only</a>
+    <a class="chip{{ ' on' if video }}" href="{{ q(vid=not video) }}">▶ With video</a>
+  </nav>
+</section>
+{% if games %}
+<ol class="cg-list">{% for g in games %}
+  <li class="panel cg">
+    <div class="cg-rank" title="Rank out of 100"><b>{{ g.rank }}</b><span>rank</span></div>
+    <div class="cg-main">
+      {% if view == 'finishes' %}
+      <div class="cg-title">{% if g.decider %}<b class="cg-decider">{{ g.decider[0] }} · {{ g.decider[1] }}</b>{% else %}<b class="cg-decider">Final 30 seconds</b>{% endif %}</div>
+      <p class="cg-sub">{{ g.final }} · {{ g.map or 'Unknown map' }} · {{ g.mode }}{% if g.scrim %}<span class="cg-tag scrim">Scrim</span>{% endif %}</p>
+      {% else %}
+      <div class="cg-title"><b>{{ g.final }}</b> <span>{{ g.map or 'Unknown map' }} · {{ g.mode }}</span>{% if g.scrim %}<span class="cg-tag scrim">Scrim</span>{% endif %}</div>
+      {% endif %}
+      <div class="chips cg-why">{% for r in g.reasons %}<span class="chip{{ ' hot' if r in ('Won by 1', 'Pro vs pro', 'Overtime') or ' · ' in r }}">{{ r }}</span>{% endfor %}</div>
+      <p class="muted cg-meta">{{ g.at|dt('%a %b %-d · %-I:%M %p') }} · {{ g.povs|map(attribute='gamertag')|join(', ') }}{% if g.pros_in_lobby > g.povs|length %} · {{ g.pros_in_lobby }} pros in the lobby{% endif %}</p>
+    </div>
+    <div class="cg-acts">{% for p in g.povs[:4] %}{% if p.watch %}<a class="pill hot" href="{{ p.watch }}">▶ {{ 'Watch the finish' if view == 'finishes' and loop.first else 'Watch' }} · {{ p.gamertag }}</a>{% endif %}{% endfor %}
+      <a class="pill" href="{{ g.povs[0].recap }}">Match recap</a></div>
+  </li>{% endfor %}
+</ol>
+<p class="muted cg-foot">Showing {{ games|length }} of {{ total }}.
+{% if view == 'finishes' %}Rank = 55 game closeness + 25 action (kills in the last 30s; 8+ counts fully) + 20 big play (Triple Kill or better, or a rare medal like Off the Rack, 360 or Ninja). From Theater film events; the game-winning kill is shown when the winner hit the score cap.
+{% else %}Rank = 60 closeness (final margin for the mode) + 15 went to the cap or overtime + 10 best play in the game + 15 pros on both teams.{% endif %}
+Only finished, decided games with a final score are ranked. Video appears when a pro's broadcast covers the game.</p>
+{% else %}
+<section class="panel"><p>Nothing matches these filters yet. <a href="{{ q(mode='', type='', vid=False) }}">Clear filters</a>.</p></section>
+{% endif %}
+{% endblock %}

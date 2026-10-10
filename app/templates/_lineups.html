@@ -1,0 +1,35 @@
+{# Squad lineups (2026-10-09): best combos by stack size, every lineup's numbers, best partners, with/without. Needs b.lineup_analysis (dashboard.lineup_analysis). #}
+{% set la = b.lineup_analysis %}
+<section class="board-panel span-full lineups" id="lineups">
+  <div class="section-title"><div><h2>Squad lineups</h2></div><span class="fine">Which of you win together · {{ b.lineup_label or b.scope_label }} · a lineup = exactly these players on the same team</span></div>
+  {% if not la or not la.sizes %}<p class="muted">No games where two or more of you were on the same team in this selection.</p>{% else %}
+  <div class="lu-best">{% for g in la.sizes %}{% set l = g.best %}
+    <article class="lu-card{{ ' none' if not l }}"><p class="lu-k">{{ 'Best duo' if g.size == 2 else 'Best ' ~ g.size ~ '-stack' }}</p>
+      {% if l %}<div class="lu-names">{% for n in l.names %}<span class="lu-n">{{ n }}</span>{% endfor %}</div>
+      <div class="lu-big"><b class="{{ 'pos' if l.win_pct >= 55 else 'neg' if l.win_pct < 45 }}">{{ l.win_pct }}%</b><span>{{ l.record }} · {{ l.games }} games</span></div>
+      <div class="lu-sub">{{ [((l.sc ~ '% team score') if l.sc is not none else ''), ((l.kda|kda ~ ' KDA') if l.kda is not none else ''), (('{:+}'.format(l.csr) ~ ' CSR') if l.csr is not none else '')]|select|join(' · ') }}</div>
+      {% else %}<p class="muted">Not enough games yet ({{ g.rows|length }} lineup{{ '' if g.rows|length == 1 else 's' }}, under 3 decided games)</p>{% endif %}</article>{% endfor %}</div>
+
+  {% for g in la.sizes %}<h3 class="lu-h">{{ 'Duos' if g.size == 2 else g.size ~ '-stacks' }} <small class="muted">{{ g.rows|length }} lineup{{ '' if g.rows|length == 1 else 's' }}</small></h3>
+  <div class="tablewrap"><table class="heat lu-table"><thead><tr><th data-pin>Lineup</th><th>Games</th><th data-heat>Win%</th><th>Record</th><th data-heat title="The stack's combined share of team score, per game">SC% (stack)</th><th data-heat title="Average per player-game">KDA</th><th data-heat title="Average per player-game">Dmg/min</th><th data-heat title="The stack's damage dealt minus taken, per game">Dmg ±</th><th data-heat title="Net ranked CSR, all players in the stack">CSR</th></tr></thead><tbody>
+  {% for l in g.rows %}<tr class="{{ 'small' if l.small }}"><td class="lu-who">{{ l.names|join(' + ') }}{% if l.small %} <small class="muted">small sample</small>{% endif %}</td><td>{{ l.games }}</td>
+    <td data-val="{{ l.win_pct if l.win_pct is not none and not l.small else '' }}"><b>{{ (l.win_pct ~ '%') if l.win_pct is not none else '—' }}</b></td><td>{{ l.record }}</td>
+    <td>{{ (l.sc ~ '%') if l.sc is not none else '—' }}</td><td>{{ l.kda|kda if l.kda is not none else '—' }}</td><td>{{ l.dpm if l.dpm is not none else '—' }}</td>
+    <td class="{{ 'pos' if l.dd and l.dd > 0 else 'neg' if l.dd and l.dd < 0 }}">{{ '{:+,}'.format(l.dd) if l.dd is not none else '—' }}</td>
+    <td class="{{ 'pos' if l.csr and l.csr > 0 else 'neg' if l.csr and l.csr < 0 }}">{{ '{:+}'.format(l.csr) if l.csr is not none else '—' }}</td></tr>{% endfor %}
+  </tbody></table></div>{% endfor %}
+
+  <div class="lu-two">
+    <div><h3 class="lu-h">Best partners <small class="muted">win % when both are on the team (any stack)</small></h3>
+    <div class="tablewrap"><table class="heat heat-all lu-pairs"><thead><tr><th data-pin></th>{% for n in la.names %}<th data-heat>{{ n }}</th>{% endfor %}</tr></thead><tbody>
+    {% for a in la.names %}<tr><td class="lu-who">{{ a }}</td>{% for b2 in la.names %}{% set pr = la.pairs.get((a, b2)) or la.pairs.get((b2, a)) %}
+      {% if a == b2 %}<td class="lu-self">—</td>{% elif pr and pr.win_pct is not none %}<td data-val="{{ pr.win_pct if pr.games >= 3 else '' }}" title="{{ pr.games }} games together"><b>{{ pr.win_pct }}%</b> <small class="muted">{{ pr.games }}</small></td>{% else %}<td class="muted">—</td>{% endif %}{% endfor %}</tr>{% endfor %}
+    </tbody></table></div></div>
+    <div><h3 class="lu-h">With / without <small class="muted">squad win % when each player is in vs out</small></h3>
+    <div class="tablewrap"><table class="heat lu-without"><thead><tr><th data-pin>Player</th><th data-heat>With</th><th>Games</th><th>Without</th><th>Games</th><th data-heat title="With minus without">Swing</th></tr></thead><tbody>
+    {% for w in la.without|sort(attribute='with_games', reverse=True) %}<tr><td class="lu-who">{{ w.name }}</td><td><b>{{ (w.with_pct ~ '%') if w.with_pct is not none else '—' }}</b></td><td>{{ w.with_games }}</td>
+      <td>{{ (w.without_pct ~ '%') if w.without_pct is not none else '—' }}</td><td>{{ w.without_games }}</td>
+      <td class="{{ 'pos' if w.swing and w.swing > 0 else 'neg' if w.swing and w.swing < 0 }}">{{ '{:+}'.format(w.swing) ~ ' pts' if w.swing is not none else '—' }}</td></tr>{% endfor %}
+    </tbody></table></div></div>
+  </div>{% endif %}
+</section>

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}{{ m.map or 'Match' }} · {{ m.mode }} — Clutchtape{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/match.css?v=4">{% endblock %}
+{% block content %}
+{% set tA = team_scores|selectattr('id', 'equalto', team_id)|first if team_id is not none else none %}
+{% set tB = team_scores|rejectattr('id', 'equalto', team_id)|first if team_id is not none else none %}
+{% macro tcls(tid) %}{{ 'tA' if tid == 0 else 'tB' if tid == 1 else 'tX' }}{% endmacro %}
+<div class="match-page mv2" data-mid="{{ m.match_id }}" data-ready="{{ 'true' if detail else 'false' }}">
+<nav class="match-nav">
+  {% if prev_m %}<a class="secondary" href="/match/{{ prev_m.match_id }}?player={{ m.slug }}">← Previous game</a>{% endif %}
+  <a class="secondary" href="/p/{{ m.slug }}?session={{ m.match_id[:8] }}">{{ m.gamertag }}’s session</a>
+  {% if next_m %}<a class="secondary" href="/match/{{ next_m.match_id }}?player={{ m.slug }}">Next game →</a>{% endif %}
+  {% if squad_slugs %}<a class="primary" href="/squad/{{ squad_slugs|join(',') }}?game={{ m.match_id[:8] }}">▶ Watch every angle</a>{% endif %}
+  <button class="secondary" type="button" data-share>🔗 Share</button>
+</nav>
+
+<header class="mhero {{ m.outcome|lower }}">
+  <div class="mh-id"><p class="eyebrow">{{ m.mode }} · {{ m.playlist or 'Custom game' }}{% if detail and not detail.teams_enabled %} · Free-for-all{% endif %}</p><h1>{{ m.map or 'Unknown map' }}</h1>
+    <p class="muted">{{ m.started_at|dt('%a %b %-d, %Y · %-I:%M %p') }} · {{ m.duration_s|dur }}{% if tA and tA.fields %}{% set rw = tA.fields|selectattr(0, 'equalto', 'Rounds won')|map(attribute=1)|first %}{% set rl = tA.fields|selectattr(0, 'equalto', 'Rounds lost')|map(attribute=1)|first %}{% if rw is not none and (rw or rl) and (rw + rl) > 1 %} · Rounds {{ rw }}–{{ rl }}{% endif %}{% endif %}</p></div>
+  <div class="mh-score"><span class="res {{ m.outcome|lower }}">{{ m.outcome }}</span>
+    <div class="sc"><b class="{{ tcls(team_id) }}">{{ (tA.score if tA else m.team_score)|int if (tA.score if tA else m.team_score) is not none else '—' }}</b><i>–</i><b class="{{ tcls(tB.id if tB else none) }}">{{ (tB.score if tB else m.enemy_score)|int if (tB.score if tB else m.enemy_score) is not none else '—' }}</b></div>
+    {% set edge = tracked_rows[0].mmr_edge %}{% if edge is not none %}<small>Lobby MMR {{ '{:+}'.format(edge) }} {{ '(favoured)' if edge > 25 else '(underdog)' if edge < -25 else '(even)' }}</small>{% endif %}</div>
+  <div class="mh-who">{% for r in tracked_rows %}<a class="mh-p" href="/p/{{ r.slug }}"><b>{{ r.gamertag }}</b><span>{{ r.kills }}/{{ r.deaths }}/{{ r.assists }} · {{ r.kda|kda }} KDA</span>
+    <span>{% if r.dmg_pm %}{{ r.dmg_pm }}/min{% endif %}{% if r.sc_pct is not none %} · {{ r.sc_pct }}% score{% endif %}{% if r.csr_d is not none %} · <em class="{{ 'pos' if r.csr_d > 0 else 'neg' if r.csr_d < 0 }}">{{ '{:+}'.format(r.csr_d) }} CSR</em>{% endif %}{% if r.xk is not none %} · {{ '{:+g}'.format(r.xk) }} xK{% endif %}</span></a>{% endfor %}</div>
+</header>
+
+{% if not detail %}<section class="panel" id="roster-loading"><h2>Full scoreboard</h2><p id="match-status" role="status">{{ 'Halo could not return the full match right now. Your saved stats and events are still available below.' if state=='error' else 'Loading every player’s stats from Halo. This can take a little time while other games finish syncing.' }}</p><button type="button" class="secondary" id="match-retry">Check again</button><p>{{ m.gamertag }} · {{ m.kills }} kills / {{ m.deaths }} deaths / {{ m.assists }} assists · {{ m.damage_dealt }} damage</p></section>{% endif %}
+
+{% if bars %}<section class="panel mbars" aria-label="Team vs team"><div class="ph"><h2>Team vs team</h2><span class="muted"><i class="sw {{ tcls(team_id) }}"></i> {{ 'Your team' }} · <i class="sw {{ tcls(tB.id if tB else none) }}"></i> Opponents</span></div>
+<div class="mbar-grid">{% for b in bars %}<div class="mbar-row"><span class="v {{ 'win' if b.you > b.them }}">{{ '{:,}'.format(b.you) if b.you is number and b.you == b.you|int else b.you }}{{ b.unit }}</span><div class="mbar-mid"><span class="lab">{{ b.label }}</span><div class="mbar-track"><i class="{{ tcls(team_id) }}" style="width:{{ (b.share * 100)|round(1) }}%"></i><i class="{{ tcls(tB.id if tB else none) }}" style="width:{{ (100 - b.share * 100)|round(1) }}%"></i></div></div><span class="v r {{ 'win' if b.them > b.you }}">{{ '{:,}'.format(b.them) if b.them is number and b.them == b.them|int else b.them }}{{ b.unit }}</span></div>{% endfor %}</div></section>{% endif %}
+
+<section class="panel mtl-panel" id="timeline"><div class="ph"><h2>Timeline</h2><span class="muted mtl-legend"><i class="lg kill"></i>Kill <i class="lg death"></i>Death <i class="lg medal"></i>Medal <i class="lg obj"></i>Objective <i class="lg big"></i>Big moment</span></div>
+  <div id="mtl" class="mtl-root" data-dur="{{ m.duration_s or 0 }}"><p class="muted">Loading the film timeline…</p></div>
+  <p class="fine">From the Theater film: every kill, death, medal and objective play. Hover (or tap) for details; click to jump the event list below to that moment.</p></section>
+
+{% if board %}<section class="panel mboard-panel" aria-label="Full scoreboard"><div class="ph"><h2>Scoreboard</h2><span class="muted">{{ board|length }} players · every stat Halo supplies · click a header to sort</span></div>
+<div class="tablewrap"><table class="heat mboard"><thead><tr><th data-pin>Player</th><th data-heat title="Share of the team's personal score">SC%</th><th data-heat title="Personal score">Score</th><th data-heat>K</th><th data-heat="lo">D</th><th data-heat>A</th><th data-heat>KDA</th><th data-heat>K/D</th><th data-heat title="Damage per minute played">Dmg/min</th><th data-heat="lo" title="Damage per kill + assist (lower is better)">Dmg/KA</th><th data-heat title="Damage dealt minus taken">Dmg ±</th><th data-heat>Dmg</th><th data-heat="lo">Taken</th><th data-heat>Acc</th><th data-heat title="Headshot kills">HS</th>{% for lab in mode_cols %}<th data-heat{{ '="lo"' if 'killed' in lab|lower and false }} title="{{ lab }}">{{ short[lab] }}</th>{% endfor %}<th data-heat title="Callout assists">Callouts</th><th data-heat title="Best killing spree">Spree</th><th data-heat title="Average life">Life</th><th data-heat>Melee</th><th data-heat>Nades</th><th data-heat title="Power weapon kills">Power</th><th data-heat>Medals</th><th>Spawns</th><th>Shots</th></tr></thead><tbody>
+{% for r in board %}<tr class="{{ tcls(r.team) }}{{ ' you' if r.you }}{{ ' tracked' if r.tracked and not r.you }}"><td class="pl"><i class="tbar"></i><b>{{ r.name }}</b><small>{{ ('#' ~ r.rank) if r.rank }}{{ ' · you' if r.you }}{{ ' · tracked' if r.tracked and not r.you }}</small></td>
+<td><b>{{ (r.sc ~ '%') if r.sc is not none else '—' }}</b></td><td>{{ '{:,}'.format(r.pscore) if r.pscore is not none else '—' }}</td><td><b>{{ r.k }}</b></td><td>{{ r.d }}</td><td>{{ r.a }}</td><td>{{ r.kda|kda }}</td><td>{{ r.kd }}</td><td>{{ r.dpm if r.dpm is not none else '—' }}</td><td>{{ r.dka if r.dka is not none else '—' }}</td>
+<td class="{{ 'pos' if r.dd and r.dd > 0 else 'neg' if r.dd and r.dd < 0 }}">{{ '{:+,}'.format(r.dd|int) if r.dd is not none else '—' }}</td><td>{{ '{:,}'.format(r.dmg|int) if r.dmg is not none else '—' }}</td><td>{{ '{:,}'.format(r.taken|int) if r.taken is not none else '—' }}</td><td>{{ (r.acc ~ '%') if r.acc is not none else '—' }}</td><td>{{ r.hs if r.hs is not none else '—' }}</td>
+{% for lab in mode_cols %}{% set v = r.mode.get(lab) %}<td>{{ (v|int if v == v|int else v) ~ ('s' if 'time' in lab|lower else '') if v is not none else '—' }}</td>{% endfor %}
+<td>{{ r.callouts if r.callouts is not none else '—' }}</td><td>{{ r.spree if r.spree is not none else '—' }}</td><td>{{ ((r.life|round(1)) ~ 's') if r.life is not none else '—' }}</td><td>{{ r.melee if r.melee is not none else '—' }}</td><td>{{ r.nade if r.nade is not none else '—' }}</td><td>{{ r.power if r.power is not none else '—' }}</td><td>{{ r.medal_n }}</td><td>{{ r.spawns if r.spawns is not none else '—' }}</td><td>{{ r.shots if r.shots is not none else '—' }}{% if r.hit is not none %} <small class="muted">({{ r.hit }} hit)</small>{% endif %}</td></tr>{% endfor %}
+</tbody></table></div></section>
+
+<section class="panel mmedals" aria-label="Medals"><div class="ph"><h2>Medals</h2><span class="muted">Every medal each player earned</span></div>
+<div class="mmedal-grid">{% for r in board if r.medals %}<div class="mmed {{ tcls(r.team) }}{{ ' you' if r.you }}"><b>{{ r.name }} <small>{{ r.medal_n }}</small></b><div>{% for md in r.medals %}<span class="medal{{ ' rare' if md.name in ('Triple Kill','Overkill','Killtacular','Killtrocity','Killamanjaro','Killtastrophe','Killpocalypse','Killionaire','Killing Frenzy','Running Riot','Rampage','Nightmare','Boogeyman','Grim Reaper','Demon','Extermination','Perfection','Ninja','Hail Mary','360','Quigley','Off the Rack','Sneak King','Fastball','Bank Shot','Mind the Gap','Cluster Luck','Interlinked','Steaktacular') }}">{{ md.name }}{% if md.count > 1 %} <em>×{{ md.count }}</em>{% endif %}</span>{% endfor %}</div></div>{% endfor %}</div></section>{% endif %}
+
+<details class="panel recap-fold"><summary><h2>Event list</h2><span class="muted">every kill, death, medal and objective, searchable</span></summary>{% include '_recap.html' %}</details>
+</div>
+<script nonce="{{ csp_nonce }}">window.CT_MATCH={{ {'mid': m.match_id, 'dur': m.duration_s or 0, 'roster': roster, 'team': team_id}|tojson }};</script>
+{% endblock %}
+{% block scripts %}<script nonce="{{ csp_nonce }}" src="/static/match.js?v=1" defer></script><script nonce="{{ csp_nonce }}" src="/static/match_timeline.js?v=3" defer></script>{% endblock %}

@@ -1,0 +1,11 @@
+const assert=require('node:assert/strict');require('../app/static/multistats.js');
+const s=ClutchStats.derive({k:12,d:6,a:8,seconds:600,fired:200,hit:125,score:1000,dmg:4000,taken:2000,extra:{melee_kills:0,expected_kills:10}});
+assert.equal(s.kd,2);assert.equal(s.kpm,1.2);assert.equal(s.missed,75);assert.equal(s.scorePm,100);assert.equal(s.damageRatio,2);assert.equal(s.melee_kills,0);
+const sparse=ClutchStats.derive({seconds:0,k:0,d:0});assert.equal(sparse.kd,null);assert.equal(sparse.kpm,null);assert.equal(sparse.missed,null);assert.equal(sparse.melee_kills,undefined);
+assert.equal(new Set(ClutchStats.rows.map(x=>x[1])).size,ClutchStats.rows.length);
+console.log(ClutchStats.rows.length+' metrics: rates, zeros, missing values and unique rows passed');
+assert.equal(ClutchStats.heat(10,[5,10],0).kind,'magnitude');
+assert.equal(ClutchStats.heat(5,[5,10],-1).kind,'good');
+assert.equal(ClutchStats.heat(10,[5,10],-1).kind,'bad');
+assert.equal(ClutchStats.heat(0,[0,0],1).kind,'equal');
+assert.equal(ClutchStats.heat(null,[0,1],1).kind,'');

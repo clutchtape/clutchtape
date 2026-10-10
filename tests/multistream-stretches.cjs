@@ -1,0 +1,11 @@
+const assert = require('node:assert/strict');
+global.window = {};
+require('../app/static/eventlog.js');
+const stretches = window.ClutchLog.stretches;
+const events = [['k',10000,'A','X'],['k',20000,'A','Y'],['k',30000,'A','Z'],['k',100000,'X','A'],['d',100000,'','A'],['k',110000,'Y','A'],['k',120000,'Z','A']];
+assert.deepEqual(stretches(events, ['A']).map(x => [x.type,x.k,x.d]), [['hot',3,0],['rough',0,3]]);
+assert.deepEqual(stretches(events, ['Other']), []);
+assert.deepEqual(stretches([], ['A']), []);
+assert.equal(stretches(events.slice(0,2), ['A']).length, 0);
+assert.equal(stretches(events, ['a']).length, 2);
+console.log('Hot/rough selection, overlapping windows, duplicate deaths, names and empty data passed');

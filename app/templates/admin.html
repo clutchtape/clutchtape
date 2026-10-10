@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Admin — Clutchtape{% endblock %}
+{% block content %}
+<section class="prose">
+<h1>Admin</h1>
+{% if not authed %}
+  <form method="post" class="lookup"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="action" value="login">
+  <label>Password<input type="password" name="password" autofocus></label><button>Sign in</button></form>
+{% else %}
+  {% if msg %}<div class="alert">{{ msg }}</div>{% endif %}
+  <p><a href="/admin/privacy">Review private removal requests</a></p><h2>Service health</h2>
+  <p>Halo jobs: {{ ops.worker.pending }} pending · {{ ops.worker.completed }} completed · {{ ops.worker.errors }} interrupted since restart.</p>
+  <p>Last verified database snapshot: {{ ops.backup.at|ago if ops.backup.at else 'not yet available' }}. Snapshots run every six hours; 28 are retained.</p>
+  {% for alert in ops.alerts %}<p class="alert">{{ alert }}</p>{% else %}<p>No operational alerts.</p>{% endfor %}
+  <h2>Xbox service login</h2>
+  <p>{% if xbox.connected %}<b>Connected.</b> Last refreshed {{ xbox.minted_ago_min if xbox.minted_ago_min is not none else '?' }} min ago.{% else %}<b>Not connected.</b> {{ xbox.reason }}{% endif %}</p>
+  <p class="muted">Use a <b>dedicated</b> Xbox account, never your own. Sharing one login between two apps makes them invalidate each other.</p>
+  <form method="post" action="/admin/xbox" class="lookup"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="action" value="creds">
+    <label>Azure app client id<input name="client_id" required></label><label>Azure app client secret<input name="client_secret" type="password" required></label>
+    <button>{{ 'Replace' if creds else 'Save' }} Azure credentials</button></form>
+  {% if authorize_url %}
+  <ol><li><a href="{{ authorize_url }}" target="_blank" rel="noopener">Open the Microsoft sign-in</a> (use the dedicated Xbox account).</li>
+  <li>After approving, your browser lands on a page that fails to load (<code>{{ redirect_uri }}</code>). Copy that full address and paste it below.</li></ol>
+  <form method="post" action="/admin/xbox" class="lookup"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="action" value="code">
+    <label>Redirect URL<input name="redirect_url" required></label><button>Connect</button></form>
+  {% endif %}
+  <form method="post" action="/admin/xbox"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="action" value="remint"><button>Refresh tokens now</button></form>
+  <h2>Alt accounts</h2>
+  <p class="muted">Link a second Xbox account to a player: its games fold into the main profile, the live panel and "Tonight". Rank stays the main account's.</p>
+  <form method="post" action="/admin/alts" class="altform"><input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <input name="main" required placeholder="Main gamertag or slug"> <input name="alt" required placeholder="Alt gamertag"> <button type="submit">Link alt</button></form>
+  {% if alt_links %}<ul>{% for a in alt_links %}<li>{{ a.alt }} → <a href="/p/{{ a.main_slug }}">{{ a.main }}</a>
+    <form method="post" action="/admin/alts" style="display:inline"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="main" value="{{ a.main_slug }}"><input type="hidden" name="unlink" value="{{ a.alt_id }}"><button type="submit" class="secondary">Unlink</button></form></li>{% endfor %}</ul>{% endif %}
+  <h2>Players ({{ players|length }} shown)</h2>
+  <div class="tablewrap"><table><thead><tr><th>Gamertag</th><th>State</th><th>Games</th><th>Synced</th><th>Visit windows</th><th></th></tr></thead>
+  <tbody>{% for x in players %}<tr><td><a href="/p/{{ x.slug }}">{{ x.gamertag }}</a></td><td>{{ x.sync_state }}</td><td>{{ x.matches_done }}</td><td>{{ x.last_synced|ago }}</td><td>{{ x.views }}</td><td><form method="post" action="/admin/delete" data-confirm="Remove this cached profile?"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="slug" value="{{ x.slug }}"><button class="mini">Remove</button></form></td></tr>{% endfor %}</tbody></table></div>
+{% endif %}
+</section>
+{% endblock %}

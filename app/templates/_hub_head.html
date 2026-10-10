@@ -1,0 +1,8 @@
+{# One page per player/squad (Halo-site layout). Needs: hub_title, hub_meta (html), hub_badges (html), save_label, tab. #}
+<section class="hub-head">
+  {# squads: the member chips ARE the title (no giant "A + B + C + D" line repeating them) #}
+  <div class="hub-id{{ ' squadid' if hub_squad }}"><h1{% if hub_squad %} class="sr-only"{% endif %}>{{ hub_title }}</h1><div class="muted hub-meta">{{ hub_meta }}</div></div>
+  <div class="hub-actions">{{ hub_badges }}<details class="hub-more"><summary aria-label="More actions" title="Save · Share · Color">⋯</summary><div class="hub-menu"><button type="button" class="share save-profile" data-save-profile data-label="{{ save_label }}">★ Save</button><button type="button" class="share" data-share title="Copy a link to this page">🔗 Share</button>{% if p is defined and p.slug %}<a class="share color-link" href="/p/{{ p.slug }}/color">Color</a>{% endif %}</div></details></div>
+</section>
+<nav class="hub-tabs" aria-label="Sections">{% for k, label in hub_tabs %}<a href="{{ tab_url(k) }}" class="{{ 'on' if tab == k }}"{% if tab == k %} aria-current="page"{% endif %}>{% if k == 'latest' %}⚡ Latest<span class="tl-long">&nbsp;session</span>{% else %}{{ label }}{% endif %}</a>{% endfor %}</nav>
+{% if tab != 'analysis' %}<nav class="kinds" aria-label="Game type">{% for k, label in kinds %}<a href="{{ kind_url(k) }}" class="{{ 'on' if k == cur_kind }}">{{ label }}</a>{% endfor %}</nav>{% endif %}

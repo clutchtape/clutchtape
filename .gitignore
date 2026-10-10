@@ -1,0 +1,18 @@
+# data: never commit (player database, snapshots, tokens live outside the repo)
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.env
+.env*
+tokens.json
+api_config.json
+privacy_exclusions.json*
+# generated
+graphify-out/
+__pycache__/
+*.pyc
+node_modules/
+tests/**/*.png
+tests/**/output/
+*.log

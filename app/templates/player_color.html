@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}{{ p.gamertag }} · Your color — Clutchtape{% endblock %}
+{% block content %}
+<section class="panel color-editor">
+  <a href="/p/{{ p.slug }}">← {{ p.gamertag }}</a>
+  <h1>Gamertag color</h1>
+  <p class="muted">Choose how {{ p.gamertag }} appears to you on this browser: names, squad tags and profile accents.</p>
+  <p class="fine">Only this browser sees your choices. Colors never indicate that a player uses ClutchTape.</p>
+  {% if error %}<p class="alert" role="alert">{{ error }}</p>{% endif %}
+  <form id="player-color-form" data-slug="{{ p.slug }}" data-name="{{ p.gamertag }}">
+    <p id="color-status" role="status"></p><noscript>Color customization needs JavaScript and stays on this device.</noscript>
+    <div class="color-fields"><label for="tag-color">Pick a color<input id="tag-color" type="color" value="{{ color }}"></label><label for="tag-color-hex">Hex color<input id="tag-color-hex" value="{{ color }}" pattern="#[0-9a-fA-F]{6}" maxlength="7" required spellcheck="false"></label></div>
+    <div class="color-presets" aria-label="Color presets">{% for c in presets %}<button type="button" data-color="{{ c }}" style="--swatch:{{ c }}" aria-label="Use color {{ c }}"></button>{% endfor %}</div>
+    <div class="color-preview"><span>Preview</span><h2>{{ p.gamertag }}</h2><p>Names and profile accents as you see them</p></div>
+    <div class="color-actions"><button type="submit" name="action" value="save">Save on this browser</button><button type="submit" name="action" value="reset" class="secondary" formnovalidate>Restore default</button></div>
+    <p class="fine">Dark colors are lightened for readable name text.</p>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,21 @@
+{# Analysis tab body (was the /live dashboard). Needs b, explanations, kinds; scripts: growth.js + analysis.js. #}
+<div class="companion" id="companion" data-slugs="{{ b.slugs }}" data-current="{{ 'true' if b.current else 'false' }}" data-version="{{ b.version }}" data-title="{{ b.title }}" data-stable="{{ b.stable_url }}" data-latest-time="{{ b.latest.started_at if b.latest else 0 }}">
+<div class="board-toolbar"><div class="board-actions"><button type="button" class="secondary" data-fullscreen="#companion">Full screen</button></div></div>
+
+<details class="filter-panel"><summary>⚙ Filters</summary><form class="analysis-filters" method="get" id="analysis-filters"><input type="hidden" name="tab" value="analysis">
+{% if request.args.get('tw') %}<input type="hidden" name="tw" value="{{ request.args.tw }}">{% endif %}
+<label>Game type<select name="kind">{% for k,label in kinds %}<option value="{{ k }}" {{ 'selected' if k==b.kind }}>{{ label }}</option>{% endfor %}</select></label>
+<label>Playlist<select name="playlist"><option value="">All playlists</option>{% for pl in b.playlists %}<option value="{{ pl }}" {{ 'selected' if pl==b.playlist }}>{{ pl }}</option>{% endfor %}</select></label>
+<label>Period<select name="scope"><option value="session" {{ 'selected' if b.scope=='session' }}>Selected session</option><option value="30" {{ 'selected' if b.scope=='30' }}>Last 30 days</option><option value="90" {{ 'selected' if b.scope=='90' }}>Last 90 days</option><option value="all" {{ 'selected' if b.scope=='all' }}>All loaded history</option></select></label>
+<label>Session<select name="session"><option value="" {{ 'selected' if b.current }}>Follow latest session</option>{% for s in b.sessions %}<option value="{{ s.key }}" {{ 'selected' if not b.current and b.scope=='session' and s.key==b.anchor }}>{{ s.start|utc('%b %-d, %H:%M') }} UTC · {{ s.summary.record }} · {{ s.games }} games</option>{% endfor %}</select></label>
+<button class="primary" type="submit">Apply filters</button>
+</form></details>
+<p class="selection-caption">{{ b.scope_label }} · {{ b.playlist or 'All playlists' }} · {{ b.matches|length }} games. </p>
+<div id="board-top" data-view="overview">{% include '_board_top.html' %}</div>
+{% include '_stats_grid.html' %}
+<div class="refresh-line"><span id="board-status" role="status">{{ 'Checking for completed games…' if b.current else '' }}</span><button type="button" class="secondary" id="board-refresh">Refresh stats</button><a class="primary" id="board-new" href="{{ request.full_path }}" hidden>New data — update charts ↗</a></div>
+{% for p in b.players if p.sync_state in ('error','private','queued','syncing') %}<p class="board-notice">{{ p.gamertag }}: {{ 'Updating match history…' if p.sync_state in ('queued','syncing') else 'No public match history found yet.' if p.sync_state=='private' else 'The last update could not finish. Showing stored results while we retry.' }}</p>{% endfor %}
+{% include '_analysis_charts.html' %}
+<div class="analysis-workspace"><section class="board-panel games-panel" id="games" data-view="games"><div class="section-title"><h2>Games</h2><span class="fine">{{ b.matches|length }} matches</span></div><div class="tablewrap" id="game-stats-table"></div><div class="game-pagination"><button class="secondary" type="button" id="games-prev">Previous</button><span id="games-page"></span><button class="secondary" type="button" id="games-next">Next</button></div></section>
+{% include '_analysis_detail.html' %}</div></div>
+<script type="application/json" nonce="{{ csp_nonce }}" id="analysis-data">{{ b.analysis|tojson }}</script>

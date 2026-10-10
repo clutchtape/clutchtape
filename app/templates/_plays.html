@@ -1,0 +1,4 @@
+{# Best plays from the match films (2026-10-09): works without Twitch. Needs d.plays (web._plays). #}
+{% if d.plays %}<section class="panel plays" id="plays"><div class="ph"><h2>{{ "This session's best plays" if d.in_session else "Best plays" }}</h2><span class="muted">From the game files{{ ' · no stream needed' if not tw }} · opens the moment on the match timeline</span></div>
+<div class="play-list">{% for m in d.plays %}<a class="play" href="{{ m.url }}"><span class="sc">{{ m.score }}</span><span class="pt"><b>{{ m.label }}</b>
+<small>{% if m.gamertag and d.squad is defined %}{{ m.gamertag }} · {% endif %}{{ m.map or 'Unknown map' }}{% if m.mode %} · {{ m.mode }}{% endif %} · {{ m.match_started|dt('%b %-d') }} · <span class="res {{ m.outcome|lower }}">{{ m.outcome }}</span> · {{ m.t_ms // 60000 }}:{{ '%02d'|format((m.t_ms // 1000) % 60) }}</small></span><span class="go">Timeline →</span></a>{% endfor %}</div></section>{% endif %}

@@ -1,0 +1,20 @@
+{# Auto clips: timestamps only. With a Twitch link each one jumps the embedded player to that second. #}
+{% if d.moments %}
+<section class="panel clipsec" id="clips">
+  <div class="ph"><h2>Auto clips</h2>
+    <span class="muted">Best plays from the match films, on the stream. Click ▶ to watch.</span></div>
+  <div class="moments">{% for m in d.moments %}
+    <div class="mo">
+      <span class="sc" title="Highlight score">{{ m.score }}</span>
+      <div class="mtxt"><b>{{ m.label }}</b>
+        <small>{% if m.gamertag and d.squad %}{{ m.gamertag }} · {% endif %}{{ m.map or 'Unknown map' }}{% if m.mode %} · {{ m.mode }}{% endif %} · {{ m.match_started|dt('%b %-d') }} ·
+          <span class="res {{ m.outcome|lower }}">{{ m.outcome }}</span> · film {{ (m.t_ms // 60000) }}:{{ '%02d'|format((m.t_ms // 1000) % 60) }}
+          {%- if m.src == 'archive' %} <span class="srcchip arch" title="Twitch deleted this broadcast; playing our archived copy">📼 archived</span>
+          {%- elif m.expires_days is defined %} <span class="srcchip exp" title="Twitch deletes past broadcasts after a few days on this channel. Save it now if you want to keep it.">⏳ {{ 'gone today' if m.expires_days < 1 else 'gone in ' ~ m.expires_days ~ ' day' ~ ('' if m.expires_days == 1 else 's') }}</span>{% endif %}</small></div>
+      <span class="acts"><a class="vod" href="{{ m.vod }}" target="_blank" rel="noopener">▶ Watch</a><button type="button" class="vod savebtn" data-href="{{ m.vod }}" data-dur="{{ m.dur_s }}" data-name="{{ (m.gamertag or '')|replace(' ','') }}-{{ (m.map or '')|replace(' ','') }}-{{ m.label|replace(' · ','-')|replace(' ','') }}" title="Record this clip in your browser and save it (nothing is uploaded)">⬇ Save</button></span>
+    </div>{% endfor %}</div>
+  {% if d.moments|length > 6 %}<button type="button" class="clipmore" data-showall=".clipsec">Show all {{ d.moments|length }} clips</button>{% endif %}
+</section>
+{% elif d.clips_pending and tw %}
+<section class="panel"><div class="ph"><h2>Auto clips</h2><span class="muted">Finding the best plays in your newest games… refresh in a minute.</span></div></section>
+{% endif %}

@@ -1,0 +1,5 @@
+{# Game-log stat cells for one player-game `m`, in the order of the header in profile.html (after SC%, K/D/A, KDA).
+   Key: Dmg/min, Dmg/KA, Dmg ±, Obj. Extras (class xc, shown with "All stats"): Dmg%, xK±, Lobby, CSR, Life, Acc, HS%. #}
+{% macro sgn(v, fmt='{:+g}', cls='') %}<td class="{{ cls }} {{ 'pos' if v and v > 0 else 'neg' if v and v < 0 }}">{{ fmt.format(v) if v is not none else '—' }}</td>{% endmacro %}
+<td>{{ m.dmg_pm if m.dmg_pm is not none else '—' }}</td><td>{{ m.dmg_ka if m.dmg_ka is not none else '—' }}</td>{{ sgn(m.dmg_diff, '{:+,}') }}<td class="gobj">{{ m.obj or '—' }}</td>
+<td class="xc">{{ (m.dmg_share ~ '%') if m.dmg_share is not none else '—' }}</td>{{ sgn(m.xk, cls='xc') }}{{ sgn(m.mmr_edge, '{:+}', 'xc') }}{{ sgn(m.csr_d, '{:+}', 'xc') }}<td class="xc">{{ (m.life ~ 's') if m.life is not none else '—' }}</td><td class="xc">{{ (m.accuracy|round(1) ~ '%') if m.accuracy is not none else '—' }}</td><td class="xc">{{ (m.hs_pct ~ '%') if m.hs_pct is not none else '—' }}</td>

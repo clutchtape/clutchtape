@@ -1,0 +1,29 @@
+<section class="panel match-recap" id="recap" data-names='{{ recap_names|tojson }}' data-vm='{{ vm|default({})|tojson }}'>
+  <div class="ph"><h2>Match highlights</h2><span class="muted">Theater events · no Twitch needed</span></div>
+  {% if recap_matches %}
+  <label for="recap-match">Game from this session</label>
+  <select id="recap-match">{% for match in recap_matches %}<option value="{{ match.id }}" data-duration="{{ match.duration }}">{{ match.started_at|utc('%b %-d, %H:%M') }} UTC · {{ match.label }}</option>{% endfor %}</select>
+  <p id="recap-status" role="status">Choose a match to explore its events.</p>
+  <button type="button" class="secondary" id="recap-retry" hidden>Retry events</button>
+  <div id="recap-content" hidden>
+    {% if recap_players %}<label for="recap-player">Players to explore</label><select id="recap-player"><option value="">Selected team / players</option>{% for player in recap_players %}<option value="{{ player }}">{{ player }}</option>{% endfor %}</select>{% endif %}
+    <div class="recap-summary" id="recap-summary"></div>
+    <svg id="recap-chart" viewBox="0 0 1000 160" preserveAspectRatio="none" role="img" aria-label="Running kills minus deaths for the selected players"></svg>
+    <p class="muted review-note">Momentum shows running kills minus deaths for the selected players, not the match score.</p>
+    <h3>Key stretches</h3>
+    <p class="muted review-note">Highlighted ranges show standout medals and concentrated activity for the selected players. Choose a stretch to review what happened.</p>
+    <div id="recap-highlights" class="recap-highlights"></div>
+    <details id="recap-detail" class="recap-detail"><summary>Browse individual events <output id="recap-selection"></output></summary>
+    <label for="recap-time">Jump to a time <output id="recap-clock">All events</output></label>
+    <input id="recap-time" type="range" min="0" max="1" value="0" step="1">
+
+    <div class="recap-controls"><button type="button" class="secondary" id="recap-all">All times</button><label><input type="checkbox" id="recap-mine" checked> Selected players only</label><label>Events <select id="recap-kind"><option value="all">All types</option><option value="k">Kills</option><option value="d">Deaths</option><option value="m">Medals</option><option value="o">Objectives</option></select></label></div>
+    <div id="recap-events" class="recap-events"></div>
+    <button type="button" class="secondary" id="recap-more" hidden>Show more events</button>
+    </details>
+    <p class="muted review-note">Theater data can be incomplete. Kill/death pairings are estimated from shared timestamps.</p>
+
+  </div>
+    
+  {% else %}<p class="muted">No matches in this session yet. A recap will be available when Halo supplies match film events.</p>{% endif %}
+</section>

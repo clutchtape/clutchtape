@@ -1,0 +1,158 @@
+.mobile-expand,.mobile-sort,.mobile-views{display:none}
+@media(max-width:700px){
+  main{padding:12px!important;min-width:0}.top{position:relative;padding:6px 12px!important;gap:6px}.top .navsearch{width:100%;max-width:none}.top input,main input:not([type=color]):not([type=range]),main select,main textarea{font-size:16px}.top nav a{min-height:44px!important}.top .navsearch button{min-width:48px;min-height:44px}.top .navsearch input{min-height:44px}
+  .hub-head{gap:10px!important}.hub-id.squadid .hub-meta{gap:6px}.hub-id.squadid a.mem{min-height:42px;font-size:14px}.hub-id.squadid .memx{width:32px;height:42px}.hub-id.squadid .addmem summary{min-height:44px;padding:8px 12px}.hub-actions .share{min-height:44px!important;font-size:13px!important}.hub-tabs{display:flex;flex-wrap:wrap;gap:3px;overflow:visible}.hub-tabs a{min-height:44px!important;font-size:13px;padding:10px 12px}.kinds{flex-wrap:wrap}.kinds a{min-height:44px!important;padding:10px 12px}.panel{padding:12px!important}.ph{align-items:flex-start;flex-wrap:wrap;gap:8px}.ph>span{white-space:normal}.hub-kpis{gap:8px}
+  .mobile-sort{display:flex;gap:10px;align-items:center;margin:12px 0 8px;color:var(--mute);font-size:13px}.mobile-sort select{flex:1;min-width:0;min-height:44px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px}
+  .tablewrap:has(> .mobile-cards){overflow:visible!important;max-height:none!important}.mobile-cards{display:block!important;min-width:0!important;width:100%!important;table-layout:auto!important;border:0!important}.mobile-cards>thead{display:none!important}.mobile-cards>tbody{display:grid!important;gap:12px}.mobile-cards tr.mobile-card{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:10px;border:1px solid var(--watch-edge,var(--line));border-radius:12px;background-color:var(--panel2);height:auto!important;cursor:default}
+  .mobile-cards tr.mobile-card>.mobile-field{position:static!important;display:block!important;width:auto!important;min-width:0!important;max-width:none!important;white-space:normal!important;overflow-wrap:anywhere;text-align:left!important;padding:8px!important;border:0;border-radius:6px;font-size:14px;line-height:1.45;box-shadow:none;letter-spacing:normal}
+  .mobile-cards .mobile-field:before{content:attr(data-mobile-label);display:block;color:var(--mute);font-size:11px;font-weight:500;line-height:1.5;margin-bottom:3px}
+  .mobile-cards tr.mobile-card>.mobile-identity{grid-column:1/-1;font-size:15px;font-weight:700;background:transparent!important;padding:2px 0 6px!important}.mobile-cards .mobile-identity:before{display:none}.mobile-cards .mobile-identity>a{display:inline-flex;align-items:center;min-height:44px}.mobile-cards .mobile-identity .muted{font-weight:400}.mobile-cards .mobile-expand{display:block;min-height:44px;margin:8px 0 0;padding:8px 12px;font-size:13px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--acc2);font-weight:600}.mobile-cards tr.mobile-card:not(.mobile-expanded)>.mobile-extra{display:none!important}.mobile-cards tr.mobile-card>.mobile-field[hidden]{display:none!important}
+  .mobile-cards .colnav{display:none!important}.mobile-cards tr.mobile-card>.mobile-actions{grid-column:1/-1;display:flex!important;flex-wrap:wrap;gap:6px;padding:4px 0!important;background:none!important}.mobile-cards .mobile-actions:before{display:none}.mobile-actions a,.mobile-actions button{min-height:44px!important;padding:10px 12px!important;font-size:13px!important}.mobile-cards .whochip{margin:3px}.mobile-cards .watch-cues{white-space:normal;flex-wrap:wrap}.mobile-cards .session-pick{max-width:none;white-space:normal;font-weight:400}.session-heat-legend{line-height:1.6}.mobile-cards .session-date>a{font-size:15px}.mobile-cards .cellvod{display:inline-flex;align-items:center;min-height:44px}
+  .companion .stat-controls{flex-wrap:wrap}.companion .stat-groups{display:flex;flex-wrap:wrap;gap:6px}.stat-groups button{min-height:44px!important}.companion .workspace-tabs{flex-wrap:wrap}.companion .workspace-tabs a{padding:12px 10px}.companion .chart-table{max-width:100%;overflow:auto}.companion .analysis-filters{grid-template-columns:1fr}.companion select{min-height:44px}.companion .hero-copy h1{overflow-wrap:anywhere;font-size:24px}.companion .session-hero{padding:16px}.companion .stat-grid tbody th{font-size:14px!important}
+  .twlist li,.moments li{flex-wrap:wrap}.twclips button,.twclips .vod,.twlist button{min-height:44px!important}.recap-controls{flex-wrap:wrap}.recap select{max-width:100%}.color-form{max-width:100%}input,select,textarea{max-width:100%} .foot{padding:18px 12px;line-height:1.7}
+}
+/* Mobile multistream is an explicit choice of visible angles. Embeds stay mounted. */
+.multi.focus .mobile-views{display:flex;gap:6px;align-items:center;font-size:12px}.mobile-views select{min-height:44px;max-width:95px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;font-size:14px}
+.multi.focus{padding:6px;gap:4px;overflow:hidden;height:100dvh}
+.multi.focus .mbar{gap:4px;flex-wrap:wrap;flex:none}.multi.focus .mbar>#multititle,.multi.focus .mtip,.multi.focus [data-fullscreen],.multi.focus #msave,.multi.focus #mlink{display:none}.multi.focus .mbar .mctl{gap:4px}.multi.focus .mbar button{min-height:44px;height:44px;padding:4px 9px;font-size:12px}.multi.focus #mlogbtn{display:inline-flex}.multi.focus #mlayout{display:none}.multi.focus #msync{display:inline-flex}.multi.focus .mskip{order:5;flex:1;justify-content:center}.multi.focus .mskip button{min-height:44px;flex:1}.multi.focus .mskip [data-skip='-300'],.multi.focus .mskip [data-skip='300'],.multi.focus .mskip [data-skip='-60'],.multi.focus .mskip [data-skip='60']{display:none}
+.multi.focus .mwrap{display:contents}.multi.focus .mgrid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto!important;gap:4px;order:1;flex:none;min-height:0;width:100%}.multi.focus .angles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;order:-2;grid-column:1/-1;overflow:visible;margin:0}.multi.focus .angles button{padding:4px;min-height:44px;height:44px;border-radius:7px;font-size:11px;white-space:normal;overflow-wrap:anywhere}.multi.focus .angles button.visible{border-color:#746457}.multi.focus .angles button.on{border-color:var(--acc2)}
+.multi.focus .mcell.thumb,.multi.focus .mcell.main{position:static;left:auto;top:auto;width:auto;height:auto;pointer-events:auto;order:0;grid-column:auto}.multi.focus .mcell.thumb{display:none}.multi.focus .mcell.mobile-visible{display:flex;min-width:0}.multi.focus .mcell .mtop,.multi.focus .mcell.main .mtop{display:flex;min-height:22px;font-size:11px;margin:0}.multi.focus .mcell .mtop button{background:none;border:0;color:var(--ink);min-height:28px;font:inherit;padding:3px 6px;text-align:left;width:100%}.multi.focus .mcell .mtop button[aria-pressed=true]{color:var(--acc2)}
+.multi.focus .mvid{max-width:none;max-height:none;width:100%!important;height:auto!important;aspect-ratio:16/9}.multi.focus[data-mobile-views='2'] .mvid{max-height:20dvh}.multi.focus[data-mobile-views='all'] .mgrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.multi.focus[data-mobile-views='all'] .mvid{max-height:17dvh}.multi.focus[data-mobile-views='1'] .mvid{max-height:24dvh}.multi.focus>.mtl{display:block;order:2;flex:none;margin:0}.multi.focus .mlog{order:3;display:flex;flex:1;min-height:0;width:auto;overflow:hidden;gap:3px}.multi.focus .mgame{flex:1;min-height:0}.multi.focus .mgnav button,.multi.focus .mg-game-select,.multi.focus .mgpager button{min-height:40px;height:40px}.multi.focus .multi-event-details>summary,.multi.focus .multi-moments>summary{min-height:36px;padding:8px}.multi.focus.nolog .mlog{display:none}.multi.focus.nolog .mgrid{flex:1;align-content:center}.multi.focus.nolog .mvid{max-height:30dvh}.multi.focus .mstart{top:155px;z-index:30;min-height:44px}
+@media(max-height:520px){.multi.focus .mbar{flex-wrap:nowrap}.multi.focus .mbar .mskip{flex:0}.multi.focus .mwrap{display:contents}.multi.focus .mlog{display:none}.multi.focus .mgrid{flex:1;align-content:center}.multi.focus[data-mobile-views='2'] .mgrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.multi.focus .mvid,.multi.focus[data-mobile-views] .mvid{max-height:34dvh}.multi.focus[data-mobile-views='all'] .mgrid{grid-template-columns:repeat(4,minmax(0,1fr))!important}.multi.focus .angles{display:flex;justify-content:center}.multi.focus .angles button{min-width:90px}.multi.focus .mcell .mtop{display:none!important}.multi.focus>.mtl{max-height:90px}}
+
+@media(max-width:700px){
+  .mediasec:not([open]),.mediasec[open]>.mediabar{top:0!important}.mediasec .mediabar{min-height:48px;padding:8px 10px;flex-wrap:nowrap}.mediabar .muted{display:none}.mediabar b{font-size:14px}.mobile-cards .mobile-expand{float:right;display:inline-flex;align-items:center;margin:0 0 0 8px;box-shadow:none;background:none;padding:5px 8px;font-size:12px}.mobile-cards .mobile-identity{order:-2}.mobile-cards .mobile-extra{order:1}.mobile-cards .mobile-actions{order:2}.mobile-cards tr.mobile-card>.mobile-field{padding:6px!important}.mobile-cards tr.mobile-card>.mobile-identity{min-height:44px;line-height:44px!important}.mobile-cards .mobile-identity .watch-cues,.mobile-cards .mobile-identity .session-pick{line-height:1.5}.mobile-cards .mobile-identity .muted{line-height:1.5}.mobile-cards .mobile-field:before{font-size:12px}
+}
+.multi.focus[data-mobile-views='2'] .mgrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.multi.focus[data-mobile-views] .mcell.mobile-visible .mvid{max-height:24dvh;max-width:100%}
+.multi.focus .mcell .mtop,.multi.focus .mcell.thumb .mtop{min-height:24px;padding:0;width:100%}.multi.focus .mcell .mtop button{box-shadow:none;min-height:28px}.multi.focus .mgwho{min-height:40px}.multi.focus #mlogbtn{font-size:0}.multi.focus #mlogbtn:after{content:'Stats';font-size:12px}
+.multi.focus.nolog[data-mobile-views='2'] .mgrid{grid-template-columns:minmax(0,1fr)!important}.multi.focus.nolog[data-mobile-views] .mcell.mobile-visible .mvid{max-height:30dvh}.multi.focus .et-picks{font-size:14px;min-height:44px}.multi.focus #mpicks{max-height:120px;overflow:auto}.multi.focus .multi-event-details[open],.multi.focus .multi-moments[open]{position:absolute;bottom:8px;left:8px;right:8px;width:auto;z-index:25;background:#201912;box-shadow:0 -6px 30px #0009}.multi.focus .multi-event-details[open] .elog{height:180px;max-height:180px}
+@media(max-height:520px){.multi.focus.nolog[data-mobile-views='2'] .mgrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.multi.focus[data-mobile-views] .mcell.mobile-visible .mvid{max-height:34dvh}}
+
+.mobile-totals>summary{display:none}.mobile-totals{margin-bottom:10px}
+@media(max-width:700px){.hub-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0}.hub-tabs a{padding:8px 3px;font-size:12px;display:flex;align-items:center;justify-content:center;text-align:center;white-space:normal;line-height:1.35}.mobile-totals{border:1px solid var(--line);border-radius:10px;padding:0 10px}.mobile-totals>summary{display:list-item;cursor:pointer;padding:12px 0;min-height:48px;font-size:14px;font-weight:700}.mobile-totals[open]{padding-bottom:10px}.mobile-totals .mobile-sort{margin-top:0}}
+
+.mobile-game-nav{display:none}.multi.focus .mobile-game-nav{display:block;order:0;flex:none;min-height:0}.mobile-game-nav .mgnav{margin:0}.multi.focus #mlogbtn[aria-pressed=true]{border-color:var(--acc2);background:#46301e}.multi.focus #mlogbtn[aria-pressed=false]{border-color:var(--line)}
+
+.mobile-quick{display:none}.multi.focus .mobile-quick{display:inline-flex;align-items:center}.multi.focus.nolog .mlog:has(.multi-moments[open]){display:contents}.multi.focus.nolog .mgame,.multi.focus.nolog .multi-event-details{display:none}.multi.focus.nolog .multi-moments:not([open]){display:none}
+@media(max-height:520px){.multi.focus:not(.nolog) .mlog{display:flex;position:absolute;z-index:20;right:6px;top:100px;bottom:96px;width:min(500px,70vw);padding:6px;background:#16120f;border:1px solid var(--line);border-radius:8px}.multi.focus .mbar .mskip [data-skip='-30'],.multi.focus .mbar .mskip [data-skip='30']{display:none}.multi.focus .mghead,.multi.focus .mg-caption{display:none}.multi.focus .multi-event-details>summary,.multi.focus .multi-moments>summary{min-height:28px;padding:5px}.multi.focus .mgpager button{min-height:30px;height:30px}}
+
+/* Reserve space before event data arrives: loading the timeline must not move the players. */
+.multi.focus>.mtl{height:104px;min-height:104px;max-height:104px;box-sizing:border-box}
+@media(max-height:520px){.multi.focus>.mtl{height:104px;min-height:104px;max-height:104px}}
+
+.multi.focus .mcell .mtop{display:flex;align-items:center;gap:4px}.multi.focus .mcell .mtop button{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mobile-play-state{flex:none;color:#ffd29b;font-size:11px;white-space:nowrap}.mobile-play-state[hidden]{display:none}
+
+/* Keep the real embed above Twitch's minimum when the viewport has room.
+   Smaller screens retain the compact view and native Play controls. */
+@media(min-width:412px) and (min-height:980px){.multi.focus.nolog[data-mobile-views='2'] .mcell.mobile-visible .mvid{height:300px!important;max-height:none;aspect-ratio:auto}}
+.playback-help{position:absolute;z-index:50;inset:56px 12px auto;max-height:calc(100dvh - 80px);overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;box-shadow:0 8px 30px #000b}.playback-help[hidden]{display:none}.playback-help p{font-size:13px;line-height:1.5}.playback-help pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;user-select:text}.playback-help button{min-height:44px}.playback-help #mhelp-close{float:right}
+
+/* Phone player geometry must fit before Twitch loads: never overlap the next
+   video or the timeline when the viewport is shorter than the content. */
+.multi.focus{padding:2px;gap:2px}
+.multi.focus .mbar{height:44px;min-height:44px;flex-wrap:nowrap;gap:3px}
+.multi.focus .mbar .mctl{display:contents}
+.multi.focus .mbar button{padding:4px 7px;white-space:nowrap}
+.multi.focus .mobile-views{font-size:0;gap:0;margin-left:auto}.multi.focus .mobile-views select{max-width:92px;font-size:12px}
+.multi.focus .mgrid,.multi.focus.nolog .mgrid{flex:1;min-height:0;align-content:stretch;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:repeat(var(--mobile-count,2),minmax(0,1fr))!important;gap:2px}
+.multi.focus .mcell.mobile-visible{min-height:0;overflow:hidden}
+.multi.focus .mcell .mtop{display:none!important}
+.multi.focus[data-mobile-views] .mcell.mobile-visible .mvid,.multi.focus.nolog[data-mobile-views] .mcell.mobile-visible .mvid{height:100%!important;max-height:none;min-height:0;max-width:none;aspect-ratio:auto;flex:1}
+.multi.focus[data-mobile-views='all'] .mgrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:repeat(var(--mobile-rows,2),minmax(0,1fr))!important}
+.multi.focus>.mtl{padding-top:0;height:60px;min-height:60px;max-height:60px}
+.multi.focus .mtl .etl.separate-lanes{height:58px;margin:0;box-sizing:border-box}
+.multi.focus .separate-lanes .et-clip{height:17px;min-height:17px}.multi.focus .separate-lanes .et-clip.clip{top:1px}.multi.focus .separate-lanes .et-clip.hot{top:20px}.multi.focus .separate-lanes .et-clip.rough{top:39px}.multi.focus .separate-lanes .et-timing{top:0;right:0}
+.mobile-options{position:absolute;z-index:40;top:48px;left:4px;right:4px;max-height:calc(100dvh - 56px);overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-wrap:wrap;gap:8px;box-shadow:0 8px 30px #000b}.mobile-options[hidden]{display:none}.mobile-options>.mobile-game-nav,.mobile-options>.angles{width:100%;order:0!important}.mobile-options .angles{display:flex!important;flex-wrap:wrap}.mobile-options button{min-height:44px}.mobile-options .mskip{display:flex;flex-wrap:wrap;gap:4px}.mobile-options #mlogbtn{display:inline-flex}.mobile-options #moptions-close{margin-left:auto}.multi.focus:not(.nolog) .mlog{position:absolute;z-index:25;inset:96px 4px 64px;width:auto;background:var(--panel);padding:8px;border:1px solid var(--line);border-radius:8px}
+@media(max-height:520px){.multi.focus[data-mobile-views='2'] .mgrid,.multi.focus.nolog[data-mobile-views='2'] .mgrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:minmax(0,1fr)!important}}
+.multi.focus .mcell.mobile-visible{height:100%!important;align-self:stretch;justify-content:stretch}.multi.focus[data-mobile-views] .mcell.mobile-visible .mvid{flex:1 1 0!important}
+/* Keep Twitch surfaces above the page layout. Only an explicitly opened menu
+   enters the browser top layer; no transparent full-screen box covers playback. */
+.mobile-player-surface{position:fixed;z-index:61;background:#000}
+.mobile-player-surface[hidden]{display:none}
+.mobile-player-surface iframe{display:block}
+body:has(>.mobile-player-surface)>.multi.focus .mgrid,body:has(>.mobile-player-surface)>.multi.focus .mgrid *{visibility:hidden!important;pointer-events:none!important}
+.mobile-player-panel:not(:popover-open){display:none!important}
+.multi.focus .mobile-player-panel:popover-open{position:fixed;margin:0;width:auto;height:auto;bottom:auto}
+.multi.focus .mlog.mobile-player-panel:popover-open{display:flex;inset:96px 4px 64px}
+
+/* ===== mobile density v2 (2026-10-09 review): data first, less chrome =====
+   Cards: 4 numbers per row, slim padding, "More" inline with the title (no floating box leaving a gap).
+   Game cards lead with K/D/A · KDA · Dmg/min · SC% (squad: every player's line, mobile.js marks .mobile-member). */
+@media(max-width:700px){
+  .mobile-cards>tbody{gap:8px}
+  .mobile-cards tr.mobile-card{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:8px 10px}
+  .mobile-cards tr.mobile-card>.mobile-identity{display:flex!important;align-items:center;flex-wrap:wrap;gap:4px 8px;min-height:0;line-height:1.3!important;padding:0 0 4px!important;font-size:14px}
+  .mobile-cards .mobile-identity>a{min-height:36px}
+  .mobile-cards .mobile-identity .mobile-expand{order:99;float:none;margin:0 0 0 auto;min-height:32px;padding:2px 10px;border:1px solid var(--line);border-radius:999px;font-size:12px;background:var(--panel)}
+  .mobile-cards tr.mobile-card>.mobile-field{padding:4px 6px!important;font-size:13px;line-height:1.3}
+  .mobile-cards .mobile-field:before{font-size:10px!important;text-transform:uppercase;letter-spacing:.04em;margin-bottom:1px;line-height:1.3}
+  .mobile-cards tr.mobile-card>.mobile-member{grid-column:span 2}
+  .mobile-cards tr.mobile-card>.mobile-member small{display:block;font-size:11px;color:var(--mute)}
+  .mobile-cards tr.mobile-card>.mobile-actions{gap:4px;padding:2px 0 0!important}
+  .mobile-actions a,.mobile-actions button{min-height:40px!important;padding:6px 10px!important;font-size:12px!important}
+  .mobile-cards .cellvod{min-height:0}
+  /* header: buttons on one row, chips smaller, short tab label */
+  .hub-actions{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:4px;max-width:100%}.hub-actions::-webkit-scrollbar{display:none}
+  .hub-actions .pill,.hub-actions .share,.hub-actions button{min-height:36px!important;padding:0 10px!important;font-size:12px!important;white-space:nowrap;flex:none}
+  .hub-id.squadid a.mem{min-height:34px;font-size:13px;padding:0 10px}.hub-id.squadid .memx{width:26px;height:34px}
+  .hub-id.squadid .addmem summary{min-height:34px;padding:0 10px}
+  .tl-long{display:none}
+  .hub-tabs a{font-size:12.5px;padding:6px 2px}
+  .mobile-sort{margin:8px 0 6px}.mobile-sort select{min-height:40px}
+}
+@media(max-width:700px){
+  .mobile-cards tr.mobile-card:not(:has(.mobile-member))>.mobile-actions{grid-column:span 2;align-self:center}
+  .mobile-cards tr.mobile-card>.mobile-member:before{text-transform:none!important;letter-spacing:0!important;font-size:11px!important;font-weight:700;color:var(--ink)}
+  .mobile-cards tr.mobile-card>.mobile-absent{display:none!important}
+  .hub-actions .pill .pk{display:none}
+}
+
+/* ===== phone Watch together, portrait (2026-10-09 review) =====
+   Videos at true 16:9 (no black padding), timeline right under them, stats/log inline below (scrolls) instead of a
+   pop-up covering the players. Landscape (max-height:520px) keeps the pop-up layout above. */
+@media (max-width:900px) and (min-height:521px){
+  .multi.focus .mgrid,.multi.focus.nolog .mgrid{flex:none!important;grid-template-rows:none!important;grid-auto-rows:auto!important;align-content:start}
+  .multi.focus.nolog .mgrid{flex:1 1 auto!important;align-content:center}
+  .multi.focus .mcell.mobile-visible{height:auto!important}
+  .multi.focus[data-mobile-views] .mcell.mobile-visible .mvid,.multi.focus.nolog[data-mobile-views] .mcell.mobile-visible .mvid{height:auto!important;aspect-ratio:16/9!important;flex:none!important}
+  .multi.focus>.mtl{order:2}
+  .multi.focus:not(.nolog) .mlog{display:flex!important;flex-direction:column;order:3;flex:1 1 0;min-height:0;overflow:auto;position:static;width:auto;margin:0;padding:0 2px 4px;background:none;border:0}
+  .multi.focus.nolog .mlog:not(:has(.multi-moments[open])){display:none!important}
+}
+@media (max-width:900px) and (min-height:521px){
+  /* portrait: always one column — a half-width (≈190px) Twitch embed refuses to play; full-width 16:9 (≈386×217) plays */
+  .multi.focus .mgrid,.multi.focus.nolog .mgrid,.multi.focus[data-mobile-views] .mgrid,.multi.focus.nolog[data-mobile-views] .mgrid{grid-template-columns:minmax(0,1fr)!important}
+  .multi.focus[data-mobile-views='all']:not(.nolog) .mlog{min-height:160px}
+}
+
+/* phone "Stream & clips" player (2026-10-09): edge-to-edge, true 16:9 (was squashed to ~340×138) */
+@media(max-width:700px){
+  #mediasec #player:not(:fullscreen){height:auto!important;min-height:0!important;display:block;margin:0 -12px;padding:6px 0 8px;border-radius:0;border-left:0;border-right:0;overflow:visible}
+  #mediasec #player:not(:fullscreen) .embed{width:100%!important;height:auto!important;aspect-ratio:16/9!important;max-height:none!important;min-height:0!important;flex:none!important;border-radius:0;border-left:0;border-right:0}
+  #mediasec #player .ph{padding:0 12px;margin-bottom:6px;min-height:36px;flex-wrap:nowrap}
+  #mediasec #player .ph h2{font-size:14px}#mediasec #player #playerlabel{font-size:11px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #mediasec #player .ph button{min-height:36px;padding:0 10px;font-size:12px}
+  #mediasec #player .elog.inplayer{margin:8px 12px 0;height:auto!important;max-height:none!important}
+  #mediasec #player .mobile-playback-note{padding:4px 12px 0}
+}
+
+/* ===== session totals on phones (2026-10-09, the owner): always shown, a swipeable table with the player column pinned ===== */
+@media(max-width:700px){
+  .gamelog table.nightper{font-size:12.5px;border-collapse:separate;border-spacing:0;width:max-content;min-width:100%}
+  .gamelog table.nightper th,.gamelog table.nightper td{padding:7px 9px;white-space:nowrap}
+  .gamelog table.nightper th{font-size:10px}
+  .gamelog table.nightper th:first-child,.gamelog table.nightper td:first-child{position:sticky;left:0;z-index:2;background:var(--panel2);box-shadow:4px 0 8px -4px rgba(0,0,0,.7);max-width:118px;overflow:hidden;text-overflow:ellipsis}
+  .gamelog .tablewrap:has(> table.nightper){overflow-x:auto!important;margin:0 0 10px;border:1px solid var(--line);border-radius:10px}
+  /* event log is the least important thing on a phone: keep only the seek bar under the video */
+  #player .elog.inplayer .elist,#player .elog.inplayer .elidle,#player .elog.inplayer .elf,#player .elog.inplayer .elh{display:none!important}
+  #player .elog.inplayer{padding:4px 8px!important}
+}
+@media(max-width:700px){
+  /* pinned name cell must be opaque (player tint is 13% alpha): solid base + the same tint layered on top */
+  .gamelog table.nightper td:first-child{background-image:linear-gradient(var(--pin-tint,transparent),var(--pin-tint,transparent))!important;background-color:#1b1714!important}
+  .gamelog table.nightper th:first-child{background-color:#1b1714!important}
+}
+@media(max-width:700px){#mediasec #player .elog.inplayer{min-height:0!important;height:auto!important}#mediasec #player .elog.inplayer .etl{margin:0}}
+@media(max-width:700px){.tr-chip,.tr-chip.ct-player-tag{min-height:30px!important;padding:0 9px!important;font-size:12px!important;box-shadow:none!important}.tr-head select{max-width:60vw}}
+@media(max-width:700px){.top{flex-wrap:wrap!important}.top .navsearch{flex:1 1 100%!important;order:3;margin:2px 0 6px!important}.top nav{margin-left:auto}}

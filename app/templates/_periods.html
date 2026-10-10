@@ -1,0 +1,14 @@
+{# Last 30 / 90 / 365 days (heatmapped). Solo: one table, a row per period. Squad: a table per period, players by score share. Needs periods (web._periods). #}
+<section class="panel periods" id="periods"><div class="ph"><h2>Last 30 · 90 days · All games</h2><span class="muted">{{ periods.note }}</span></div>
+{% if periods.solo %}
+<div class="tablewrap"><table class="heat"><thead><tr><th>Period</th>{% with head=True, more=True, with_win=True %}{% include "_agg_cols.html" %}{% endwith %}</tr></thead><tbody>
+{% for per in periods.tables %}{% if per.rows %}{% set a = per.rows[0][1] %}<tr><td class="name">{{ per.label }}{% if per.all %} <small class="muted">since {{ periods.since|dt('%b %-d') }}</small>{% endif %}{% if per.partial %} <small class="muted">since {{ periods.since|dt('%b %-d') }}</small>{% endif %}</td>{% with head=False, more=True, with_win=True %}{% include "_agg_cols.html" %}{% endwith %}</tr>
+{% else %}<tr><td class="name">{{ per.label }}</td><td colspan="16" class="muted">No games</td></tr>{% endif %}{% endfor %}
+</tbody></table></div>
+{% else %}
+{% for per in periods.tables %}<h3 class="perh">{{ per.label }}{% if per.all %} · since {{ periods.since|dt('%b %-d') }}{% endif %} <small class="muted">{{ per.games }} game{{ '' if per.games == 1 else 's' }} together{% if per.partial %} · loaded history starts {{ periods.since|dt('%b %-d') }}{% endif %}</small></h3>
+{% if per.rows %}<div class="tablewrap"><table class="heat"><thead><tr><th>Player</th>{% with head=True, more=True, with_win=True %}{% include "_agg_cols.html" %}{% endwith %}</tr></thead><tbody>
+{% for name, a in per.rows %}<tr><td class="name">{{ name }}</td>{% with head=False, more=True, with_win=True %}{% include "_agg_cols.html" %}{% endwith %}</tr>{% endfor %}
+</tbody></table></div>{% else %}<p class="muted">No games together in this window.</p>{% endif %}{% endfor %}
+{% endif %}
+</section>
