@@ -26,7 +26,7 @@
   {% endif %}
   <form method="post" action="/admin/xbox"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="action" value="remint"><button>Refresh tokens now</button></form>
   <h2>Alt accounts</h2>
-  <p class="muted">Link a second Xbox account to a player: its games fold into the main profile, the live panel and "Tonight". Rank stays the main account's.</p>
+  <p class="muted">Link a second Xbox account to a player: its games fold into the main profile, the live panel and "This stream". Rank stays the main account's.</p>
   <form method="post" action="/admin/alts" class="altform"><input type="hidden" name="csrf" value="{{ csrf_token() }}">
     <input name="main" required placeholder="Main gamertag or slug"> <input name="alt" required placeholder="Alt gamertag"> <button type="submit">Link alt</button></form>
   {% if alt_links %}<ul>{% for a in alt_links %}<li>{{ a.alt }} → <a href="/p/{{ a.main_slug }}">{{ a.main }}</a>

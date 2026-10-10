@@ -13,19 +13,19 @@
   <div class="oa-grid">{% for x in onair.per %}{% set a = x.a %}
     <div class="oa-card{{ ' none' if not x.games }}">{% if onair.per|length > 1 %}<b class="oa-name">{{ x.p.gamertag }}</b>{% endif %}
       {% if x.games %}
-      <div class="oa-rec"><span class="lab">Tonight</span><b>{{ a.wins }}-{{ a.losses }}</b><small>{{ x.games }} game{{ '' if x.games == 1 else 's' }}</small></div>
+      <div class="oa-rec"><span class="lab">This stream</span><b>{{ a.wins }}-{{ a.losses }}</b><small>{{ x.games }} game{{ '' if x.games == 1 else 's' }}</small></div>
       <div class="oa-nums"><span><b>{{ a.kda|kda }}</b>KDA</span><span><b>{{ a.dmg_pm if a.dmg_pm is not none else '—' }}</b>Dmg/min</span><span><b>{{ (a.sc_pct ~ '%') if a.sc_pct is not none else '—' }}</b>Score %</span>{% if x.csr is not none %}<span><b class="{{ 'pos' if x.csr > 0 else 'neg' if x.csr < 0 }}">{{ '{:+}'.format(x.csr) }}</b>CSR</span>{% endif %}</div>
       {% if x.milestones %}<div class="oa-miles">{% for kind, text in x.milestones %}<span class="oa-mile {{ kind }}">{{ '▲' if kind == 'up' else '▼' }} {{ text }}</span>{% endfor %}</div>{% endif %}
-      {% if x.strip %}<div class="oa-strip" role="img" aria-label="Tonight's games along the stream">
+      {% if x.strip %}<div class="oa-strip" role="img" aria-label="This stream's games">
         {% for g in x.strip %}{% set left = (g.t - onair.lo) / onair.span * 100 %}{% set w = [g.dur / onair.span * 100, 0.8]|max %}
         <a class="oa-g {{ g.outcome|lower }}" href="/match/{{ g.match_id }}?player={{ x.p.slug }}" style="left:{{ left|round(2) }}%;width:{{ w|round(2) }}%" title="{{ g.label }}{% if g.best %} · best: {{ g.best.label }}{% endif %}">{% if g.best and g.best.score >= 60 %}<i class="oa-star" style="left:{{ ((g.best.t / g.dur * 100) if g.dur else 50)|round(1) }}%"></i>{% endif %}</a>{% endfor %}
         <span class="oa-now" style="left:{{ ((onair.uptime - onair.lo) / onair.span * 100)|round(2) }}%" title="Now"></span>
         <span class="oa-axis l">{{ 'start' if onair.lo >= 0 else 'pre-stream' }}</span><span class="oa-axis r">now</span></div>{% endif %}
-      {% if x.lobby %}<div class="oa-lobby" title="Halo publishes lobby MMR after each game ends">Lobbies tonight: <b class="{{ 'pos' if x.lobby.edge > 25 else 'neg' if x.lobby.edge < -25 }}">{{ '{:+}'.format(x.lobby.edge) }} MMR</b> on average{% if x.lobby.fav %} · favoured <b>{{ x.lobby.fav }}</b>{% endif %}{% if x.lobby.even %} · even <b>{{ x.lobby.even }}</b>{% endif %}{% if x.lobby.dog %} · underdog <b>{{ x.lobby.dog }}</b>{% endif %}</div>{% endif %}
-      {% if x.best %}<div class="oa-best"><span class="lab">Best plays tonight</span>{% for m in x.best %}<a href="/match/{{ m.match_id }}?player={{ m.slug }}&at={{ (m.t_ms // 1000) }}#recap" title="{{ m.map }} · {{ m.mode }} · {{ m.outcome }}"><b>{{ m.score }}</b> {{ m.label }}</a>{% endfor %}</div>{% endif %}
+      {% if x.lobby %}<div class="oa-lobby" title="Halo publishes lobby MMR after each game ends">Lobbies this stream: <b class="{{ 'pos' if x.lobby.edge > 25 else 'neg' if x.lobby.edge < -25 }}">{{ '{:+}'.format(x.lobby.edge) }} MMR</b> on average{% if x.lobby.fav %} · favoured <b>{{ x.lobby.fav }}</b>{% endif %}{% if x.lobby.even %} · even <b>{{ x.lobby.even }}</b>{% endif %}{% if x.lobby.dog %} · underdog <b>{{ x.lobby.dog }}</b>{% endif %}</div>{% endif %}
+      {% if x.best %}<div class="oa-best"><span class="lab">Best plays this stream</span>{% for m in x.best %}<a href="/match/{{ m.match_id }}?player={{ m.slug }}&at={{ (m.t_ms // 1000) }}#recap" title="{{ m.map }} · {{ m.mode }} · {{ m.outcome }}"><b>{{ m.score }}</b> {{ m.label }}</a>{% endfor %}</div>{% endif %}
       {% set l = x.last %}<a class="oa-last" href="/match/{{ l.match_id }}?player={{ x.p.slug }}">Last: <b class="res {{ l.outcome|lower }}">{{ l.outcome }}</b> · {{ l.map or '?' }} · {{ l.mode or '' }} · {{ l.kills }}/{{ l.deaths }}/{{ l.assists }} · {{ x.ended_ago // 60 }}m ago →</a>
       {% else %}
-      <div class="oa-rec"><span class="lab">Tonight</span><b>0-0</b><small>waiting for the first game</small></div>
+      <div class="oa-rec"><span class="lab">This stream</span><b>0-0</b><small>waiting for the first game</small></div>
       <p class="muted oa-wait">Halo publishes each game when it ends; results land here within a couple of minutes.</p>
       {% endif %}</div>{% endfor %}</div>
   {# 2026-10-10: no "probably another account" box while there are no games yet — menus, warm-ups and settings are normal #}

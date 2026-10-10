@@ -34,7 +34,7 @@ class OnAir(unittest.TestCase):
         x=web._onair(self.g(),{'started':time.time()-60*60,'halo':True},'pro')['per'][0]
         self.assertEqual((x['lobby']['dog'],x['lobby']['fav'],x['lobby']['even']),('1-0','1-0','1-0'))
         texts=' | '.join(t for _,t in x['milestones'])
-        self.assertIn('+31 CSR tonight',texts);self.assertIn('Reached Onyx (1511)',texts);self.assertIn('3-game win streak',texts)
+        self.assertIn('+31 CSR this stream',texts);self.assertIn('Reached Onyx (1511)',texts);self.assertIn('3-game win streak',texts)
         self.assertIn('Most kills in a game on record: 31',texts)
         self.assertEqual(len(x['strip']),3);self.assertLess(x['strip'][0]['t'],x['strip'][-1]['t'])
     def test_alt_games_fold_into_tonight(self):

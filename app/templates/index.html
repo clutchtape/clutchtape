@@ -17,8 +17,8 @@
   <div class="ln-top"><b>{{ c.gamertag }}</b><span class="muted">{{ '{:,}'.format(c.viewers) if c.viewers is not none else '' }} watching · {{ (c.uptime // 3600 ~ 'h ') if c.uptime >= 3600 }}{{ c.uptime % 3600 // 60 }}m</span></div>
   <div class="ln-title">{{ c.title or c.channel }}</div>
   {% if not c.halo %}<div class="muted ln-sub">Now: {{ c.game or 'something else' }}{% if c.halo_s %} · Halo earlier ({{ (c.halo_s // 3600 ~ 'h ') if c.halo_s >= 3600 }}{{ c.halo_s % 3600 // 60 }}m){% if c.games %} · {{ c.a.wins }}-{{ c.a.losses }}{% endif %}{% endif %}</div>
-  {% elif c.games %}<div class="ln-rec"><b>{{ c.a.wins }}-{{ c.a.losses }}</b> tonight · {{ c.a.kda|kda }} KDA{% if c.a.csr_net is not none %} · <span class="{{ 'pos' if c.a.csr_net > 0 else 'neg' if c.a.csr_net < 0 }}">{{ '{:+}'.format(c.a.csr_net) }} CSR</span>{% endif %}</div><div class="oa-pips">{% for o in c.pips %}<i class="pip sm {{ o }}"></i>{% endfor %}</div>
-  {% else %}<div class="muted ln-sub">{{ 'No games on this account yet tonight' if c.quiet else 'Waiting for the first game' }}</div>{% endif %}
+  {% elif c.games %}<div class="ln-rec"><b>{{ c.a.wins }}-{{ c.a.losses }}</b> this stream · {{ c.a.kda|kda }} KDA{% if c.a.csr_net is not none %} · <span class="{{ 'pos' if c.a.csr_net > 0 else 'neg' if c.a.csr_net < 0 }}">{{ '{:+}'.format(c.a.csr_net) }} CSR</span>{% endif %}</div><div class="oa-pips">{% for o in c.pips %}<i class="pip sm {{ o }}"></i>{% endfor %}</div>
+  {% else %}<div class="muted ln-sub">{{ 'No games on this account yet this stream' if c.quiet else 'Waiting for the first game' }}</div>{% endif %}
 </a>{% endfor %}</div></section>{% endif %}
 <section class="panel saved-profiles" id="saved-profiles" aria-labelledby="saved-title" hidden><h2 id="saved-title">Saved</h2><p class="muted">On this device.</p><div id="saved-list"></div><p id="saved-status" role="status"></p></section>
 <div class="herowrap"><section class="hero">

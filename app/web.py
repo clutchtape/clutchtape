@@ -1093,7 +1093,7 @@ def _tonight(main, ids, since, stream_start):
     # milestones: only true, specific statements
     ms = x["milestones"]
     if x["csr"] is not None and abs(x["csr"]) >= 20:
-        ms.append(("up" if x["csr"] > 0 else "down", f"{x['csr']:+} CSR tonight"))
+        ms.append(("up" if x["csr"] > 0 else "down", f"{x['csr']:+} CSR this stream"))
     ranked = [r for r in reversed(rows) if r.get("pre_csr") and r.get("post_csr")]
     if ranked and _tier(ranked[0]["pre_csr"]) != _tier(ranked[-1]["post_csr"]):
         up = ranked[-1]["post_csr"] > ranked[0]["pre_csr"]
