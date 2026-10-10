@@ -67,3 +67,23 @@ class BreakdownTests(unittest.TestCase):
         self.assertEqual({m['name'] for m in b['modes']},{'Slayer','Oddball'})
         self.assertEqual(b['medals'][0],('Perfect',3))
         self.assertEqual(web._breakdown(sess,sess)['base_games'],0)   # too few earlier games: no comparison
+
+
+class RawViewTests(unittest.TestCase):
+    def test_every_stat_objectives_and_medals_with_totals(self):
+        import raw_view
+        from test_companion import row
+        a=row('a',2000,mode='Oddball',medals='{"Perfect": 1, "Boxer": 2}',advanced='{"melee_kills": 3, "team_mmr": 1500, "enemy_mmr": 1480}',
+              objectives='{"time_as_skull_carrier": {"label": "Ball time", "value": 50.5, "unit": "s"}, "pvp_stats:kills": {"label": "Kills", "value": 10}}')
+        b=row('b',1000,win=False,medals='{"Boxer": 1}',advanced='{"melee_kills": 1}')
+        r=raw_view.build([a,b])
+        keys=[c['key'] for c in r['cols']]
+        self.assertIn('obj:time_as_skull_carrier',keys);self.assertNotIn('obj:pvp_stats:kills',keys)   # duplicate of K/D/A
+        self.assertEqual(keys[-2:],['medal:Boxer','medal:Perfect'])                                       # most frequent first
+        col=lambda k:keys.index(k)
+        self.assertEqual([x['match_id'] for x in r['rows']],['b','a'])                                    # oldest first
+        self.assertEqual(r['rows'][1]['cells'][col('obj:time_as_skull_carrier')],50.5);self.assertIsNone(r['rows'][0]['cells'][col('obj:time_as_skull_carrier')])
+        self.assertEqual(r['total'][col('melee_kills')],4);self.assertEqual(r['total'][col('kills')],20)
+        self.assertEqual(r['total'][col('medal:Boxer')],3);self.assertEqual(r['total'][col('medals_all')],4)
+        self.assertEqual(r['rows'][1]['cells'][col('mmr_edge')],None if a.get('mmr_edge') is None else a['mmr_edge'])
+        self.assertIsNone(raw_view.build([]))

@@ -15,6 +15,7 @@ from flask import Response, g, Flask, abort, jsonify, redirect, render_template,
 
 from werkzeug.exceptions import HTTPException
 import analytics
+import raw_view
 import capacity
 import privacy
 
@@ -1169,7 +1170,7 @@ def profile(slug):
     comparison = session_review.comparison(data['sessions'], data['s_idx'], 'recent' if request.args.get('compare') == 'recent' else 'previous')
     tab = _tab()
     extra = _hub_board(p["slug"]) if tab == "analysis" else {}
-    return render_template("profile.html", session_picks=session_watch.for_sessions(data["sessions"], [p["id"] for p in [p] + alts], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(s["matches"] if s else [], [p["id"]] + [a["id"] for a in alts]) if tab == "latest" else {}, tab=tab, onair=onair, alts=alts, kpis=_kpis(s["matches"]) if s else [], adv=_adv_kpis({p["gamertag"]: s["matches"]}) if s else [], sess_agg=analytics._agg(s["matches"]) if s else None, brk=_breakdown(s["matches"], data["rows"]) if s and tab == "latest" else None, periods=_periods({p["gamertag"]: data["rows"]}, solo=True) if tab == "records" else None, **extra, comparison=comparison, recap_matches=session_review.recap_matches(s['matches'] if s else []), recap_names=[p['gamertag']], pcfg=pcfg, vm=vm, og=og, p=p, d=data, clips=clips, vods=vods, tw=tw, psrc=psrc, plabel=plabel,
+    return render_template("profile.html", session_picks=session_watch.for_sessions(data["sessions"], [p["id"] for p in [p] + alts], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(s["matches"] if s else [], [p["id"]] + [a["id"] for a in alts]) if tab == "latest" else {}, tab=tab, onair=onair, alts=alts, kpis=_kpis(s["matches"]) if s else [], adv=_adv_kpis({p["gamertag"]: s["matches"]}) if s else [], sess_agg=analytics._agg(s["matches"]) if s else None, brk=_breakdown(s["matches"], data["rows"]) if s and tab == "latest" else None, raw=raw_view.build(s["matches"]) if s and tab == "latest" else None, periods=_periods({p["gamertag"]: data["rows"]}, solo=True) if tab == "records" else None, **extra, comparison=comparison, recap_matches=session_review.recap_matches(s['matches'] if s else []), recap_names=[p['gamertag']], pcfg=pcfg, vm=vm, og=og, p=p, d=data, clips=clips, vods=vods, tw=tw, psrc=psrc, plabel=plabel,
                            host=request.host.split(":")[0])
 
 

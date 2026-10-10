@@ -102,7 +102,7 @@
     var th = document.createElement('th'); th.className = 'colnav'; th.setAttribute('data-pin', '');
     th.innerHTML = '<button type="button" data-pg="-1" aria-label="Previous columns"' + (pg ? '' : ' disabled') + '>‹</button><span>' + (pg + 1) + '/' + pages.length + '</span><button type="button" data-pg="1" aria-label="More columns"' + (pg < pages.length - 1 ? '' : ' disabled') + '>›</button>';
     head.appendChild(th);
-    rows.forEach(function (r) { if (r.parentNode.tagName === 'TBODY' && r.cells.length === n) { var td = document.createElement('td'); td.className = 'colnav'; r.appendChild(td); } });
+    rows.forEach(function (r) { if (r !== head && r.cells.length === n) { var td = document.createElement('td'); td.className = 'colnav'; r.appendChild(td); } });
   }
   var PAGED = '.tablewrap > table, table.heat';
   function swipe(wrap) {
@@ -138,4 +138,17 @@
   window.ctHeat = function (root) { [].forEach.call((root || document).querySelectorAll('table.heat'), function (t) { heat(t); page(t); }); };
   function init() { foldInit(); window.ctHeat(); window.ctPage(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+/* Summary / Raw data switch on the player page (2026-10-10): <html class="rawview">, remembered per device; the class is
+   set early by an inline script in base.html so the page doesn't flash the other view */
+(function () {
+  function sync() { var raw = document.documentElement.classList.contains('rawview');
+    [].forEach.call(document.querySelectorAll('[data-view]'), function (b) { b.setAttribute('aria-pressed', String((b.dataset.view === 'raw') === raw)); }); }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-view]'); if (!b) return;
+    var raw = b.dataset.view === 'raw'; document.documentElement.classList.toggle('rawview', raw);
+    try { localStorage.setItem('ct-view', raw ? 'raw' : 'summary'); } catch (x) {}
+    sync(); if (window.ctPage) window.ctPage();
+  });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', sync); else sync();
 })();

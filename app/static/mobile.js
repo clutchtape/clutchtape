@@ -7,7 +7,7 @@
     if (table.classList.contains('mobile-cards') || table.closest('#multi') || !table.tHead) return;
     /* 2026-10-09 : session totals are the most important numbers on a phone. They stay a real table, always
        shown, swiped sideways with the player column pinned (style: mobile.css "session totals"), never cards. */
-    if (table.classList.contains('nightper')) return;
+    if (table.classList.contains('nightper') || table.classList.contains('rawtable')) return;   /* raw data stays a real table */
     const heads = Array.from(table.tHead.rows[0].cells).filter(h => !h.classList.contains('colnav'));
     if ((heads.length < 6 && !table.closest('.chart-table') && !table.classList.contains('metric-table')) || heads.some(h => h.colSpan > 1)) return;
     const labels = heads.map(h => h.textContent.trim()), game = labels[0] === '#', session = !!table.closest('.hub-sessions'), analysis = table.classList.contains('stat-grid');
