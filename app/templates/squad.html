@@ -6,7 +6,7 @@
 {% set hub_meta %}{% for p in ps %}{% set rest = ps|rejectattr('slug', 'equalto', p.slug)|map(attribute='slug')|list %}<span class="memchip"><a class="mem" href="/p/{{ p.slug }}">{{ p.gamertag }}</a><a class="memx" href="{{ ('/squad/' ~ rest|join(',')) if rest|length > 1 else ('/p/' ~ rest[0]) }}" title="Remove {{ p.gamertag }} from this squad" aria-label="Remove {{ p.gamertag }}">×</a></span>{% endfor %}{% if ps|length < 6 %}<details class="addmem"><summary>+ Add player</summary><form method="post" action="/add"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="squad" value="{{ ps|map(attribute='slug')|join(',') }}"><input name="gamertag" maxlength="15" required placeholder="Gamertag" aria-label="Gamertag to add" autocomplete="off"><input type="hidden" name="twitch" value=""><button type="submit">Add</button></form></details>{% endif %}{% set tw_rows = [] %}{% for p in ps %}{% set _ = tw_rows.append((p.slug, p.gamertag, chans.get(p.slug, ''))) %}{% endfor %}{% include "_tw_form.html" %}{% if d.games %}<span class="dot">·</span>{{ d.games }} games together{% endif %}{% endset %}
 {% set hub_badges %}{% endset %}{% set hub_squad = True %}
 {% include "_hub_head.html" %}
-{% include "_onair.html" %}
+{% if not (onair and tw) %}{% include "_onair.html" %}{% endif %}{# live with video: the panel sits beside the player (colside) #}
 {% set pending = ps|rejectattr('sync_state','in',['ready','error','private'])|list %}
 {% if pending %}
 <div class="sync" id="sync" role="status" data-slugs="{{ pending|map(attribute='slug')|join(',') }}">
@@ -52,7 +52,7 @@
 {% if d.together %}
 {% if d.night %}
 <section class="panel latest gamelog statfold" id="latest">
-  <div class="ph"><h2>Game log</h2><span class="muted">{{ 'Latest night together' if d.s_idx == 0 else 'Night together' }} · {{ d.night_start|dt('%a %b %-d') }}{% if d.nights|length > 1 %} · <a href="{{ tab_url('sessions') }}">All sessions →</a>{% endif %}</span>{% with nav_list = d.nights, nav_sel = d.s_idx %}{% include "_sess_nav.html" %}{% endwith %}<button type="button" class="allstats-btn" data-allstats aria-pressed="false"><span class="as-off">All stats</span><span class="as-on">Key stats</span></button>{% include "_stat_help.html" %}</div>
+  <div class="ph"><h2>Game log</h2><span class="muted">{{ ('Playing together now' if sess_current else 'Last session together') if d.s_idx == 0 else 'Session together' }} · {{ d.night_start|dt('%a %b %-d') }}{% if d.nights|length > 1 %} · <a href="{{ tab_url('sessions') }}">All sessions →</a>{% endif %}</span>{% with nav_list = d.nights, nav_sel = d.s_idx %}{% include "_sess_nav.html" %}{% endwith %}<button type="button" class="allstats-btn" data-allstats aria-pressed="false"><span class="as-off">All stats</span><span class="as-on">Key stats</span></button>{% include "_stat_help.html" %}</div>
   {# player columns ordered by that night's score share, best first #}
   {% set mrows = [] %}{% for m in d.members %}{% set a0 = (d.night_per or {}).get(m.pid) %}{% set _ = mrows.append({'m': m, 'sc': a0.sc_pct if a0 and a0.sc_pct is not none else -1}) %}{% endfor %}
   {% set memo = mrows|sort(attribute='sc', reverse=True)|map(attribute='m')|list %}
@@ -75,7 +75,7 @@
 {% set media_block %}
 <div class="cols {{ 'stats-layout' if not tw else 'video-layout' }}"><div class="colmain">
 {% if tw %}
-<section class="panel player" id="player">
+<section class="panel player{{ ' is-live' if onair }}" id="player">
   <div class="ph"><h2>Twitch</h2><button type="button" class="secondary" data-fullscreen="#player">Full screen</button><span class="muted" id="playerlabel">{{ plabel }}</span></div>
   <div class="embed"><div id="tplayer"></div></div>
   <div class="elog inplayer" id="elog"></div>
@@ -103,13 +103,13 @@
 </section>
 {% endif %}
 {% if not d.together and not pending %}<div class="alert">No games found where these players were on the same team yet.</div>{% endif %}
-</div><aside class="colside">
+</div><aside class="colside">{% if onair and tw %}{% include "_onair.html" %}{% endif %}{% include "_chat.html" %}
 {% set d2 = {'moments': d.moments, 'clips_pending': d.clips_pending, 'squad': true} %}
 {% with d = d2 %}{% include "_moments.html" %}{% endwith %}
 </aside></div>
 {% endset %}
 {# stream & clips fold above the data (2026-10-08): collapsed by default, expands in place; static/mediatoggle.js #}
-{% if tw or d.moments or d.teamwork.good or d.teamwork.bad %}<details class="mediasec{{ ' live' if onair }}" id="mediasec"><summary class="mediabar"><span class="caret" aria-hidden="true">▶</span>
+{% if tw or d.moments or d.teamwork.good or d.teamwork.bad %}<details class="mediasec{{ ' live' if onair }}" id="mediasec"{{ ' open' if onair }}><summary class="mediabar"><span class="caret" aria-hidden="true">▶</span>
   {% if onair %}<span class="oa-live"><i></i>LIVE</span> <b>Watch the stream</b>{% elif tw %}<b>Stream &amp; clips</b>{% else %}<b>Team plays</b>{% endif %}
   <span class="muted">{% set nclip = (d.moments|length if d.moments else 0) %}{% if tw %}{{ 'live now' if onair else 'latest broadcast' }} · {% endif %}{{ nclip }} clip{{ '' if nclip == 1 else 's' }}</span></summary>
 {{ media_block }}</details>{% endif %}
@@ -117,7 +117,7 @@
 {% else %}
 <div class="cols {{ 'stats-layout' if not tw else 'video-layout' }}"><div class="colmain">
 {% if tw %}
-<section class="panel player" id="player">
+<section class="panel player{{ ' is-live' if onair }}" id="player">
   <div class="ph"><h2>Twitch</h2><button type="button" class="secondary" data-fullscreen="#player">Full screen</button><span class="muted" id="playerlabel">{{ plabel }}</span></div>
   <div class="embed"><div id="tplayer"></div></div>
   <div class="elog inplayer" id="elog"></div>
@@ -145,7 +145,7 @@
 </section>
 {% endif %}
 {% if not d.together and not pending %}<div class="alert">No games found where these players were on the same team yet.</div>{% endif %}
-</div><aside class="colside">
+</div><aside class="colside">{% if onair and tw %}{% include "_onair.html" %}{% endif %}{% include "_chat.html" %}
 {% set d2 = {'moments': d.moments, 'clips_pending': d.clips_pending, 'squad': true} %}
 {% with d = d2 %}{% include "_moments.html" %}{% endwith %}
 </aside></div>

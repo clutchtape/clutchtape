@@ -202,3 +202,35 @@ document.addEventListener('toggle', function (e) {
     var d = e.target; if (d.classList && d.classList.contains('twpop') && d.open) { var i = d.querySelector('input[name=twitch]'); if (i && window.matchMedia('(min-width:701px)').matches) i.focus(); }
   }, true);
 })();
+
+/* live chat: fills the player's height beside it (two-column layout only) */
+(function () {
+  var chat = document.getElementById('twchat'), player = document.getElementById('player'); if (!chat || !player) return;
+  /* live: the stats panel (#onair) sits above the chat in the same column, so chat takes what's left of the player's height */
+  function fit() { var oa = chat.parentElement.querySelector('#onair'), above = oa ? oa.offsetHeight + 16 : 0;
+    if (window.innerWidth > 900 && player.offsetHeight > 300) chat.style.setProperty('--chat-h', Math.max(360, player.offsetHeight - above) + 'px'); else chat.style.removeProperty('--chat-h'); }
+  if (window.ResizeObserver) { var ro = new ResizeObserver(fit); ro.observe(player); var oa0 = chat.parentElement.querySelector('#onair'); if (oa0) ro.observe(oa0); } window.addEventListener('resize', fit); fit();
+})();
+
+/* live on a phone: the stats panel goes right under the video instead of at the end of the side column */
+(function () {
+  var oa = document.querySelector('.colside #onair'), player = document.getElementById('player'); if (!oa || !player) return;
+  var home = oa.parentElement, mark = document.createComment('onair');
+  home.insertBefore(mark, oa);
+  var narrow = window.matchMedia('(max-width:900px)');
+  function place() { var cur = document.getElementById('onair'); if (!cur) return;
+    if (narrow.matches) { if (cur.previousElementSibling !== player) player.after(cur); }
+    else if (cur.parentElement !== home) mark.after(cur); }
+  if (narrow.addEventListener) narrow.addEventListener('change', place); place();
+  /* live.js swaps #onair in place on new games; keep it where it belongs */
+  new MutationObserver(function () { if (narrow.matches) place(); }).observe(player.parentElement, { childList: true });
+})();
+
+/* live: the side column holds the live stats + chat, so clips move to a scrollable row under the video */
+(function () {
+  var player = document.querySelector('#player.is-live'); if (!player) return;
+  var secs = document.querySelectorAll('.colside .clipsec, .colside .twclips'); if (!secs.length) return;
+  var row = document.createElement('div'); row.className = 'liveclips';
+  [].forEach.call(secs, function (s) { row.appendChild(s); });
+  player.after(row);
+})();

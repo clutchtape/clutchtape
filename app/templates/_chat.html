@@ -1,0 +1,6 @@
+{# Live Twitch chat (2026-10-10): next to the player while the channel is live. Needs onair (web._onair).
+   Height follows the player (heat.js chatFit); www.twitch.tv is allowed in the CSP frame-src. #}
+{% if onair and onair.channel %}<section class="panel twchat" id="twchat">
+  <div class="ph"><h2><span class="oa-live"><i></i>LIVE</span> Chat</h2><span class="muted">{{ onair.channel }}</span><a class="vod" href="https://www.twitch.tv/popout/{{ onair.channel }}/chat?popout=" target="_blank" rel="noopener">Pop out ↗</a></div>
+  <iframe class="twchat-frame" title="Twitch chat for {{ onair.channel }}" src="https://www.twitch.tv/embed/{{ onair.channel }}/chat?parent={{ request.host.split(':')[0] }}&darkpopout" loading="lazy"></iframe>
+</section>{% endif %}

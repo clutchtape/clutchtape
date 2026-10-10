@@ -245,7 +245,7 @@ def headers(resp):
         test_host = False
     if test_host:
         resp.headers["X-Robots-Tag"] = "noindex, nofollow"        # the owner's test host never enters search results
-    resp.headers["Content-Security-Policy"] = ("default-src 'self'; script-src 'nonce-" + getattr(g,"csp_nonce",secrets.token_urlsafe(24)) + "' 'strict-dynamic'; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.ttvnw.net https://*.jtvnw.net; font-src 'self'; connect-src 'self'; worker-src 'self'; frame-src https://player.twitch.tv https://clips.twitch.tv; media-src 'self' blob:; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'")
+    resp.headers["Content-Security-Policy"] = ("default-src 'self'; script-src 'nonce-" + getattr(g,"csp_nonce",secrets.token_urlsafe(24)) + "' 'strict-dynamic'; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.ttvnw.net https://*.jtvnw.net; font-src 'self'; connect-src 'self'; worker-src 'self'; frame-src https://player.twitch.tv https://clips.twitch.tv https://www.twitch.tv; media-src 'self' blob:; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'")
     if request.is_secure: resp.headers["Strict-Transport-Security"]="max-age=31536000"
     resp.headers.setdefault("X-Content-Type-Options", "nosniff")
     resp.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
@@ -649,7 +649,7 @@ def squad(slugs, short=False, code=None, game=None):
         if st:
             onair = _onair([(m, [m["id"]] + [a["id"] for a in _alts(m["id"])]) for m in ps], st, chans.get(slug))
             break
-    return render_template("squad.html", pt=_squad_table(night, ps) if tab == "latest" else None, raw=raw_view.build(night, squad=[(p["id"], p["gamertag"]) for p in ps]) if tab == "latest" else None, session_picks=session_watch.for_sessions(data["nights"], [p["id"] for p in ps], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(night, [p["id"] for p in ps]) if tab == "latest" else {}, tab=tab, kpis=kp, adv=adv, periods=periods, pidgt=gt, onair=onair, **extra, comparison=comparison, recap_matches=session_review.recap_matches(data.get('night') or []), recap_names=[p['gamertag'] for p in ps], gtmap={p["slug"]: p["gamertag"] for p in ps}, pcfg=pcfg, vm=vm, og=og, share_url=share_url, d=data, ps=ps, chans=chans, tw=first, psrc=psrc, plabel=plabel, host=request.host.split(":")[0],
+    return render_template("squad.html", sess_current=bool(night) and data.get("s_idx") == 0 and _is_current(night), pt=_squad_table(night, ps) if tab == "latest" else None, raw=raw_view.build(night, squad=[(p["id"], p["gamertag"]) for p in ps]) if tab == "latest" else None, session_picks=session_watch.for_sessions(data["nights"], [p["id"] for p in ps], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(night, [p["id"] for p in ps]) if tab == "latest" else {}, tab=tab, kpis=kp, adv=adv, periods=periods, pidgt=gt, onair=onair, **extra, comparison=comparison, recap_matches=session_review.recap_matches(data.get('night') or []), recap_names=[p['gamertag'] for p in ps], gtmap={p["slug"]: p["gamertag"] for p in ps}, pcfg=pcfg, vm=vm, og=og, share_url=share_url, d=data, ps=ps, chans=chans, tw=first, psrc=psrc, plabel=plabel, host=request.host.split(":")[0],
                            slugs=",".join(names), vods=vods, sq_base=("/sq/" + code) if code else None, open_game=game)
 
 
@@ -903,14 +903,23 @@ def _kpis(matches, per=None):
 BASE_DAYS = 90
 
 
-def _solo_table(matches, rows):
+def _is_current(matches):
+    """Is this (newest-first) session still going? Only if its last game ended less than the session gap ago:
+    a game after that starts a new session, so going live after a day off doesn't make yesterday "this session"."""
+    if not matches:
+        return False
+    last = matches[0]
+    return time.time() - (last["started_at"] + (last.get("duration_s") or 0)) < analytics.SESSION_GAP_S
+
+
+def _solo_table(matches, rows, label="This session"):
     """Player stats table on a player page: this session vs the usual (the 90 days around it, session left out)."""
     if not matches:
         return None
     ids = {m["match_id"] for m in matches}
     cutoff = min(m["started_at"] for m in matches) - BASE_DAYS * 86400
     base = [r for r in rows if r["match_id"] not in ids and r["started_at"] >= cutoff]
-    return player_table.build([("This session", matches, None),
+    return player_table.build([(label, matches, None),
                                ("Usual", base if len(base) >= 5 else [], f"{len(base)} games in the 90 days before")])
 
 
@@ -1214,7 +1223,7 @@ def profile(slug):
     comparison = session_review.comparison(data['sessions'], data['s_idx'], 'recent' if request.args.get('compare') == 'recent' else 'previous')
     tab = _tab()
     extra = _hub_board(p["slug"]) if tab == "analysis" else {}
-    return render_template("profile.html", session_picks=session_watch.for_sessions(data["sessions"], [p["id"] for p in [p] + alts], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(s["matches"] if s else [], [p["id"]] + [a["id"] for a in alts]) if tab == "latest" else {}, tab=tab, onair=onair, alts=alts, kpis=_kpis(s["matches"]) if s else [], adv=_adv_kpis({p["gamertag"]: s["matches"]}) if s else [], sess_agg=analytics._agg(s["matches"]) if s else None, brk=_breakdown(s["matches"], data["rows"]) if s and tab == "latest" else None, pt=_solo_table(s["matches"], data["rows"]) if s and tab == "latest" else None, raw=raw_view.build(s["matches"]) if s and tab == "latest" else None, periods=_periods({p["gamertag"]: data["rows"]}, solo=True) if tab == "records" else None, **extra, comparison=comparison, recap_matches=session_review.recap_matches(s['matches'] if s else []), recap_names=[p['gamertag']], pcfg=pcfg, vm=vm, og=og, p=p, d=data, clips=clips, vods=vods, tw=tw, psrc=psrc, plabel=plabel,
+    return render_template("profile.html", session_picks=session_watch.for_sessions(data["sessions"], [p["id"] for p in [p] + alts], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(s["matches"] if s else [], [p["id"]] + [a["id"] for a in alts]) if tab == "latest" else {}, tab=tab, onair=onair, alts=alts, kpis=_kpis(s["matches"]) if s else [], adv=_adv_kpis({p["gamertag"]: s["matches"]}) if s else [], sess_agg=analytics._agg(s["matches"]) if s else None, brk=_breakdown(s["matches"], data["rows"]) if s and tab == "latest" else None, pt=_solo_table(s["matches"], data["rows"], "This session" if data["s_idx"] == 0 and _is_current(s["matches"]) else fmt_dt(s["start"], "%a %b %-d")) if s and tab == "latest" else None, sess_current=bool(s) and data["s_idx"] == 0 and _is_current(s["matches"]), raw=raw_view.build(s["matches"]) if s and tab == "latest" else None, periods=_periods({p["gamertag"]: data["rows"]}, solo=True) if tab == "records" else None, **extra, comparison=comparison, recap_matches=session_review.recap_matches(s['matches'] if s else []), recap_names=[p['gamertag']], pcfg=pcfg, vm=vm, og=og, p=p, d=data, clips=clips, vods=vods, tw=tw, psrc=psrc, plabel=plabel,
                            host=request.host.split(":")[0])
 
 

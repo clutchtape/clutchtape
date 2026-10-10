@@ -1096,3 +1096,23 @@ a.sessbtn:hover{border-color:var(--acc2);color:var(--acc2)}.sessbtn.off{opacity:
 .twsave{background:#9146ff;border:1px solid #9146ff;color:#fff}.twsave:hover{background:#a970ff}
 @media(max-width:700px){.twpop{display:block;margin:6px 0 0}.twbtn{min-height:38px}
  .twcard{position:static;width:auto;margin-top:8px}.twfield input{min-height:44px;font-size:16px}.twacts button{min-height:42px}}
+/* live chat next to the player (_chat.html) */
+.twchat{display:flex;flex-direction:column;height:var(--chat-h,560px);min-height:360px;box-sizing:border-box}
+.twchat .ph{flex:0 0 auto;gap:8px}.twchat .ph h2{display:inline-flex;align-items:center;gap:8px}.twchat .ph .vod{margin-left:auto}
+.twchat-frame{flex:1 1 auto;min-height:0;width:100%;border:0;border-radius:10px;background:#0e0e10}
+@media(max-width:900px){.twchat{height:460px}}
+/* live: the stats panel beside the player (colside) */
+.colside .onair{margin:0 0 16px}.colside .oa-grid{grid-template-columns:minmax(0,1fr)}
+.colside .oa-top{flex-wrap:wrap;row-gap:4px}.colside .oa-title{flex-basis:100%;order:3;font-size:13px}
+/* live: no event log under the video, the video gets the room */
+#player.is-live .elog,#player.is-live #elog{display:none!important}
+/* live layout order on phones (.cols children are display:contents there): video, live stats, chat, clips */
+@media(max-width:900px){.cols #onair{order:2}.cols #twchat{order:3}.cols .liveclips{order:4}}
+/* live: clips as rows under the video (heat.js moves them out of the side column) */
+.liveclips{display:grid;gap:12px;margin-top:16px;min-width:0}
+.liveclips .panel{margin:0;min-width:0}
+.liveclips .moments{flex-direction:row;overflow-x:auto;gap:8px;padding-bottom:6px;scrollbar-width:thin;scroll-snap-type:x proximity}
+.liveclips .moments .mo{flex:0 0 300px;display:flex!important;scroll-snap-align:start}
+.liveclips .clipgrid{display:grid;grid-auto-flow:column;grid-auto-columns:220px;grid-template-columns:none;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
+.liveclips .clipmore{display:none}
+@media(max-width:700px){.liveclips .moments .mo{flex-basis:78%}.liveclips .clipgrid{grid-auto-columns:62%}}

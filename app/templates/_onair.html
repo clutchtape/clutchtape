@@ -28,8 +28,6 @@
       <div class="oa-rec"><span class="lab">Tonight</span><b>0-0</b><small>waiting for the first game</small></div>
       <p class="muted oa-wait">Halo publishes each game when it ends; results land here within a couple of minutes.</p>
       {% endif %}</div>{% endfor %}</div>
-  {% if onair.quiet %}<div class="oa-alt"><b>{{ onair.halo_s // 60 }} minutes of Halo on stream, but no finished games on {{ onair.per|map(attribute='p.gamertag')|join(' or ') }}.</b>
-    Probably playing on another account (or one long custom game). Know the gamertag? Add it and it opens with this stream attached:
-    <form method="post" action="/add"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input name="gamertag" maxlength="15" required placeholder="Other gamertag" aria-label="Other gamertag"><input type="hidden" name="twitch" value="{{ onair.channel }}"><button type="submit">Open</button></form></div>{% endif %}
+  {# 2026-10-10: no "probably another account" box while there are no games yet — menus, warm-ups and settings are normal #}
 </section>
 {% endif %}
