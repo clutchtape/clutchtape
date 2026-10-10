@@ -36,8 +36,9 @@
       {% if x.best %}<div class="oa-best"><span class="lab">Best plays this stream</span>{% for m in x.best %}<a href="/match/{{ m.match_id }}?player={{ m.slug }}&at={{ (m.t_ms // 1000) }}#recap" title="{{ m.map }} · {{ m.mode }} · {{ m.outcome }}"><b>{{ m.score }}</b> {{ m.label }}</a>{% endfor %}</div>{% endif %}
       {% set l = x.last %}<a class="oa-last" href="/match/{{ l.match_id }}?player={{ x.p.slug }}">Last: <b class="res {{ l.outcome|lower }}">{{ l.outcome }}</b> · {{ l.map or '?' }} · {{ l.mode or '' }} · {{ l.kills }}/{{ l.deaths }}/{{ l.assists }} · {{ x.ended_ago // 60 }}m ago →</a>
       {% else %}
-      <div class="oa-rec"><span class="lab">This stream</span><b>0-0</b><small>waiting for the first game</small></div>
-      <p class="muted oa-wait">Halo publishes each game when it ends; results land here within a couple of minutes.</p>
+      <div class="oa-rec"><span class="lab">This stream</span><b>0-0</b><small>{{ 'no matchmade games yet' if x.customs_hidden else 'waiting for the first game' }}</small></div>
+      {% if x.customs_hidden %}<p class="muted oa-wait oa-cust"><b>In custom games?</b> {{ x.p.gamertag }}'s customs (scrims) aren't shared by Halo, so only matchmade games show up here.</p>
+      {% else %}<p class="muted oa-wait">Halo publishes each game when it ends; results land here within a couple of minutes.</p>{% endif %}
       {% endif %}</div>{% endfor %}</div>
   {# 2026-10-10: no "probably another account" box while there are no games yet — menus, warm-ups and settings are normal #}
 </section>

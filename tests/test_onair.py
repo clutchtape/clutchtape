@@ -42,6 +42,16 @@ class OnAir(unittest.TestCase):
         self.add(20*60,pid=2)
         self.assertEqual(web._onair(self.g((1,2)),{'started':time.time()-30*60,'halo':True},'pro')['per'][0]['games'],1)
         self.assertEqual(web._onair(self.g((1,)),{'started':time.time()-30*60,'halo':True},'pro')['per'][0]['games'],0)
+    def test_customs_hidden_when_long_history_has_no_customs(self):
+        # 2026-10-10: Halo doesn't share a player's customs unless they allow it; 50+ games and not one custom = hidden
+        for d in range(50): self.add((2+d)*86400)
+        self.conn.execute("UPDATE matches SET playlist='Ranked Arena'")
+        o=web._onair(self.g(),{'started':time.time()-40*60,'halo':True,'title':'scrims','game':'Halo Infinite','viewers':3},'pro')
+        self.assertTrue(o['per'][0]['customs_hidden'])
+        with web.app.test_request_context('/p/pro'):
+            self.assertIn('In custom games?',web.render_template('_onair.html',onair=o))
+        self.conn.execute("UPDATE matches SET playlist=NULL WHERE match_id=(SELECT MIN(match_id) FROM matches)")   # one custom on record
+        self.assertFalse(web._onair(self.g(),{'started':time.time()-40*60,'halo':True},'pro')['per'][0]['customs_hidden'])
     def test_offline_is_none(self):
         self.assertIsNone(web._onair(self.g(),None,'pro'))
 
@@ -63,3 +73,27 @@ class OnAirRender(OnAir):
         self.assertIn('class="lv up"', html)                            # K/game well above usual
         self.assertIn('usual 8', html)
         self.assertIn('oa-grp', html); self.assertIn('Stats only', html)
+
+
+class LiveVsRender(OnAir):
+    """2026-10-10: under the stream on phones the session-vs-usual table becomes stat tiles (player page) or
+    stats-as-rows (squad); key stats first, the rest behind "All stats"."""
+    def _rows(self, n, kills, pid=1):
+        from test_companion import row
+        return [row(f'm{pid}-{kills}-{i}', 1000 + i, kills=kills, deaths=5, pid=pid) for i in range(n)]
+
+    def _render(self, pt, squad=False):
+        import player_table
+        with web.app.test_request_context('/p/pro'):
+            return web.render_template('_live_vs.html', onair={'channel': 'x'}, pt=player_table.build(pt), sess_current=True, squad_view=squad)
+
+    def test_player_tiles(self):
+        html = self._render([('This session', self._rows(2, 20), None), ('Usual', self._rows(6, 8), '6 games')])
+        self.assertIn('class="lvm-grid"', html)
+        self.assertIn('usual 8', html)                                  # K tile carries the usual value
+        self.assertIn('lvm-x', html)                                    # extras hidden until "All stats"
+        self.assertIn('data-lvall', html)
+
+    def test_squad_rows(self):
+        html = self._render([('A', self._rows(2, 20), None), ('B', self._rows(2, 8, 2), None), ('C', self._rows(2, 10, 3), None)], squad=True)
+        self.assertIn('lvm-rows', html); self.assertNotIn('lvm-grid', html)

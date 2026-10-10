@@ -1,8 +1,25 @@
 {# Live (2026-10-10): the session table right under the video, so viewers see at a glance whether the player is doing
    better or worse than usual (player page: this session vs the usual 90 days; squad: each player, best SC% first).
-   Refreshed in place by live.js (#livevs) on every finished game. Needs pt, sess_current. #}
+   Refreshed in place by live.js (#livevs) on every finished game. Needs pt, sess_current.
+   Phones (≤700px, style.css .lvm): the wide table only showed 2-3 of its columns, so it becomes stat tiles (player page:
+   session value big, usual under it) or stats-as-rows (squad: one column per player). Key stats first; "All stats"
+   (heat.js, html.lvall, remembered) shows the rest. #}
+{% from "_pt_macros.html" import ptval %}
+{% set LVKEY = ('csr_net', 'win_pct', 'kd', 'kda', 'kills_pg', 'deaths_pg', 'assists_pg', 'dmg_pm', 'dmg_diff_pg', 'sc_pct', 'acc', 'games') %}
 {% if onair and pt %}<section class="panel livevs" id="livevs">
   {% set vs_title %}{% if squad_view %}{{ 'Playing together now' if sess_current else 'Last session together' }}{% else %}{{ 'This session vs usual' if sess_current else 'Last session vs usual' }}{% endif %}{% endset %}
   {# compact (no title row, the video gets the room): the title is the table's first header cell, the key in its tooltip #}
   {% with pt_head = vs_title, pt_tip = ('green = best of the squad, red = worst' if squad_view else 'green = better than usual, red = worse') ~ ('' if sess_current else ' · updates with the first game this stream') %}{% include "_player_table.html" %}{% endwith %}
+  <div class="lvm">
+    {% if not squad_view and pt.rows|length == 2 %}{% set a, u = pt.rows[0], pt.rows[1] %}
+    <div class="lvm-head"><b>{{ vs_title }}</b><span>{{ a.label }}{% if not sess_current %} · updates with the first game{% endif %}</span></div>
+    <div class="lvm-grid">{% for c in pt.cols %}{% set v, cls = a.cells[loop.index0] %}{% set uv = u.cells[loop.index0][0] %}
+      <div class="lvm-t {{ cls }}{{ ' lvm-x' if c.key not in LVKEY }}"{% if c.help %} title="{{ c.help }}{{ ' · lower is better' if c.better == 'lo' }}"{% endif %}><span>{{ c.label }}</span><b>{{ ptval(c, v) }}</b>{% if c.key == 'games' %}<small>{{ uv }} in 90 days</small>{% elif c.key != 'csr_net' %}<small>usual {{ ptval(c, uv) }}</small>{% endif %}</div>{% endfor %}</div>
+    {% else %}
+    <div class="lvm-head"><b>{{ vs_title }}</b><span>green = best, red = worst</span></div>
+    <div class="tablewrap"><table class="ptable lvm-rows"><thead><tr><th></th>{% for r in pt.rows %}<th>{{ r.label }}</th>{% endfor %}</tr></thead>
+    <tbody>{% for c in pt.cols %}{% set ci = loop.index0 %}<tr class="{{ 'lvm-x' if c.key not in LVKEY }}"><th scope="row"{% if c.help %} title="{{ c.help }}"{% endif %}>{{ c.label }}</th>{% for r in pt.rows %}{% set v, cls = r.cells[ci] %}<td class="{{ cls }}">{{ ptval(c, v) }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>
+    {% endif %}
+    <button type="button" class="lvm-more" data-lvall><span class="lv-off">All {{ pt.cols|length }} stats</span><span class="lv-on">Key stats only</span></button>
+  </div>
 </section>{% endif %}

@@ -1126,18 +1126,25 @@ a.sessbtn:hover{border-color:var(--acc2);color:var(--acc2)}.sessbtn.off{opacity:
 /* live stats card on narrow screens: keep the record on one line, nothing past the edge */
 .oa-rec b{white-space:nowrap}.oa-card,.oa-grid{min-width:0}.oa-card{overflow-wrap:anywhere}
 @media(max-width:360px){.oa-rec{flex-wrap:wrap;row-gap:2px}}
-/* phones: live chat is a drawer from the right edge (heat.js adds the tab + close) */
-.chattab,.twchat .chatx,.chatshade{display:none}
+/* phones: live chat is a bottom sheet under the video, like the Twitch app (heat.js adds the Chat pill + close and sets
+   --sheet-top under the video). 2026-10-10: nothing may cover the video, not even by a few pixels or at opacity 0:
+   Twitch then treats the player as hidden, never autoplays it and pauses it if it was playing. That ruled out the
+   right-edge drawer (it covered the video; its tab and shadow overlapped the edge) and a full-screen shade. */
+.chattab,.twchat .chatx{display:none}
 @media(max-width:700px){
- .cols #twchat{position:fixed;top:0;right:0;bottom:0;z-index:70;width:min(88vw,420px);height:100dvh!important;margin:0;border-radius:16px 0 0 16px;
-  transform:translateX(105%);transition:transform .25s ease;box-shadow:-12px 0 40px rgba(0,0,0,.6);padding:10px 10px calc(10px + env(safe-area-inset-bottom))}
- html.chat-open .cols #twchat{transform:none}
+ .cols #twchat{position:fixed;left:0;right:0;bottom:0;top:var(--sheet-top,40vh);z-index:70;width:auto;height:auto!important;min-height:0;margin:0;
+  border-radius:16px 16px 0 0;overscroll-behavior:contain;transform:translateY(105%);visibility:hidden;transition:transform .25s ease,visibility 0s .25s;
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom))}
+ html.chat-open .cols #twchat{transform:none;visibility:visible;transition:transform .25s ease;box-shadow:none;border-top:1px solid #9146ff}
+ html.chat-open,html.chat-open body{overflow:hidden}
  .twchat .chatx{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;margin-left:4px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:20px;line-height:1;cursor:pointer}
- .chattab{display:flex;align-items:center;gap:6px;position:fixed;right:0;top:50%;z-index:65;transform:translateY(-50%);writing-mode:vertical-rl;padding:14px 8px;border-radius:12px 0 0 12px;border:1px solid #9146ff;border-right:0;background:#9146ff;color:#fff;font-weight:800;font-size:13px;letter-spacing:.06em;box-shadow:-4px 0 18px rgba(0,0,0,.45);cursor:pointer}
+ .twchat .ph::before{content:"";position:absolute;left:50%;top:-4px;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:var(--line)}
+ .cols #twchat .ph{position:relative;padding-top:6px}
+ .chattab{display:flex;align-items:center;gap:7px;position:fixed;right:14px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:65;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid #9146ff;background:#9146ff;color:#fff;font-weight:800;font-size:13px;letter-spacing:.06em;box-shadow:0 6px 20px rgba(0,0,0,.5);cursor:pointer;animation:chatpill .3s ease-out}
+ @keyframes chatpill{from{opacity:0;transform:translateY(12px)}}
+ .chattab[hidden],html.chat-open .chattab{display:none!important}
+ .chattab.off{visibility:hidden}
  .chattab i{width:8px;height:8px;border-radius:50%;background:#ff4d4d;box-shadow:0 0 0 2px rgba(255,255,255,.35)}
- html.chat-open .chattab{display:none}
- .chatshade{display:block;position:fixed;inset:0;z-index:69;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .25s}
- html.chat-open .chatshade{opacity:1;pointer-events:auto}
 }
 @media(max-width:700px){.twchat .ph{flex-wrap:nowrap;margin-bottom:8px}.twchat .ph>.muted{display:none}.twchat .ph .vod{margin-left:auto;white-space:nowrap}}
 /* ---- live updates (live.js): heartbeat, new-game banner, rolling numbers, new rows ---- */
@@ -1286,3 +1293,26 @@ html.dragging-split iframe{pointer-events:none}
 .oa-more .lv{display:flex;flex-direction:column;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);margin:0;padding:3px 6px}
 .oa-more .lv b{font-size:16px;letter-spacing:0;text-transform:none;color:var(--ink);font-variant-numeric:tabular-nums}
 .oa-more .lv.up b{color:#9fe3b4}.oa-more .lv.down b{color:#f3a9a0}
+/* live session-vs-usual on phones (_live_vs.html .lvm): stat tiles instead of a 29-column table */
+.lvm{display:none}
+@media(max-width:700px){
+ .livevs>.tablewrap{display:none}
+ .lvm{display:block}
+ .lvm-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:2px 2px 8px}
+ .lvm-head b{color:var(--acc2);font-size:12.5px;font-weight:800}.lvm-head span{color:var(--mute);font-size:11px;text-align:right}
+ .lvm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
+ .lvm-t{display:flex;flex-direction:column;gap:1px;padding:7px 9px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);font-variant-numeric:tabular-nums;min-width:0}
+ .lvm-t span{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--mute)}
+ .lvm-t b{font-size:18px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .lvm-t small{font-size:10.5px;color:var(--mute);white-space:nowrap}
+ .lvm-t.h-ex{background:rgba(34,197,94,.16);border-color:rgba(34,197,94,.35)}.lvm-t.h-ex b{color:#8ee6a8}
+ .lvm-t.h-good{background:rgba(74,222,128,.09);border-color:rgba(74,222,128,.22)}.lvm-t.h-good b{color:#9fd9ad}
+ .lvm-t.h-below{background:rgba(249,115,22,.10);border-color:rgba(249,115,22,.25)}.lvm-t.h-below b{color:#e0a87a}
+ .lvm-t.h-poor{background:rgba(239,68,68,.14);border-color:rgba(239,68,68,.32)}.lvm-t.h-poor b{color:#f0a3a3}
+ .lvm-rows{font-size:13px}.lvm-rows th,.lvm-rows td{padding:6px 8px;text-align:right;white-space:nowrap}
+ .lvm-rows thead th{font-size:11px;max-width:110px;overflow:hidden;text-overflow:ellipsis}
+ .lvm-rows tbody th{text-align:left;color:var(--mute);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+ .lvm .lvm-x{display:none}html.lvall .lvm .lvm-grid .lvm-x{display:flex}html.lvall .lvm tr.lvm-x{display:table-row}
+ .lvm-more{display:block;width:100%;margin-top:8px;min-height:40px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font-weight:700;font-size:13px;cursor:pointer}
+ .lvm-more .lv-on,html.lvall .lvm-more .lv-off{display:none}html.lvall .lvm-more .lv-on{display:inline}
+}

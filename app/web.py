@@ -1190,6 +1190,14 @@ def _onair(groups, stream, channel):
     halo_s = int(sum(g["end"] - g["start"] for g in segs if g["halo"]))
     cur = segs[-1]
     per = [_tonight(main, ids, since, start) for main, ids in groups]
+    # 2026-10-10: Halo keeps custom games (scrims) private unless the player shares "non-matchmade" history, and its API
+    # never shows them. A player with a long history and not one custom game is almost surely hiding them, so while
+    # their stream has no games the card says scrims won't appear, instead of an unexplained 0-0.
+    for (main, ids), x in zip(groups, per):
+        if not x["games"]:
+            ph = ",".join("?" * len(ids))
+            r = db.q1(f"SELECT COUNT(*) AS n, SUM(playlist IS NULL) AS cu FROM matches WHERE player_id IN ({ph})", *ids)
+            x["customs_hidden"] = bool(r and r["n"] >= 50 and not r["cu"])
     up = int(now - start)
     span = max([up] + [g["t"] + g["dur"] for x in per for g in x["strip"]] + [60])
     lo = min([0] + [g["t"] for x in per for g in x["strip"]])

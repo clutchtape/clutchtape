@@ -1,5 +1,5 @@
 {# Player stats table (2026-10-10): needs pt = player_table.build(). One row per player (or session vs usual), per-game
    numbers, heat by rank (h-ex best … h-poor worst). Keeps the .nightper class for the phone layout (swipe, pinned name). #}
-{% macro ptval(c, v) %}{% if v is none %}<span class="na">—</span>{% elif c.key in ('dmg_diff_pg','xk_pg','csr_net','mmr_edge') %}{{ '{:+g}'.format(v) }}{% elif c.key in ('win_pct','sc_pct','dmg_share','acc','hs_pct') %}{{ v }}%{% elif c.key == 'kda' %}{{ v|kda }}{% elif c.key == 'life' %}{{ v }}s{% else %}{{ v }}{% endif %}{% endmacro %}
+{% from "_pt_macros.html" import ptval %}
 <div class="tablewrap"><table class="nightper ptable scrollx"><thead><tr><th data-stick{% if pt_tip %} title="{{ pt_tip }}"{% endif %}>{{ pt_head or 'Player' }}</th>{% for c in pt.cols %}<th{% if c.help %} title="{{ c.help }}{{ ' · lower is better' if c.better == 'lo' }}"{% endif %}>{{ c.label }}</th>{% endfor %}</tr></thead>
 <tbody>{% for r in pt.rows %}<tr><td class="name"{% if r.extra %} title="{{ r.extra }}"{% endif %}>{{ r.label }}{% if r.extra %}<small>{{ r.extra }}</small>{% endif %}</td>{% for c in pt.cols %}{% set v, cls = r.cells[loop.index0] %}<td class="{{ cls }}">{{ ptval(c, v) }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>

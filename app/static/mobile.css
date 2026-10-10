@@ -178,3 +178,12 @@ body:has(>.mobile-player-surface)>.multi.focus .mgrid,body:has(>.mobile-player-s
   .mobile-cards .mobile-identity>a,.gamelog .ph a{min-height:44px;display:inline-flex;align-items:center}
   button[aria-label="Scroll the table for more columns"]{min-width:44px}
 }
+
+/* phones: the live video runs edge to edge (2026-10-10). Bigger picture, and Twitch won't autoplay an embed under
+   ~300px wide: with the page and panel padding a 320px phone only got 266px. -27px = main padding 12 + panel border 1
+   + panel padding 14. */
+@media(max-width:480px){
+  #mediasec.live #player.is-live:not(:fullscreen){margin-left:-27px;margin-right:-27px;padding-left:0!important;padding-right:0!important}
+  #mediasec.live #player.is-live:not(:fullscreen) .embed{border-radius:0;margin-left:0;margin-right:0;width:auto}
+  #mediasec.live #player.is-live .mobile-playback-note{padding-left:16px;padding-right:16px}
+}

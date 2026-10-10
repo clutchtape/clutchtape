@@ -267,26 +267,46 @@ document.addEventListener('toggle', function (e) {
   ms.after(kinds); kinds.classList.add('after-live');
 })();
 
-/* phones: live chat as a drawer from the right edge — a "Chat" tab on the edge opens it over the page (the video keeps
-   playing); ×, a tap outside, Back or a swipe right closes it */
+/* phones: live chat as a bottom sheet under the video (like the Twitch app). The Chat pill scrolls the video to the top
+   and opens chat in the space below it, so you watch and chat at once. ×, Back or a swipe down closes it.
+   Nothing may cover the video: Twitch pauses (and won't autoplay) a player that is overlapped at all — see style.css. */
 (function () {
   var chat = document.getElementById('twchat'); if (!chat) return;
   var html = document.documentElement, ms = document.getElementById('mediasec');
+  /* the chat iframe loads when it's first shown (on phones: when the sheet opens), not on page load */
+  var cf = chat.querySelector('iframe[data-src]'), narrow = matchMedia('(max-width:700px)');
+  function loadChat() { if (cf && !cf.getAttribute('src')) cf.src = cf.dataset.src; }
+  if (!narrow.matches) loadChat(); else narrow.addEventListener('change', function (e) { if (!e.matches) { loadChat(); close(); } });
   var tab = document.createElement('button'); tab.type = 'button'; tab.className = 'chattab'; tab.setAttribute('aria-label', 'Open live chat'); tab.innerHTML = '<i></i>Chat';
-  var shade = document.createElement('div'); shade.className = 'chatshade';
   var x = document.createElement('button'); x.type = 'button'; x.className = 'chatx'; x.setAttribute('aria-label', 'Close chat'); x.textContent = '×';
   var ph = chat.querySelector('.ph'); if (ph) ph.appendChild(x);
-  document.body.append(tab, shade);
-  function open(on) { html.classList.toggle('chat-open', on); tab.setAttribute('aria-expanded', String(on));
+  document.body.append(tab);
+  function fixedTop() { var t = document.querySelector('.top'); if (!t) return 0; var p = getComputedStyle(t).position; return (p === 'sticky' || p === 'fixed') ? t.getBoundingClientRect().bottom : 0; }
+  function place() {
+    var e = document.querySelector('#player .embed'); if (!e) return;
+    window.scrollBy(0, e.getBoundingClientRect().top - fixedTop() - 6);
+    html.style.setProperty('--sheet-top', Math.round(e.getBoundingClientRect().bottom + 8) + 'px');
+  }
+  function open(on) { if (on) { loadChat(); place(); } html.classList.toggle('chat-open', on); tab.setAttribute('aria-expanded', String(on));
     if (on) { try { history.pushState({ chat: 1 }, ''); } catch (e) {} } }
   function close() { if (!html.classList.contains('chat-open')) return; html.classList.remove('chat-open'); if (history.state && history.state.chat) history.back(); }
-  tab.onclick = function () { open(true); }; x.onclick = close; shade.onclick = close;
+  tab.onclick = function () { open(true); }; x.onclick = close;
   window.addEventListener('popstate', function () { html.classList.remove('chat-open'); });
+  window.addEventListener('resize', function () { if (html.classList.contains('chat-open')) place(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
-  var sx = null; chat.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; }, { passive: true });
-  chat.addEventListener('touchend', function (e) { if (sx != null && e.changedTouches[0].clientX - sx > 70) close(); sx = null; }, { passive: true });
-  /* no tab while the stream section is collapsed */
-  function sync() { tab.hidden = !!(ms && !ms.open); if (tab.hidden) close(); }
+  var sy = null; if (ph) { ph.addEventListener('touchstart', function (e) { sy = e.touches[0].clientY; }, { passive: true });
+    ph.addEventListener('touchend', function (e) { if (sy != null && e.changedTouches[0].clientY - sy > 60) close(); sy = null; }, { passive: true }); }
+  /* the Chat pill waits until the video is playing (or 10s): on small phones it can sit over the video, which stops
+     Twitch's autoplay. No pill while the stream section is collapsed. */
+  var ready = false, waited = 0, wv = setInterval(function () { waited += 500; var go = waited >= 10000;
+    try { go = go || (window.__sp && !window.__sp.isPaused() && window.__sp.getCurrentTime() > 0); } catch (e) {}
+    if (go) { clearInterval(wv); ready = true; sync(); } }, 500);
+  function sync() { tab.hidden = !ready || !!(ms && !ms.open); if (ms && !ms.open) close(); clear(); }
+  /* …and steps aside whenever it would touch the video (short phones, or scrolled so the video is at the bottom) */
+  var emb = document.querySelector('#player .embed');
+  function clear() { if (!emb || tab.hidden) return; var v = emb.getBoundingClientRect(), t = tab.getBoundingClientRect();
+    tab.classList.toggle('off', v.bottom > t.top - 6 && v.top < t.bottom && v.right > t.left && v.left < t.right); }
+  window.addEventListener('scroll', clear, { passive: true }); window.addEventListener('resize', clear);
   if (ms) ms.addEventListener('toggle', sync); sync();
 })();
 
@@ -313,3 +333,10 @@ document.addEventListener('toggle', function (e) {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', sync); else sync();
   new MutationObserver(sync).observe(document.body, { childList: true, subtree: true });
 })();
+
+/* live session-vs-usual on phones: All stats / Key stats only (remembered; html.lvall, set early in base.html) */
+document.addEventListener('click', function (e) {
+  if (!e.target.closest('[data-lvall]')) return;
+  var on = document.documentElement.classList.toggle('lvall');
+  try { localStorage.setItem('ct-lvall', on ? '1' : '0'); } catch (x) {}
+});

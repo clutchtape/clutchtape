@@ -1,0 +1,2 @@
+{# ptval: one player-table value with its unit/sign (shared by _player_table.html and _live_vs.html). #}
+{% macro ptval(c, v) %}{% if v is none %}<span class="na">—</span>{% elif c.key in ('dmg_diff_pg','xk_pg','csr_net','mmr_edge') %}{{ '{:+g}'.format(v) }}{% elif c.key in ('win_pct','sc_pct','dmg_share','acc','hs_pct') %}{{ v }}%{% elif c.key == 'kda' %}{{ v|kda }}{% elif c.key == 'life' %}{{ v }}s{% else %}{{ v }}{% endif %}{% endmacro %}
