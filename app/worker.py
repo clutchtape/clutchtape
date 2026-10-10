@@ -74,12 +74,14 @@ def backlog():
     return _q.qsize()
 
 
-ACTIVE_RESYNC_S = 90
+ACTIVE_RESYNC_S = 30
+STREAMING_RESYNC_S = 20
 
 
-def stale(player, active=False):
-    """Players who played in the last couple of hours refresh every 90s (live stats); everyone else every 10 min."""
-    limit = ACTIVE_RESYNC_S if active else RESYNC_AFTER_S
+def stale(player, active=False, streaming=False):
+    """Players on a live stream refresh every 20s (a finished game shows up fast while you watch), players who played
+    in the last couple of hours every 30s (only while someone has their page open), everyone else every 10 min."""
+    limit = STREAMING_RESYNC_S if streaming else ACTIVE_RESYNC_S if active else RESYNC_AFTER_S
     return (not player["last_synced"]) or time.time() - player["last_synced"] > limit
 
 

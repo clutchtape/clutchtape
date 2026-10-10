@@ -649,7 +649,7 @@ def squad(slugs, short=False, code=None, game=None):
         if st:
             onair = _onair([(m, [m["id"]] + [a["id"] for a in _alts(m["id"])]) for m in ps], st, chans.get(slug))
             break
-    return render_template("squad.html", sess_current=bool(night) and data.get("s_idx") == 0 and _is_current(night), pt=_squad_table(night, ps) if tab == "latest" else None, raw=raw_view.build(night, squad=[(p["id"], p["gamertag"]) for p in ps]) if tab == "latest" else None, session_picks=session_watch.for_sessions(data["nights"], [p["id"] for p in ps], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(night, [p["id"] for p in ps]) if tab == "latest" else {}, tab=tab, kpis=kp, adv=adv, periods=periods, pidgt=gt, onair=onair, **extra, comparison=comparison, recap_matches=session_review.recap_matches(data.get('night') or []), recap_names=[p['gamertag'] for p in ps], gtmap={p["slug"]: p["gamertag"] for p in ps}, pcfg=pcfg, vm=vm, og=og, share_url=share_url, d=data, ps=ps, chans=chans, tw=first, psrc=psrc, plabel=plabel, host=request.host.split(":")[0],
+    return render_template("squad.html", sb=_live_board(night if data.get("s_idx") == 0 and _is_current(night) else [], ps) if tab == "latest" else None, sess_current=bool(night) and data.get("s_idx") == 0 and _is_current(night), pt=_squad_table(night, ps) if tab == "latest" else None, raw=raw_view.build(night, squad=[(p["id"], p["gamertag"]) for p in ps]) if tab == "latest" else None, session_picks=session_watch.for_sessions(data["nights"], [p["id"] for p in ps], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(night, [p["id"] for p in ps]) if tab == "latest" else {}, tab=tab, kpis=kp, adv=adv, periods=periods, pidgt=gt, onair=onair, **extra, comparison=comparison, recap_matches=session_review.recap_matches(data.get('night') or []), recap_names=[p['gamertag'] for p in ps], gtmap={p["slug"]: p["gamertag"] for p in ps}, pcfg=pcfg, vm=vm, og=og, share_url=share_url, d=data, ps=ps, chans=chans, tw=first, psrc=psrc, plabel=plabel, host=request.host.split(":")[0],
                            slugs=",".join(names), vods=vods, sq_base=("/sq/" + code) if code else None, open_game=game)
 
 
@@ -844,6 +844,17 @@ def _tw_out_of_urls():
     return redirect(request.path + ("?" + urlencode(args) if args else ""), code=302)
 
 
+def _streaming(p):
+    """Is this player's channel (as this browser knows it) live on Twitch right now? Cached 60s; checked server-side so
+    the fast live re-sync can't be switched on from a URL."""
+    if not twitch.enabled():
+        return False
+    tw = _channel_for(p)
+    u = tw and _cached("uid", tw, 3600, lambda: twitch.lookup_user(tw))
+    st = u and _cached("stream", u["id"], 60, lambda: twitch.stream(u["id"]))
+    return bool(st)
+
+
 def _channel_for(p):
     """Twitch channel to show: this browser's own choice for the player, else the featured example's channel."""
     tw = _tw_map().get(p["slug"])
@@ -912,6 +923,30 @@ def _is_current(matches):
     return time.time() - (last["started_at"] + (last.get("duration_s") or 0)) < analytics.SESSION_GAP_S
 
 
+def _live_board(games, ps=None):
+    """Stats-only live dashboard (2026-10-10): big session tiles + one card per game, newest first. games = the current
+    session's match rows (player page) or the night's games with members {pid: row} (squad, ps = its players)."""
+    if not games:
+        return None
+    rows = [r for g in games for r in (g["members"].values() if ps else [g])]
+    a = analytics._agg(rows if not ps else [g["members"][next(iter(g["members"]))] for g in games])   # squad record: once per game
+    if ps:
+        a.update({k: v for k, v in analytics._agg(rows).items() if k not in ("games", "wins", "losses", "win_pct")})
+    cards = []
+    for g in games:
+        lines = []
+        for pid, r in ((p["id"], g["members"].get(p["id"])) for p in ps) if ps else [(None, g)]:
+            if r:
+                lines.append({"who": next((p["gamertag"] for p in ps if p["id"] == pid), None) if ps else None,
+                              "k": r["kills"], "d": r["deaths"], "a": r["assists"], "kda": r.get("kda"), "dmg_pm": r.get("dmg_pm"),
+                              "sc_pct": r.get("sc_pct"), "csr_d": r.get("csr_d")})
+        ref = g if not ps else next(iter(g["members"].values()))
+        cards.append({"match_id": g["match_id"], "outcome": (g.get("outcome") or ref.get("outcome") or ""), "map": analytics.clean_map(g.get("map") or ref.get("map")),
+                      "mode": analytics.clean_mode(g.get("mode") or ref.get("mode")), "t": g["started_at"], "lines": lines,
+                      "score": f"{round(ref['team_score'])}–{round(ref['enemy_score'])}" if ref.get("team_score") is not None and ref.get("enemy_score") is not None else None})
+    return {"a": a, "cards": cards}
+
+
 def _solo_table(matches, rows, label="This session"):
     """Player stats table on a player page: this session vs the usual (the 90 days around it, session left out)."""
     if not matches:
@@ -919,8 +954,15 @@ def _solo_table(matches, rows, label="This session"):
     ids = {m["match_id"] for m in matches}
     cutoff = min(m["started_at"] for m in matches) - BASE_DAYS * 86400
     base = [r for r in rows if r["match_id"] not in ids and r["started_at"] >= cutoff]
-    return player_table.build([(label, matches, None),
-                               ("Usual", base if len(base) >= 5 else [], f"{len(base)} games in the 90 days before")])
+    t = player_table.build([(label, matches, None),
+                            ("Usual", base if len(base) >= 5 else [], f"{len(base)} games in the 90 days before")])
+    # CSR change is a session total: 90 days of it isn't a "usual" to compare a session with, so the Usual row leaves it blank
+    if t and len(t["rows"]) == 2:
+        i = next((n for n, c in enumerate(t["cols"]) if c["key"] == "csr_net"), None)
+        if i is not None:
+            t["rows"][1]["cells"][i] = (None, "")
+            t["rows"][0]["cells"][i] = (t["rows"][0]["cells"][i][0], "")
+    return t
 
 
 def _squad_table(night, ps):
@@ -1065,6 +1107,11 @@ def _tonight(main, ids, since, stream_start):
     last = rows[0]
     x["ended_ago"] = int(time.time() - last["started_at"] - (last["duration_s"] or 0))
     x["csr"] = x["a"].get("csr_net")
+    # the player's usual (90 days before this stream, at least 5 games): the live numbers are tinted against it
+    base = [dict(r) for r in db.q(f"SELECT * FROM matches WHERE player_id IN ({ph}) AND started_at<? AND started_at>=? AND COALESCE(duration_s, 999)>={analytics.MIN_GAME_S}", *ids, since, since - 90 * 86400)]
+    for r in base:
+        analytics.derive(r)
+    x["usual"] = analytics._agg(base) if len(base) >= 5 else None
     # lobby read: how tonight's lobbies have gone (Halo only publishes MMR after a game ends, so this is never "next game")
     edges = [r for r in rows if r.get("mmr_edge") is not None and r["outcome"] in ("Win", "Loss")]
     if edges:
@@ -1223,7 +1270,7 @@ def profile(slug):
     comparison = session_review.comparison(data['sessions'], data['s_idx'], 'recent' if request.args.get('compare') == 'recent' else 'previous')
     tab = _tab()
     extra = _hub_board(p["slug"]) if tab == "analysis" else {}
-    return render_template("profile.html", session_picks=session_watch.for_sessions(data["sessions"], [p["id"] for p in [p] + alts], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(s["matches"] if s else [], [p["id"]] + [a["id"] for a in alts]) if tab == "latest" else {}, tab=tab, onair=onair, alts=alts, kpis=_kpis(s["matches"]) if s else [], adv=_adv_kpis({p["gamertag"]: s["matches"]}) if s else [], sess_agg=analytics._agg(s["matches"]) if s else None, brk=_breakdown(s["matches"], data["rows"]) if s and tab == "latest" else None, pt=_solo_table(s["matches"], data["rows"], "This session" if data["s_idx"] == 0 and _is_current(s["matches"]) else fmt_dt(s["start"], "%a %b %-d")) if s and tab == "latest" else None, sess_current=bool(s) and data["s_idx"] == 0 and _is_current(s["matches"]), raw=raw_view.build(s["matches"]) if s and tab == "latest" else None, periods=_periods({p["gamertag"]: data["rows"]}, solo=True) if tab == "records" else None, **extra, comparison=comparison, recap_matches=session_review.recap_matches(s['matches'] if s else []), recap_names=[p['gamertag']], pcfg=pcfg, vm=vm, og=og, p=p, d=data, clips=clips, vods=vods, tw=tw, psrc=psrc, plabel=plabel,
+    return render_template("profile.html", session_picks=session_watch.for_sessions(data["sessions"], [p["id"] for p in [p] + alts], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(s["matches"] if s else [], [p["id"]] + [a["id"] for a in alts]) if tab == "latest" else {}, tab=tab, onair=onair, alts=alts, kpis=_kpis(s["matches"]) if s else [], adv=_adv_kpis({p["gamertag"]: s["matches"]}) if s else [], sess_agg=analytics._agg(s["matches"]) if s else None, brk=_breakdown(s["matches"], data["rows"]) if s and tab == "latest" else None, pt=_solo_table(s["matches"], data["rows"], "This session" if data["s_idx"] == 0 and _is_current(s["matches"]) else fmt_dt(s["start"], "%a %b %-d")) if s and tab == "latest" else None, sess_current=bool(s) and data["s_idx"] == 0 and _is_current(s["matches"]), sb=_live_board(s["matches"] if s and data["s_idx"] == 0 and _is_current(s["matches"]) else []) if tab == "latest" else None, raw=raw_view.build(s["matches"]) if s and tab == "latest" else None, periods=_periods({p["gamertag"]: data["rows"]}, solo=True) if tab == "records" else None, **extra, comparison=comparison, recap_matches=session_review.recap_matches(s['matches'] if s else []), recap_names=[p['gamertag']], pcfg=pcfg, vm=vm, og=og, p=p, d=data, clips=clips, vods=vods, tw=tw, psrc=psrc, plabel=plabel,
                            host=request.host.split(":")[0])
 
 
@@ -1247,7 +1294,7 @@ def live_api(slugs):
             r["map"], r["mode"] = analytics.clean_map(r["map"]), analytics.clean_mode(r["mode"])
             analytics.derive(r)
         lv = analytics.live_summary(rows) if rows else None
-        if p["sync_state"] in ("ready", "error") and worker.stale(p, active=True):
+        if p["sync_state"] in ("ready", "error") and worker.stale(p, active=True, streaming=_streaming(p)):
             worker.enqueue(p["id"])
         out.append({"slug": s, "gamertag": p["gamertag"], "live": lv, "syncing": p["sync_state"] in ("queued", "syncing"),
                     "updated": p["last_synced"]})

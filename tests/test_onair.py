@@ -47,3 +47,19 @@ class OnAir(unittest.TestCase):
 
 if __name__=='__main__':
     unittest.main()
+
+
+class OnAirRender(OnAir):
+    """2026-10-10: the live panel renders with the usual-tinted numbers and grouped extras (template-level check:
+    nobody has to be live for this to run)."""
+    def test_panel_renders_with_tint_against_usual(self):
+        for d in range(5):
+            self.add((3 + d) * 86400, kills=8)                          # usual: 8 kills a game
+        self.add(20 * 60, kills=20)                                     # this stream: 20
+        o = web._onair(self.g(), {'started': time.time() - 60 * 60, 'halo': True, 'title': 'Ranked', 'game': 'Halo Infinite', 'viewers': 3}, 'pro')
+        self.assertIsNotNone(o['per'][0]['usual'])
+        with web.app.test_request_context('/p/pro'):
+            html = web.render_template('_onair.html', onair=o)
+        self.assertIn('class="lv up"', html)                            # K/game well above usual
+        self.assertIn('usual 8', html)
+        self.assertIn('oa-grp', html); self.assertIn('Stats only', html)

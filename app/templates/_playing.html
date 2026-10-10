@@ -1,0 +1,19 @@
+{# "Playing now" (2026-10-10): stats-only live mode for players who are in a session but not streaming (or viewers who
+   turned the stream off). Same look as the live panel, green instead of red. Shown on the Latest tab while someone
+   on the page finished a game recently; live.js refreshes it in place (#playnow) and animates what changed.
+   Needs live_rows (slug, gamertag, live = analytics.live_summary) and optional pt / sess_current. #}
+{% set act = live_rows|selectattr('live')|selectattr('live.ended_ago', 'lt', 5400)|list %}{# last game under 90 min ago: the session is still going #}
+{% if act and not onair and tab == 'latest' %}<section class="onair playnow" id="playnow">
+  <div class="oa-top"><span class="oa-live pn"><i></i>PLAYING NOW</span>
+    <span class="oa-meta">{% set ago = (act|map(attribute='live.ended_ago')|min) // 60 %}last game ended {{ 'just now' if ago < 1 else ago ~ 'm ago' }} · stats land as each game ends</span>
+    <span class="oa-beat" title="Checks for finished games every 15 seconds; Halo posts each game when it ends"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><circle class="ring" cx="10" cy="10" r="8"/></svg><span data-beat>watching for games</span></span></div>
+  <div class="oa-grid">{% for r in act %}{% set l = r.live %}
+    <div class="oa-card">{% if act|length > 1 %}<b class="oa-name">{{ r.gamertag }}</b>{% endif %}
+      <div class="oa-rec"><span class="lab">This session</span><b>{{ l.record }}</b><small>{{ l.games }} game{{ '' if l.games == 1 else 's' }}</small></div>
+      <div class="oa-nums"><span><b>{{ l.kda|kda }}</b>KDA</span><span><b>{{ l.kd }}</b>K/D</span><span><b>{{ (l.win_pct|round|int ~ '%') if l.win_pct is not none else '—' }}</b>Win</span>{% if l.delta is not none %}<span><b class="{{ 'pos' if l.delta > 0 else 'neg' if l.delta < 0 }}">{{ '{:+}'.format(l.delta|round|int) }}</b>CSR</span>{% endif %}</div>
+      <div class="pn-pips" aria-label="Results this session">{% for o in l.pips %}<i class="pip {{ o }}"></i>{% endfor %}</div>
+      {% set L = l.last %}<a class="pn-last {{ (L.outcome or '')|lower }}" href="/match/{{ L.match_id }}?player={{ r.slug }}"><span class="lab">Last game</span><b class="res {{ (L.outcome or '')|lower }}">{{ L.outcome }}</b> {{ L.map or '' }}{% if L.mode %} · {{ L.mode }}{% endif %} · <b>{{ L.k }}/{{ L.d }}/{{ L.a }}</b> ↗</a>
+    </div>{% endfor %}</div>
+  {% if pt %}<div class="pn-vs"><div class="pn-vs-h"><b>{% if live_rows|length > 1 %}{{ 'Playing together now' if sess_current else 'Last session together' }}{% else %}{{ 'This session vs usual' if sess_current else 'Last session vs usual' }}{% endif %}</b><span class="muted">{{ 'green = best of the squad · red = worst' if live_rows|length > 1 else 'green = better than usual · red = worse' }}</span></div>
+    {% with pt_head = ('Player' if live_rows|length > 1 else 'Session') %}{% include "_player_table.html" %}{% endwith %}</div>{% endif %}
+</section>{% endif %}

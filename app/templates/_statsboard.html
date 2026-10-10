@@ -1,0 +1,25 @@
+{# Stats-only live dashboard (2026-10-10): fills the video's spot when the viewer picks "Stats only" (html.statsonly).
+   Big session tiles + a card per game this session, newest first; live.js refreshes it in place (#statsboard) and
+   rolls the numbers that changed. Needs sb = web._live_board() (None before the first game of the session). #}
+{% if onair %}<section class="panel statsboard" id="statsboard" aria-label="Live stats">
+{% if sb %}{% set a = sb.a %}
+  <div class="sb-tiles">
+    <div class="sb-tile big {{ 'pos' if a.wins > a.losses else 'neg' if a.losses > a.wins }}"><span>Record</span><b>{{ a.wins }}-{{ a.losses }}</b><small>{{ a.games }} game{{ '' if a.games == 1 else 's' }} this session</small></div>
+    <div class="sb-tile"><span>Win %</span><b>{{ a.win_pct|round|int }}%</b></div>
+    <div class="sb-tile"><span>KDA</span><b>{{ a.kda|kda }}</b></div>
+    <div class="sb-tile"><span>K/D</span><b>{{ a.kd }}</b></div>
+    <div class="sb-tile"><span>Dmg/min</span><b>{{ a.dmg_pm if a.dmg_pm is not none else '—' }}</b></div>
+    <div class="sb-tile"><span>SC%</span><b>{{ (a.sc_pct ~ '%') if a.sc_pct is not none else '—' }}</b></div>
+    <div class="sb-tile"><span>Accuracy</span><b>{{ (a.acc ~ '%') if a.acc is not none else '—' }}</b></div>
+    <div class="sb-tile"><span>CSR</span><b class="{{ 'pos' if a.csr_net and a.csr_net > 0 else 'neg' if a.csr_net and a.csr_net < 0 }}">{{ '{:+}'.format(a.csr_net) if a.csr_net is not none else '—' }}</b></div>
+  </div>
+  <div class="sb-games">{% for g in sb.cards %}
+    <a class="sb-game {{ g.outcome|lower }}" href="/match/{{ g.match_id }}{% if p is defined and p.slug %}?player={{ p.slug }}{% endif %}">
+      <div class="sb-gh"><b class="res {{ g.outcome|lower }}">{{ g.outcome or '—' }}</b><span>{{ g.map or 'Unknown map' }}{% if g.mode %} · {{ g.mode }}{% endif %}</span><small>{{ g.t|dt('%-I:%M %p') }}{% if g.score %} · {{ g.score }}{% endif %}</small></div>
+      {% for l in g.lines %}<div class="sb-line">{% if l.who %}<span class="sb-who">{{ l.who }}</span>{% endif %}<b class="sb-kda3">{{ l.k }}/{{ l.d }}/{{ l.a }}</b>
+        <span><b>{{ l.kda|kda if l.kda is not none else '—' }}</b> KDA</span>{% if l.dmg_pm is not none %}<span><b>{{ l.dmg_pm }}</b> /min</span>{% endif %}{% if l.sc_pct is not none %}<span><b>{{ l.sc_pct }}%</b> SC</span>{% endif %}{% if l.csr_d is not none %}<span class="{{ 'pos' if l.csr_d > 0 else 'neg' if l.csr_d < 0 }}"><b>{{ '{:+}'.format(l.csr_d) }}</b> CSR</span>{% endif %}</div>{% endfor %}
+    </a>{% endfor %}</div>
+{% else %}
+  <div class="sb-empty"><span class="oa-live"><i></i>LIVE</span><b>No finished games yet this stream</b><p>Stats land here the moment each game ends. The page checks every 15 seconds; nothing to reload.</p></div>
+{% endif %}
+</section>{% endif %}

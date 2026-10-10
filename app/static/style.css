@@ -1107,7 +1107,7 @@ a.sessbtn:hover{border-color:var(--acc2);color:var(--acc2)}.sessbtn.off{opacity:
 /* live: no event log under the video, the video gets the room */
 #player.is-live .elog,#player.is-live #elog{display:none!important}
 /* live layout order when the columns stack (<1200px, .cols children are display:contents): video, live stats, chat, clips */
-@media(max-width:1199px){.cols #onair{order:2}.cols #twchat{order:3}.cols .liveclips{order:4}}
+@media(max-width:1199px){.cols #onair{order:2}.cols #livevs{order:3}.cols #twchat{order:4}.cols .liveclips{order:5}}
 /* live: clips as rows under the video (heat.js moves them out of the side column) */
 .liveclips{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-top:16px;min-width:0}.liveclips .moments,.liveclips .clipgrid{min-width:0}
 .liveclips .panel{margin:0;min-width:0}
@@ -1140,3 +1140,149 @@ a.sessbtn:hover{border-color:var(--acc2);color:var(--acc2)}.sessbtn.off{opacity:
  html.chat-open .chatshade{opacity:1;pointer-events:auto}
 }
 @media(max-width:700px){.twchat .ph{flex-wrap:nowrap;margin-bottom:8px}.twchat .ph>.muted{display:none}.twchat .ph .vod{margin-left:auto;white-space:nowrap}}
+/* ---- live updates (live.js): heartbeat, new-game banner, rolling numbers, new rows ---- */
+.oa-beat{display:inline-flex;align-items:center;gap:5px;margin-left:auto;font-size:11px;color:var(--mute);white-space:nowrap}
+.oa-beat svg{width:14px;height:14px;transform:rotate(-90deg)}
+.oa-beat circle{fill:none;stroke:rgba(255,255,255,.12);stroke-width:2.5}
+.oa-beat circle.ring{stroke:#ff6b6b;stroke-dasharray:50.3;stroke-dashoffset:50.3;stroke-linecap:round}
+.oa-beat.go circle.ring{animation:beatring 15s linear forwards}
+@keyframes beatring{to{stroke-dashoffset:0}}
+.gamebanner{position:fixed;left:50%;top:14px;z-index:90;display:flex;align-items:center;gap:12px;min-width:min(360px,calc(100vw - 32px));max-width:calc(100vw - 32px);padding:10px 16px 10px 10px;border-radius:16px;
+ background:#18130f;border:1px solid var(--line);box-shadow:0 18px 50px rgba(0,0,0,.6);transform:translate(-50%,-140%);opacity:0;transition:transform .45s cubic-bezier(.2,1.3,.4,1),opacity .3s}
+.gamebanner.on{transform:translate(-50%,0);opacity:1}
+.gamebanner .gb-res{display:grid;place-items:center;width:46px;height:46px;border-radius:12px;font-size:24px;font-weight:900;color:#fff;background:#555}
+.gamebanner.win{border-color:rgba(63,191,117,.7);box-shadow:0 18px 50px rgba(0,0,0,.6),0 0 30px rgba(63,191,117,.25)}.gamebanner.win .gb-res{background:linear-gradient(135deg,#2fbf6b,#1d8a4c)}
+.gamebanner.loss{border-color:rgba(224,96,79,.7);box-shadow:0 18px 50px rgba(0,0,0,.6),0 0 30px rgba(224,96,79,.25)}.gamebanner.loss .gb-res{background:linear-gradient(135deg,#e0604f,#a83a2c)}
+.gamebanner .gb-txt b{display:block;font-size:15px}.gamebanner .gb-txt small{display:block;margin-top:2px;font-size:12px;color:var(--mute)}
+.gamebanner.on .gb-res{animation:gbpop .6s .2s both}@keyframes gbpop{0%{transform:scale(.4) rotate(-12deg)}70%{transform:scale(1.15)}100%{transform:none}}
+.tick-up,.tick-down,.tick{animation:tickglow 1.6s ease-out;border-radius:4px}
+.tick-up{--tg:rgba(74,222,128,.55)}.tick-down{--tg:rgba(248,113,113,.55)}.tick{--tg:rgba(255,176,102,.55)}
+@keyframes tickglow{0%{box-shadow:0 0 0 0 var(--tg);background-color:var(--tg)}100%{box-shadow:0 0 0 8px transparent}}
+tr.row-new>td{animation:rownew 2.4s ease-out}
+tr.row-new{animation:rowin .6s cubic-bezier(.2,1,.3,1)}
+@keyframes rowin{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+@keyframes rownew{0%,30%{background-color:rgba(255,176,102,.22)}100%{}}
+.sec-new{animation:secnew 1.6s ease-out}@keyframes secnew{0%{box-shadow:0 0 0 2px rgba(255,176,102,.6)}100%{box-shadow:0 0 0 0 transparent}}
+#onair.won{animation:oawon 2.2s ease-out}#onair.lost{animation:oalost 2.2s ease-out}
+@keyframes oawon{0%,25%{box-shadow:0 0 0 2px rgba(63,191,117,.9),0 0 40px rgba(63,191,117,.45)}100%{}}
+@keyframes oalost{0%,25%{box-shadow:0 0 0 2px rgba(224,96,79,.9),0 0 40px rgba(224,96,79,.45)}100%{}}
+@media(prefers-reduced-motion:reduce){.gamebanner{transition:opacity .2s}.gamebanner.on .gb-res,tr.row-new,.oa-beat.go circle.ring,#onair.won,#onair.lost{animation:none}}
+
+/* live: session vs usual right under the video */
+.livevs{margin-top:16px}.livevs .ph{margin-bottom:8px}.livevs table.ptable{margin:0}
+@media(max-width:1199px){.livevs{margin-top:0}}
+/* stats-only live mode (live panel "Stats only" switch) */
+.oa-mode{display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 11px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.25);color:var(--ink);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.oa-mode:hover{border-color:#ff8a8a}.oa-mode .so-on{display:none}
+html.statsonly .oa-mode .so-on{display:inline}html.statsonly .oa-mode .so-off{display:none}
+html.statsonly #player,html.statsonly #twchat,html.statsonly .chattab,html.statsonly .chatshade{display:none!important}
+/* with the stream off, the live stats lead: side column becomes the main stats column */
+@media(min-width:1200px){html.statsonly .cols.video-layout{grid-template-columns:minmax(0,1fr) clamp(380px,32vw,560px)}}
+html.statsonly #livevs{margin-top:0}
+@media(max-width:1199px){html.statsonly .cols #onair{order:0}}
+/* "Playing now" (no stream): the live panel look in green */
+.onair.playnow{border-color:rgba(74,222,128,.45);background:linear-gradient(90deg,rgba(46,160,90,.14),rgba(255,176,102,.05) 60%,transparent),var(--panel,#16130f);margin:0 0 16px}
+.oa-live.pn{background:#1f9d55}
+.playnow .oa-grid{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.pn-pips{display:flex;flex-wrap:wrap;gap:3px;margin-top:8px}
+.pn-pips .pip{width:12px;height:12px;border-radius:3px;animation:pipin .35s both}
+.pn-pips .pip:last-child{box-shadow:0 0 0 2px rgba(255,255,255,.5)}
+@keyframes pipin{from{transform:scale(0)}to{transform:none}}
+.pn-last{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 6px;margin-top:8px;padding:7px 10px;border-radius:9px;background:rgba(0,0,0,.25);border:1px solid var(--line);color:var(--ink);font-size:13px;text-decoration:none}
+.pn-last .lab{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-right:4px}
+.pn-last.win{border-color:rgba(63,191,117,.45)}.pn-last.loss{border-color:rgba(224,96,79,.45)}
+.pn-vs{margin-top:12px}.pn-vs-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:0 0 6px}.pn-vs-h b{font-size:14px}.pn-vs-h .muted{font-size:12px}
+@media(prefers-reduced-motion:reduce){.pn-pips .pip{animation:none}}
+/* live, two columns: no collapse bar (the live panel has Stats only) and a compact table, so the video gets the height */
+.mediasec.live>.mediabar{display:none}
+.mediasec.live{padding-top:0}
+.livevs{padding:8px 10px}.livevs table.ptable th:first-child{color:var(--acc2);font-size:11.5px;letter-spacing:.02em;text-transform:none;font-weight:800}
+.livevs table.ptable th,.livevs table.ptable td{padding-top:6px;padding-bottom:6px}
+.livevs{margin-top:12px}
+/* "Stats only" pill in the header row while live */
+.hub-actions .pill.livepill{border-color:rgba(255,80,80,.55)!important;background:rgba(233,25,22,.14)!important;color:#ffd0d0!important;font-weight:800;cursor:pointer}
+.livepill .so-on{display:none}html.statsonly .livepill .so-on{display:inline}html.statsonly .livepill .so-off{display:none}
+html.statsonly .hub-actions .pill.livepill{border-color:rgba(145,70,255,.6)!important;background:rgba(145,70,255,.16)!important;color:#e4d4ff!important}
+/* stats-only dashboard (_statsboard.html) — only in stats-only mode, in the video's spot */
+.statsboard{display:none}
+html.statsonly .statsboard{display:block;margin:0 0 12px}
+.sb-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px}
+.sb-tile{padding:12px 14px;border-radius:12px;background:rgba(0,0,0,.25);border:1px solid var(--line)}
+.sb-tile span{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.sb-tile b{display:block;margin-top:4px;font-size:28px;font-weight:900;line-height:1.1;font-variant-numeric:tabular-nums}
+.sb-tile.big{grid-column:span 2;background:linear-gradient(135deg,rgba(255,255,255,.04),rgba(0,0,0,.25))}
+.sb-tile.big b{font-size:44px}.sb-tile.big small{display:block;color:var(--mute);font-size:12px}
+.sb-tile.big.pos{border-color:rgba(63,191,117,.5)}.sb-tile.big.neg{border-color:rgba(224,96,79,.5)}
+.sb-tile b.pos{color:#5fd38d}.sb-tile b.neg{color:#f17b6b}
+.sb-games{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-top:14px}
+.sb-game{display:block;padding:10px 12px;border-radius:12px;background:rgba(0,0,0,.22);border:1px solid var(--line);border-left:4px solid #666;color:var(--ink);text-decoration:none;transition:transform .15s,border-color .15s}
+.sb-game:hover{transform:translateY(-2px);border-color:var(--acc2)}
+.sb-game.win{border-left-color:#3fbf75}.sb-game.loss{border-left-color:#e0604f}
+.sb-game:first-child{box-shadow:0 0 0 1px rgba(255,176,102,.35)}
+.sb-gh{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px}.sb-gh span{font-weight:700}.sb-gh small{margin-left:auto;color:var(--mute);font-size:11.5px}
+.sb-line{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin-top:6px;font-size:12.5px;color:var(--mute)}
+.sb-line b{color:var(--ink)}.sb-line .sb-kda3{font-size:20px;font-weight:900;color:var(--ink)}.sb-line .sb-who{flex-basis:100%;font-weight:700;color:var(--ink);font-size:12px}
+.sb-line .pos b{color:#5fd38d}.sb-line .neg b{color:#f17b6b}
+.sb-empty{display:grid;justify-items:start;gap:8px;padding:28px 24px}.sb-empty b{font-size:22px}.sb-empty p{margin:0;color:var(--mute)}
+@media(max-width:700px){.sb-tile b{font-size:22px}.sb-tile.big b{font-size:34px}.sb-games{grid-template-columns:1fr}}
+@media(max-width:1199px){html.statsonly .cols .statsboard{order:1}}
+/* live stats + chat share the right column's height; drag the handle between them (heat.js) */
+#onair.split{overflow:auto;scrollbar-width:thin;margin-bottom:0}
+.sidesplit{display:flex;align-items:center;justify-content:center;height:16px;margin:0;cursor:row-resize;touch-action:none;user-select:none}
+.sidesplit i{width:46px;height:4px;border-radius:999px;background:rgba(255,255,255,.18);transition:background .15s,width .15s}
+.sidesplit:hover i,.sidesplit:focus-visible i,html.dragging-split .sidesplit i{background:var(--acc2);width:70px}
+html.dragging-split,html.dragging-split *{cursor:row-resize!important;user-select:none}
+html.dragging-split iframe{pointer-events:none}
+.colside #twchat{margin-top:0}
+.colside .twchat{min-height:0}
+/* live stats box adapts to its height (drag handle): less when small, more when tall */
+.oa-more,.oa-glist{display:none}
+.oa-more{grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px 10px;margin-top:10px}
+.oa-more span{display:flex;flex-direction:column;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.oa-more b{font-size:17px;letter-spacing:0;text-transform:none;color:var(--ink);font-variant-numeric:tabular-nums}.oa-more b.pos{color:#5fd38d}.oa-more b.neg{color:#f17b6b}
+.oa-glist{flex-direction:column;gap:4px;margin-top:10px}
+.oa-glist a{display:block;padding:5px 9px;border-radius:8px;background:rgba(0,0,0,.22);border-left:3px solid #666;color:var(--ink);font-size:12.5px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.oa-glist a.win{border-left-color:#3fbf75}.oa-glist a.loss{border-left-color:#e0604f}
+#onair.split{container:livebox/size}
+@container livebox (min-height:420px){.oa-more{display:grid}}
+@container livebox (min-height:500px){.oa-glist{display:flex}}
+@container livebox (max-height:300px){.oa-segs,.oa-note,.oa-lobby,.oa-best,.oa-miles{display:none}}
+@container livebox (max-height:230px){.oa-strip,.oa-title,.oa-top .oa-meta{display:none}}
+@container livebox (max-height:170px){.oa-last,.oa-wait{display:none}.oa-rec b{font-size:20px}}
+@media(max-width:1199px){.oa-more{display:grid}}
+/* Stats only <-> stream: view transition */
+@media(prefers-reduced-motion:no-preference){
+ #player{view-transition-name:livemain}
+ html.statsonly #statsboard{view-transition-name:livemain}
+ #onair{view-transition-name:liveside}#twchat{view-transition-name:livechat}#livevs{view-transition-name:livevs}
+ ::view-transition-group(*){animation-duration:.55s;animation-timing-function:cubic-bezier(.2,.8,.2,1)}
+ html.vt-to-stats::view-transition-old(livemain){animation:vtVideoOut .45s cubic-bezier(.4,0,.2,1) both}
+ html.vt-to-stats::view-transition-new(livemain){animation:vtBoardIn .6s .12s cubic-bezier(.2,.9,.25,1.15) both}
+ html.vt-to-stream::view-transition-old(livemain){animation:vtBoardOut .35s ease-in both}
+ html.vt-to-stream::view-transition-new(livemain){animation:vtVideoIn .6s .1s cubic-bezier(.2,.9,.25,1.1) both}
+ ::view-transition-old(livechat){animation:vtChatOut .35s ease-in both}
+ ::view-transition-new(livechat){animation:vtChatIn .45s .15s ease-out both}
+ html.statsonly .sb-tile{animation:sbTile .5s cubic-bezier(.2,.9,.25,1.2) both}
+ html.statsonly .sb-tile:nth-child(2){animation-delay:.05s}html.statsonly .sb-tile:nth-child(3){animation-delay:.1s}html.statsonly .sb-tile:nth-child(4){animation-delay:.15s}
+ html.statsonly .sb-tile:nth-child(5){animation-delay:.2s}html.statsonly .sb-tile:nth-child(6){animation-delay:.25s}html.statsonly .sb-tile:nth-child(7){animation-delay:.3s}html.statsonly .sb-tile:nth-child(8){animation-delay:.35s}
+ html.statsonly .sb-game{animation:sbTile .5s .3s both}
+}
+@keyframes vtVideoOut{to{opacity:0;transform:scale(.9) perspective(900px) rotateX(8deg);filter:blur(10px) brightness(.3)}}
+@keyframes vtBoardIn{from{opacity:0;transform:translateY(40px) scale(.96)}}
+@keyframes vtBoardOut{to{opacity:0;transform:translateY(-20px) scale(.97);filter:blur(6px)}}
+@keyframes vtVideoIn{from{opacity:0;transform:scale(1.06);filter:blur(12px) brightness(1.6)}}
+@keyframes vtChatOut{to{opacity:0;transform:translateX(60px)}}
+@keyframes vtChatIn{from{opacity:0;transform:translateX(60px)}}
+@keyframes sbTile{from{opacity:0;transform:translateY(14px) scale(.94)}}
+/* live numbers tinted against the player's usual: subtle, value colour + a small arrow; hover shows the usual */
+.lv{border-radius:8px;padding:3px 6px;margin:-3px -6px;transition:background-color .3s}
+.lv b i{font-style:normal;font-size:.55em;margin-left:3px;vertical-align:.35em}
+.lv.up{background:rgba(74,222,128,.08)}.lv.up b{color:#9fe3b4}.lv.up b i{color:#4ade80}
+.lv.down{background:rgba(248,113,113,.08)}.lv.down b{color:#f3a9a0}.lv.down b i{color:#f87171}
+/* the extra numbers in groups (shown when the box is tall / on phones) */
+.oa-more{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:10px}
+.oa-more .oa-grp{display:flex;flex-wrap:wrap;align-content:flex-start;gap:6px 14px;padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.22);border:1px solid var(--line)}
+.oa-more .oa-grp>.lab{flex-basis:100%;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--acc2);font-weight:800}
+.oa-more .lv{display:flex;flex-direction:column;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);margin:0;padding:3px 6px}
+.oa-more .lv b{font-size:16px;letter-spacing:0;text-transform:none;color:var(--ink);font-variant-numeric:tabular-nums}
+.oa-more .lv.up b{color:#9fe3b4}.oa-more .lv.down b{color:#f3a9a0}

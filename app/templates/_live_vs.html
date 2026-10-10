@@ -1,0 +1,8 @@
+{# Live (2026-10-10): the session table right under the video, so viewers see at a glance whether the player is doing
+   better or worse than usual (player page: this session vs the usual 90 days; squad: each player, best SC% first).
+   Refreshed in place by live.js (#livevs) on every finished game. Needs pt, sess_current. #}
+{% if onair and pt %}<section class="panel livevs" id="livevs">
+  {% set vs_title %}{% if squad_view %}{{ 'Playing together now' if sess_current else 'Last session together' }}{% else %}{{ 'This session vs usual' if sess_current else 'Last session vs usual' }}{% endif %}{% endset %}
+  {# compact (no title row, the video gets the room): the title is the table's first header cell, the key in its tooltip #}
+  {% with pt_head = vs_title, pt_tip = ('green = best of the squad, red = worst' if squad_view else 'green = better than usual, red = worse') ~ ('' if sess_current else ' · updates with the first game this stream') %}{% include "_player_table.html" %}{% endwith %}
+</section>{% endif %}

@@ -7,7 +7,7 @@
 {% set hub_meta %}{% if tw %}<a class="tw" href="https://twitch.tv/{{ tw }}" target="_blank" rel="noopener">● twitch.tv/{{ tw }}</a><span class="dot">·</span>{% endif %}{% if alts %}<span class="altchip" title="Games from linked accounts are included">+ {{ alts|map(attribute='gamertag')|join(', ') }}</span><span class="dot">·</span>{% endif %}{% if d.since %}{{ a.games }} games since {{ d.since|dt('%b %-d') }}<span class="dot">·</span>{% endif %}updated {{ p.last_synced|ago }}<details class="addmem soloadd"><summary title="Add a squadmate to see your stats together">+ Add player</summary><form method="post" action="/add"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="squad" value="{{ p.slug }}"><input name="gamertag" maxlength="15" required placeholder="Gamertag" aria-label="Gamertag to add" autocomplete="off"><input type="hidden" name="twitch" value=""><button type="submit">Add</button></form></details>{% with tw_rows = [(p.slug, p.gamertag, tw or '')] %}{% include "_tw_form.html" %}{% endwith %}{% endset %}
 {% set hub_badges %}{% if d.csr_now %}<span class="pill hot">{{ d.csr_now }} <small>CSR<span class="pk"> · peak {{ d.csr_peak }}</span></small></span>{% endif %}{% if d.streak %}<span class="pill {{ 'w' if d.streak > 0 else 'l' }}">{{ d.streak|abs }}{{ 'W' if d.streak > 0 else 'L' }} <small>streak</small></span>{% endif %}{% endset %}
 {% include "_hub_head.html" %}
-{% if not (onair and tw) %}{% include "_onair.html" %}{% endif %}{# live with video: the panel sits beside the player (colside) #}
+{% if not (onair and tw) %}{% include "_onair.html" %}{% endif %}{% with live_rows = [{"slug": p.slug, "gamertag": p.gamertag, "live": d.live}] %}{% include "_playing.html" %}{% endwith %}{# live with video: the panel sits beside the player (colside) #}
 {% if p.sync_state in ('private','error') %}<form method="post" action="/p/{{ p.slug }}/refresh" class="retry-profile"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><p class="muted">Halo could not provide this history. If your public-history settings changed or the service recovered, try again.</p><button class="secondary" type="submit">Retry public match history</button></form>{% endif %}
 
 {% if p.sync_state in ('queued','syncing') %}
@@ -23,11 +23,12 @@
 
 {% set player_block %}
 {% if tw %}
-<section class="panel player{{ ' is-live' if onair }}" id="player">
+{% include "_statsboard.html" %}<section class="panel player{{ ' is-live' if onair }}" id="player">
   <div class="ph"><h2>Twitch</h2><button type="button" class="secondary" data-fullscreen="#player">Full screen</button><span class="muted" id="playerlabel">{{ plabel }}</span></div>
   <div class="embed"><div id="tplayer"></div></div>
   <div class="elog inplayer" id="elog"></div>
 </section>
+{% with squad_view = False %}{% include "_live_vs.html" %}{% endwith %}
 {% endif %}
 {% endset %}
 {% if tab == 'analysis' %}
@@ -44,7 +45,7 @@
 {% if periods %}{% include "_periods.html" %}{% endif %}
 {% include "_hub_tools.html" %}
 {% else %}
-{% set live_rows = [{"slug": p.slug, "gamertag": p.gamertag, "live": d.live}] %}{% set live_slugs = p.slug %}{% if not tw and tab == 'latest' and (not a.games or (d.live and d.live.active)) %}{% include "_live.html" %}{% endif %}
+{% set live_rows = [{"slug": p.slug, "gamertag": p.gamertag, "live": d.live}] %}{% set live_slugs = p.slug %}{% if not tw and tab == 'latest' and (not a.games or (d.live and d.live.active)) %}{% if d.live and d.live.ended_ago < 5400 %}<div class="tracker-quiet">{% include "_live.html" %}</div>{% else %}{% include "_live.html" %}{% endif %}{% endif %}{# "Playing now" (#playnow) is the visible live view; the tracker stays as live.js's poller #}
 {% if a.games %}
 {% if tab == 'latest' %}
 {% set gamelog_block %}
@@ -52,7 +53,7 @@
 {% if s %}
 <section class="panel latest gamelog statfold solo-log" id="latest">
   <div class="ph"><h2>Game log</h2><span class="muted">{{ ('Current session' if sess_current else 'Last session') if d.s_idx == 0 else 'Session' }} · {{ s.start|dt('%a %b %-d') }}{% if d.sessions|length > 1 %} · <a href="{{ tab_url('sessions') }}">All sessions →</a>{% endif %}</span>{% with nav_list = d.sessions, nav_sel = d.s_idx %}{% include "_sess_nav.html" %}{% endwith %}<button type="button" class="allstats-btn" data-allstats aria-pressed="false"><span class="as-off">All stats</span><span class="as-on">Key stats</span></button>{% include "_stat_help.html" %}</div>
-  {% if pt %}{% with pt_head = "Session" %}{% include "_player_table.html" %}{% endwith %}{% endif %}
+  {% if pt and not onair and not (d.live and d.live.ended_ago < 5400) %}{% with pt_head = "Session" %}{% include "_player_table.html" %}{% endwith %}{% endif %}
   <div class="tablewrap"><table class="heat">
     <thead><tr><th data-pin>#</th><th data-pin>Time</th><th data-pin>Map · Mode</th><th data-pin>Result</th><th data-pin>Score</th><th class="xc">Len</th><th data-heat title="Share of your team's personal score">SC%</th><th>K/D/A</th><th data-heat title="Kills + assists/3 - deaths">KDA</th><th data-heat title="Damage per minute">Dmg/min</th><th title="Damage per kill + assist (lower is better)">Dmg/KA</th><th title="Damage dealt minus taken">Dmg ±</th><th title="Mode objective: flag caps, ball time, hill time or zone caps">Obj</th><th class="xc xw" title="Share of your team's damage">Dmg%</th><th class="xc" title="Kills above or below what Halo expected for this lobby">xK±</th><th class="xc" title="Your team's MMR minus the enemy's (negative = underdog)">Lobby</th><th class="xc xw" title="Ranked CSR change">CSR</th><th class="xc xw" title="Average life">Life</th><th class="xc xw">Acc</th><th class="xc" title="Headshot kills / kills">HS%</th><th data-pin></th></tr>
     {% if sess_agg %}{% set ga = sess_agg %}{% set secs = s.matches|sum(attribute='duration_s') %}<tr class="glsess"><td></td><td><b>Session</b></td><td>{{ ga.games }} games · {{ (secs // 3600 ~ 'h ' ~ secs % 3600 // 60 ~ 'm') if secs >= 3600 else (secs // 60 ~ 'm') }}</td><td><b>{{ ga.wins }}–{{ ga.losses }}</b></td><td></td><td class="xc"></td>
@@ -170,7 +171,7 @@ function ensurePlayer(){
   player.addEventListener(Twitch.Player.PLAYING,hush);player.addEventListener(Twitch.Player.READY,hush);
   return player;
 }
-window.CTInitSide=ensurePlayer;
+window.CTInitSide=function(){if(document.documentElement.classList.contains('statsonly'))return;return ensurePlayer()};   /* stats-only live mode: no player at all */
 if(!document.getElementById('mediasec'))ensurePlayer();
 var log=ClutchLog.init({seek:function(s){clearInterval(window.__goIv);try{player.seek(s);if(player.isPaused())player.play()}catch(e){}},el:document.getElementById('elog'),vm:{{ vm|tojson }},names:{{ [p.gamertag]|tojson }}});
 var pendingT=0;window.CT_SIDE={go:function(a,b){go(a,b)},player:player};

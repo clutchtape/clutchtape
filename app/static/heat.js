@@ -203,13 +203,39 @@ document.addEventListener('toggle', function (e) {
   }, true);
 })();
 
-/* live chat: fills the player's height beside it (two-column layout only) */
+/* live, two columns: the right column (live stats + chat) is exactly as tall as the left (video + session table), and a
+   handle between stats and chat resizes both together — drag it, one grows and the other shrinks; double-click resets.
+   The split is remembered per device. Phones/tablets: chat is a drawer / sits under the stats, so none of this runs. */
 (function () {
   var chat = document.getElementById('twchat'), player = document.getElementById('player'); if (!chat || !player) return;
-  /* live: the stats panel (#onair) sits above the chat in the same column, so chat takes what's left of the player's height */
-  function fit() { var oa = chat.parentElement.querySelector('#onair'), above = oa ? oa.offsetHeight + 16 : 0;
-    if (window.innerWidth > 1199 && player.offsetHeight > 300) chat.style.setProperty('--chat-h', Math.max(360, player.offsetHeight - above) + 'px'); else chat.style.removeProperty('--chat-h'); }
-  if (window.ResizeObserver) { var ro = new ResizeObserver(fit); ro.observe(player); var oa0 = chat.parentElement.querySelector('#onair'); if (oa0) ro.observe(oa0); } window.addEventListener('resize', fit); fit();
+  var side = chat.parentElement, html = document.documentElement, split = null, KEY = 'ct-livesplit';
+  try { var v = parseInt(localStorage.getItem(KEY), 10); if (v > 0) split = v; } catch (e) {}
+  var bar = document.createElement('div'); bar.className = 'sidesplit'; bar.setAttribute('role', 'separator'); bar.setAttribute('aria-orientation', 'horizontal');
+  bar.title = 'Drag to resize live stats and chat · double-click to reset'; bar.tabIndex = 0; bar.innerHTML = '<i></i>';
+  function oa() { return side.querySelector('#onair'); }
+  function on() { return window.innerWidth >= 1200 && !html.classList.contains('statsonly') && oa() && player.offsetHeight > 200; }
+  function fit() {
+    var o = oa();
+    if (!on()) { chat.style.removeProperty('--chat-h'); if (o) { o.style.height = ''; o.classList.remove('split'); } bar.hidden = true; return; }
+    if (bar.parentElement !== side || bar.nextElementSibling !== chat) side.insertBefore(bar, chat);
+    bar.hidden = false;
+    var vs = document.getElementById('livevs'), total = player.offsetHeight + (vs && vs.offsetHeight ? vs.offsetHeight + 12 : 0);
+    o.style.height = ''; o.classList.remove('split'); var natural = o.scrollHeight, gaps = bar.offsetHeight;   /* measure without the size container */
+    var h = Math.max(150, Math.min(split || natural, total - gaps - 220));
+    o.style.height = h + 'px'; o.classList.add('split');
+    chat.style.setProperty('--chat-h', Math.max(220, total - h - gaps) + 'px');
+  }
+  var drag = null;
+  bar.addEventListener('pointerdown', function (e) { var o = oa(); if (!o) return; drag = { y: e.clientY, h: o.offsetHeight }; bar.setPointerCapture(e.pointerId); html.classList.add('dragging-split'); e.preventDefault(); });
+  bar.addEventListener('pointermove', function (e) { if (!drag) return; split = Math.round(drag.h + e.clientY - drag.y); fit(); });
+  function end() { if (!drag) return; drag = null; html.classList.remove('dragging-split'); try { localStorage.setItem(KEY, String(split)); } catch (e) {} }
+  bar.addEventListener('pointerup', end); bar.addEventListener('pointercancel', end);
+  bar.addEventListener('dblclick', function () { split = null; try { localStorage.removeItem(KEY); } catch (e) {} fit(); });
+  bar.addEventListener('keydown', function (e) { if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return; var o = oa(); if (!o) return; split = o.offsetHeight + (e.key === 'ArrowDown' ? 24 : -24); fit(); try { localStorage.setItem(KEY, String(split)); } catch (x) {} e.preventDefault(); });
+  if (window.ResizeObserver) { var ro = new ResizeObserver(function () { requestAnimationFrame(fit); }); ro.observe(player); var vs0 = document.getElementById('livevs'); if (vs0) ro.observe(vs0); }
+  new MutationObserver(function () { requestAnimationFrame(fit); }).observe(side, { childList: true });   /* live.js swaps #onair in place */
+  if (player.parentElement) new MutationObserver(function () { requestAnimationFrame(fit); }).observe(player.parentElement, { childList: true });   /* ...and #livevs */
+  window.addEventListener('resize', fit); fit(); window.ctSideFit = fit;
 })();
 
 /* live on a phone: the stats panel goes right under the video instead of at the end of the side column */
@@ -232,7 +258,7 @@ document.addEventListener('toggle', function (e) {
   var secs = document.querySelectorAll('.colside .clipsec, .colside .twclips'); if (!secs.length) return;
   var row = document.createElement('div'); row.className = 'liveclips';
   [].forEach.call(secs, function (s) { row.appendChild(s); });
-  player.after(row);
+  (document.getElementById('livevs') || player).after(row);   /* after the session table when there is one */
 })();
 
 /* live: the video comes first, so the game-type / Summary-Raw row (it only filters the stats) moves below it */
@@ -262,4 +288,28 @@ document.addEventListener('toggle', function (e) {
   /* no tab while the stream section is collapsed */
   function sync() { tab.hidden = !!(ms && !ms.open); if (tab.hidden) close(); }
   if (ms) ms.addEventListener('toggle', sync); sync();
+})();
+
+/* "Stats only" on the live panel: hide the stream + chat (the player isn't even created), the stats keep rolling in;
+   remembered per device. "Show stream" brings it back. */
+(function () {
+  var html = document.documentElement;
+  function sync() { var on = html.classList.contains('statsonly');
+    [].forEach.call(document.querySelectorAll('[data-statsonly]'), function (b) { b.setAttribute('aria-pressed', String(on)); }); }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-statsonly]'); if (!b) return;
+    var on = !html.classList.contains('statsonly');
+    function apply() { html.classList.toggle('statsonly', on);
+      try { localStorage.setItem('ct-statsonly', on ? '1' : '0'); } catch (x) {}
+      if (on) { try { window.__sp && window.__sp.pause(); } catch (x) {} html.classList.remove('chat-open'); }
+      else { if (window.CTInitSide) window.CTInitSide(); try { window.__sp && window.__sp.play(); } catch (x) {} }
+      window.dispatchEvent(new Event('resize')); if (window.ctSideFit) window.ctSideFit(); sync(); }
+    /* the video blurs away and the live dashboard rises into its place (View Transitions; instant where unsupported) */
+    var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (document.startViewTransition && !calm) { html.classList.add(on ? 'vt-to-stats' : 'vt-to-stream'); var vt = document.startViewTransition(apply);
+      vt.finished.finally(function () { html.classList.remove('vt-to-stats', 'vt-to-stream'); }); }
+    else apply();
+  });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', sync); else sync();
+  new MutationObserver(sync).observe(document.body, { childList: true, subtree: true });
 })();
