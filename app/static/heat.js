@@ -208,7 +208,7 @@ document.addEventListener('toggle', function (e) {
   var chat = document.getElementById('twchat'), player = document.getElementById('player'); if (!chat || !player) return;
   /* live: the stats panel (#onair) sits above the chat in the same column, so chat takes what's left of the player's height */
   function fit() { var oa = chat.parentElement.querySelector('#onair'), above = oa ? oa.offsetHeight + 16 : 0;
-    if (window.innerWidth > 900 && player.offsetHeight > 300) chat.style.setProperty('--chat-h', Math.max(360, player.offsetHeight - above) + 'px'); else chat.style.removeProperty('--chat-h'); }
+    if (window.innerWidth > 1199 && player.offsetHeight > 300) chat.style.setProperty('--chat-h', Math.max(360, player.offsetHeight - above) + 'px'); else chat.style.removeProperty('--chat-h'); }
   if (window.ResizeObserver) { var ro = new ResizeObserver(fit); ro.observe(player); var oa0 = chat.parentElement.querySelector('#onair'); if (oa0) ro.observe(oa0); } window.addEventListener('resize', fit); fit();
 })();
 
@@ -217,7 +217,7 @@ document.addEventListener('toggle', function (e) {
   var oa = document.querySelector('.colside #onair'), player = document.getElementById('player'); if (!oa || !player) return;
   var home = oa.parentElement, mark = document.createComment('onair');
   home.insertBefore(mark, oa);
-  var narrow = window.matchMedia('(max-width:900px)');
+  var narrow = window.matchMedia('(max-width:1199px)');   /* the columns stack below 1200px */
   function place() { var cur = document.getElementById('onair'); if (!cur) return;
     if (narrow.matches) { if (cur.previousElementSibling !== player) player.after(cur); }
     else if (cur.parentElement !== home) mark.after(cur); }
@@ -233,4 +233,10 @@ document.addEventListener('toggle', function (e) {
   var row = document.createElement('div'); row.className = 'liveclips';
   [].forEach.call(secs, function (s) { row.appendChild(s); });
   player.after(row);
+})();
+
+/* live: the video comes first, so the game-type / Summary-Raw row (it only filters the stats) moves below it */
+(function () {
+  var ms = document.querySelector('#mediasec.live'), kinds = document.querySelector('nav.kinds'); if (!ms || !kinds) return;
+  ms.after(kinds); kinds.classList.add('after-live');
 })();

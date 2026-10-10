@@ -1100,19 +1100,29 @@ a.sessbtn:hover{border-color:var(--acc2);color:var(--acc2)}.sessbtn.off{opacity:
 .twchat{display:flex;flex-direction:column;height:var(--chat-h,560px);min-height:360px;box-sizing:border-box}
 .twchat .ph{flex:0 0 auto;gap:8px}.twchat .ph h2{display:inline-flex;align-items:center;gap:8px}.twchat .ph .vod{margin-left:auto}
 .twchat-frame{flex:1 1 auto;min-height:0;width:100%;border:0;border-radius:10px;background:#0e0e10}
-@media(max-width:900px){.twchat{height:460px}}
+@media(max-width:1199px){.twchat{height:460px}}
 /* live: the stats panel beside the player (colside) */
 .colside .onair{margin:0 0 16px}.colside .oa-grid{grid-template-columns:minmax(0,1fr)}
 .colside .oa-top{flex-wrap:wrap;row-gap:4px}.colside .oa-title{flex-basis:100%;order:3;font-size:13px}
 /* live: no event log under the video, the video gets the room */
 #player.is-live .elog,#player.is-live #elog{display:none!important}
-/* live layout order on phones (.cols children are display:contents there): video, live stats, chat, clips */
-@media(max-width:900px){.cols #onair{order:2}.cols #twchat{order:3}.cols .liveclips{order:4}}
+/* live layout order when the columns stack (<1200px, .cols children are display:contents): video, live stats, chat, clips */
+@media(max-width:1199px){.cols #onair{order:2}.cols #twchat{order:3}.cols .liveclips{order:4}}
 /* live: clips as rows under the video (heat.js moves them out of the side column) */
-.liveclips{display:grid;gap:12px;margin-top:16px;min-width:0}
+.liveclips{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-top:16px;min-width:0}.liveclips .moments,.liveclips .clipgrid{min-width:0}
 .liveclips .panel{margin:0;min-width:0}
 .liveclips .moments{flex-direction:row;overflow-x:auto;gap:8px;padding-bottom:6px;scrollbar-width:thin;scroll-snap-type:x proximity}
 .liveclips .moments .mo{flex:0 0 300px;display:flex!important;scroll-snap-align:start}
 .liveclips .clipgrid{display:grid;grid-auto-flow:column;grid-auto-columns:220px;grid-template-columns:none;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
 .liveclips .clipmore{display:none}
 @media(max-width:700px){.liveclips .moments .mo{flex-basis:78%}.liveclips .clipgrid{grid-auto-columns:62%}}
+
+/* phones: "+ Add player" and "Twitch" share a row until one is opened */
+@media(max-width:700px){.addmem.soloadd:not([open]),.twpop:not([open]){display:inline-block;margin:6px 6px 0 0}}
+.kinds.after-live{margin-top:14px}
+.addmem:not([open])>form,.twpop:not([open])>.twcard{display:none}
+.brk-modes{overflow-x:auto}
+#player.is-live>.ph{display:none}
+/* live stats card on narrow screens: keep the record on one line, nothing past the edge */
+.oa-rec b{white-space:nowrap}.oa-card,.oa-grid{min-width:0}.oa-card{overflow-wrap:anywhere}
+@media(max-width:360px){.oa-rec{flex-wrap:wrap;row-gap:2px}}
