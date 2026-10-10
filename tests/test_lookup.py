@@ -56,14 +56,26 @@ class LookupTests(unittest.TestCase):
         with patch.object(web, '_add_one', side_effect=[('cykul', 'cykul', None), ('lethul', None, None)]) as lookup:
             response = self.post(['CyKul', 'Lethul'], ['twitch.tv/cykul', ''])
         self.assertEqual(response.status_code, 302)
-        # A Twitch link opens the full squad page (player, Watch together); 2026-10-08 product change.
-        self.assertEqual(response.location, '/squad/cykul,lethul?tw=cykul:cykul')
+        # 2026-10-10: the channel is remembered on this browser only (session), never put in the URL.
+        self.assertEqual(response.location, '/squad/cykul,lethul')
+        with self.client.session_transaction() as sess:
+            self.assertEqual(sess['tw'], {'cykul': 'cykul'})
         self.assertEqual(lookup.call_args_list[1].args, ('Lethul', ''))
 
+    def test_old_tw_links_are_remembered_then_cleaned(self):
+        db.run("INSERT OR IGNORE INTO players(xuid,gamertag,slug,created_at) VALUES('77','Tw Test','tw-test',0)")
+        r = self.client.get('/p/tw-test?tw=somechannel&tab=clips')
+        self.assertEqual(r.status_code, 302); self.assertEqual(r.location, '/p/tw-test?tab=clips')
+        with self.client.session_transaction() as sess:
+            self.assertEqual(sess['tw'], {'tw-test': 'somechannel'})
+        fresh = web.app.test_client()                                     # a different visitor never sees it
+        with fresh.session_transaction() as sess:
+            self.assertNotIn('tw', sess)
+
     def test_lookup_always_opens_the_one_page_per_player_or_squad(self):
-        # 2026-10-08: one page per player/squad (Halo-site layout); Twitch only adds ?tw=.
+        # 2026-10-08: one page per player/squad; 2026-10-10: Twitch never goes in the URL.
         with patch.object(web, '_add_one', return_value=('x-echo-x', 'x_echo_x', None)):
-            self.assertEqual(self.post(['x Echo x'], ['twitch.tv/x_echo_x']).location, '/p/x-echo-x?tw=x_echo_x')
+            self.assertEqual(self.post(['x Echo x'], ['twitch.tv/x_echo_x']).location, '/p/x-echo-x')
         with patch.object(web, '_add_one', return_value=('x-echo-x', None, None)):
             self.assertEqual(self.post(['x Echo x'], ['']).location, '/p/x-echo-x')
         with patch.object(web, '_add_one', side_effect=[('a', None, None), ('b', None, None)]):

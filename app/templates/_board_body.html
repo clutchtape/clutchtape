@@ -3,7 +3,7 @@
 <div class="board-toolbar"><div class="board-actions"><button type="button" class="secondary" data-fullscreen="#companion">Full screen</button></div></div>
 
 <details class="filter-panel"><summary>⚙ Filters</summary><form class="analysis-filters" method="get" id="analysis-filters"><input type="hidden" name="tab" value="analysis">
-{% if request.args.get('tw') %}<input type="hidden" name="tw" value="{{ request.args.tw }}">{% endif %}
+
 <label>Game type<select name="kind">{% for k,label in kinds %}<option value="{{ k }}" {{ 'selected' if k==b.kind }}>{{ label }}</option>{% endfor %}</select></label>
 <label>Playlist<select name="playlist"><option value="">All playlists</option>{% for pl in b.playlists %}<option value="{{ pl }}" {{ 'selected' if pl==b.playlist }}>{{ pl }}</option>{% endfor %}</select></label>
 <label>Period<select name="scope"><option value="session" {{ 'selected' if b.scope=='session' }}>Selected session</option><option value="30" {{ 'selected' if b.scope=='30' }}>Last 30 days</option><option value="90" {{ 'selected' if b.scope=='90' }}>Last 90 days</option><option value="all" {{ 'selected' if b.scope=='all' }}>All loaded history</option></select></label>

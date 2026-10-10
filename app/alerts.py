@@ -106,7 +106,8 @@ def resolve(target, host):
             gt, _, ch = spec.partition('|')
             configured[gt.strip().casefold()] = twitch.parse_login(ch.strip()) if ch else None
     raw = parse_qs(u.query).get('tw', [''])[0]
-    channels = {}
+    mine = session.get('tw') if isinstance(session.get('tw'), dict) else {}     # this browser's own Twitch choices
+    channels = {k: twitch.parse_login(v) for k, v in mine.items()}
     for value in raw.split(','):
         slug, sep, channel = value.partition(':')
         if sep:
@@ -119,9 +120,7 @@ def resolve(target, host):
         if channel and privacy.blocked(channel):
             channel = None
         members.append(dict(slug=p['slug'], name=p['gamertag'], channel=channel))
-    mapping = ','.join(p['slug']+':'+p['channel'] for p in members if p['channel'])
-    if mapping:
-        url += '?' + urlencode({'tw': mapping})
+    # channels stay out of the URL (2026-10-10); this device's follow keeps them for "now streaming" alerts
     return dict(key=','.join(p['slug'] for p in members), label=' + '.join(p['name'] for p in members), url=url, players=members)
 
 

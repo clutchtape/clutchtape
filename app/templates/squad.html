@@ -3,7 +3,7 @@
 {% block head %}{% if tab == 'analysis' %}<link rel="stylesheet" href="/static/companion.css?v=4"><link rel="stylesheet" href="/static/growth.css?v=1"><link rel="stylesheet" href="/static/analysis.css?v=4"><link rel="stylesheet" href="/static/dense.css?v=2">{% endif %}{% endblock %}
 {% block content %}
 {% set hub_title = ps|map(attribute="gamertag")|join(" + ") %}{% set save_label = hub_title %}{% set hub_slugs = slugs %}
-{% set hub_meta %}{% for p in ps %}{% set rest = ps|rejectattr('slug', 'equalto', p.slug)|map(attribute='slug')|list %}<span class="memchip"><a class="mem" href="/p/{{ p.slug }}{{ ('?tw=' ~ chans[p.slug]) if chans[p.slug] }}">{{ p.gamertag }}</a><a class="memx" href="{{ ('/squad/' ~ rest|join(',')) if rest|length > 1 else ('/p/' ~ rest[0]) }}" title="Remove {{ p.gamertag }} from this squad" aria-label="Remove {{ p.gamertag }}">×</a></span>{% endfor %}{% if ps|length < 6 %}<details class="addmem"><summary>+ Add player</summary><form method="post" action="/add"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="squad" value="{{ ps|map(attribute='slug')|join(',') }}"><input name="gamertag" maxlength="15" required placeholder="Gamertag" aria-label="Gamertag to add" autocomplete="off"><input type="hidden" name="twitch" value=""><button type="submit">Add</button></form></details>{% endif %}{% if d.games %}<span class="dot">·</span>{{ d.games }} games together{% endif %}{% endset %}
+{% set hub_meta %}{% for p in ps %}{% set rest = ps|rejectattr('slug', 'equalto', p.slug)|map(attribute='slug')|list %}<span class="memchip"><a class="mem" href="/p/{{ p.slug }}">{{ p.gamertag }}</a><a class="memx" href="{{ ('/squad/' ~ rest|join(',')) if rest|length > 1 else ('/p/' ~ rest[0]) }}" title="Remove {{ p.gamertag }} from this squad" aria-label="Remove {{ p.gamertag }}">×</a></span>{% endfor %}{% if ps|length < 6 %}<details class="addmem"><summary>+ Add player</summary><form method="post" action="/add"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="squad" value="{{ ps|map(attribute='slug')|join(',') }}"><input name="gamertag" maxlength="15" required placeholder="Gamertag" aria-label="Gamertag to add" autocomplete="off"><input type="hidden" name="twitch" value=""><button type="submit">Add</button></form></details>{% endif %}{% if d.games %}<span class="dot">·</span>{{ d.games }} games together{% endif %}{% endset %}
 {% set hub_badges %}{% endset %}{% set hub_squad = True %}
 {% include "_hub_head.html" %}
 {% include "_onair.html" %}
@@ -107,17 +107,16 @@
 {% endif %}
 {% if not d.together and not pending %}<div class="alert">No games found where these players were on the same team yet.</div>{% endif %}
 </div><aside class="colside">
-{% set d2 = {'moments': d.moments, 'clips_pending': d.clips_pending, 'squad': true, 'plays': d.plays} %}
-{% with d = d2 %}{% include "_moments.html" %}{% if not tw %}{% include "_plays.html" %}{% endif %}{% endwith %}
+{% set d2 = {'moments': d.moments, 'clips_pending': d.clips_pending, 'squad': true} %}
+{% with d = d2 %}{% include "_moments.html" %}{% endwith %}
 </aside></div>
 {% endset %}
 {# stream & clips fold above the data (2026-10-08): collapsed by default, expands in place; static/mediatoggle.js #}
-{% if tw or d.moments or d.plays or d.teamwork.good or d.teamwork.bad %}<details class="mediasec{{ ' live' if onair }}" id="mediasec"><summary class="mediabar"><span class="caret" aria-hidden="true">▶</span>
-  {% if onair %}<span class="oa-live"><i></i>LIVE</span> <b>Watch the stream</b>{% elif tw %}<b>Stream &amp; clips</b>{% else %}<b>Team plays &amp; best plays</b>{% endif %}
+{% if tw or d.moments or d.teamwork.good or d.teamwork.bad %}<details class="mediasec{{ ' live' if onair }}" id="mediasec"><summary class="mediabar"><span class="caret" aria-hidden="true">▶</span>
+  {% if onair %}<span class="oa-live"><i></i>LIVE</span> <b>Watch the stream</b>{% elif tw %}<b>Stream &amp; clips</b>{% else %}<b>Team plays</b>{% endif %}
   <span class="muted">{% set nclip = (d.moments|length if d.moments else 0) %}{% if tw %}{{ 'live now' if onair else 'latest broadcast' }} · {% endif %}{{ nclip }} clip{{ '' if nclip == 1 else 's' }}</span></summary>
 {{ media_block }}</details>{% endif %}
 {% include "_hub_kpis.html" %}{{ gamelog_block }}
-{% if not tw %}{% with d = {'plays': d.session_plays, 'squad': true, 'in_session': true} %}{% include "_plays.html" %}{% endwith %}{% endif %}
 {% else %}
 <div class="cols {{ 'stats-layout' if not tw else 'video-layout' }}"><div class="colmain">
 {% if tw %}
@@ -150,8 +149,8 @@
 {% endif %}
 {% if not d.together and not pending %}<div class="alert">No games found where these players were on the same team yet.</div>{% endif %}
 </div><aside class="colside">
-{% set d2 = {'moments': d.moments, 'clips_pending': d.clips_pending, 'squad': true, 'plays': d.plays} %}
-{% with d = d2 %}{% include "_moments.html" %}{% if not tw %}{% include "_plays.html" %}{% endif %}{% endwith %}
+{% set d2 = {'moments': d.moments, 'clips_pending': d.clips_pending, 'squad': true} %}
+{% with d = d2 %}{% include "_moments.html" %}{% endwith %}
 </aside></div>
 {% endif %}
 
@@ -501,7 +500,7 @@ q('msync').onclick=function(){if(!players.length)return;var i=referenceIdx;try{s
 q('mclose').onclick=function(){close()};
 q('mlink').onclick=function(){var u=new URL(gameUrl(curRow)||location.pathname,location.origin),i=multi.classList.contains('focus')?focusIdx:bigIdx;
   var at=0;try{at=Math.max(0,Math.floor(playerTime(i)-targets[i]))}catch(e){}u.searchParams.set('at',String(at));if(mlist[i])u.searchParams.set('angle',mlist[i].who);
-  var tw=new URLSearchParams(location.search).get('tw')||new URLSearchParams((homeUrl||'').split('?')[1]||'').get('tw');if(tw)u.searchParams.set('tw',tw);
+  
   if(navigator.share&&matchMedia('(pointer:coarse)').matches){navigator.share({title:'ClutchTape · '+(mlist[i]?.who||'Squad moment'),url:u.href}).catch(function(){});return}
   (navigator.clipboard?navigator.clipboard.writeText(u.href):Promise.reject()).then(function(){toast('Moment link copied')},function(){window.prompt('Copy this link',u.href)})};
 function openRow(tr,shared){if(!tr||!tr.dataset.gwatch)return false;window.__mdur=+tr.dataset.dur||600;window.__mname=tr.dataset.name;var list=JSON.parse(tr.dataset.gwatch),sp=new URLSearchParams(location.search),at=shared?Number(sp.get('at')):0,angle=shared?list.findIndex(w=>w.who===sp.get('angle')):0;open(list,Number.isFinite(at)?Math.min(Math.max(0,at),Math.max(0,(+tr.dataset.dur||600)-1)):0,angle);showGame(tr,false);return true}

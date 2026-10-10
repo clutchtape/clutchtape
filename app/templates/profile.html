@@ -77,7 +77,7 @@
 {% if tw %}<div class="tracker-quiet">{% include "_live.html" %}</div>{% endif %}
 {% else %}
 {% include "_moments.html" %}
-{% if not tw %}{% include "_plays.html" %}{% endif %}
+{% if not tw and tab == 'clips' %}<section class="panel"><p class="muted">Clips come from the player's Twitch stream. Look them up again with their Twitch link (home page → "+ Add Twitch") to get auto clips here.</p></section>{% endif %}
 {% if tw and clips %}
 <section class="panel twclips"><div class="ph"><h2>Clips</h2><span class="muted">Click to play in the player above.</span></div>
   <div class="clipgrid">{% for c in clips %}
@@ -101,11 +101,10 @@
 {% endset %}
 {# stream & clips fold above the data (2026-10-08): collapsed by default, expands in place; static/mediatoggle.js #}
 {% if tw or d.moments %}<details class="mediasec{{ ' live' if onair }}" id="mediasec"><summary class="mediabar"><span class="caret" aria-hidden="true">▶</span>
-  {% if onair %}<span class="oa-live"><i></i>LIVE</span> <b>Watch the stream</b>{% elif tw %}<b>Stream &amp; clips</b>{% else %}<b>Best plays</b>{% endif %}
+  {% if onair %}<span class="oa-live"><i></i>LIVE</span> <b>Watch the stream</b>{% elif tw %}<b>Stream &amp; clips</b>{% else %}<b>Clips</b>{% endif %}
   <span class="muted">{% set nclip = (clips|length if clips else 0) + (d.moments|length if d.moments else 0) %}{% if tw %}{{ 'live now' if onair else 'latest broadcast' }} · {% endif %}{{ nclip }} clip{{ '' if nclip == 1 else 's' }}</span></summary>
 {{ media_block }}</details>{% endif %}
 {% include "_hub_kpis.html" %}{{ gamelog_block }}
-{% if not tw %}{% with d = {'plays': d.session_plays, 'in_session': true} %}{% include "_plays.html" %}{% endwith %}{% endif %}
 {% else %}
 <div class="cols {{ 'stats-layout' if not tw else 'video-layout' }}"><div class="colmain">
 {{ player_block|safe }}
@@ -113,7 +112,7 @@
 {% if tw %}<div class="tracker-quiet">{% include "_live.html" %}</div>{% endif %}
 {% else %}
 {% include "_moments.html" %}
-{% if not tw %}{% include "_plays.html" %}{% endif %}
+{% if not tw and tab == 'clips' %}<section class="panel"><p class="muted">Clips come from the player's Twitch stream. Look them up again with their Twitch link (home page → "+ Add Twitch") to get auto clips here.</p></section>{% endif %}
 {% if tw and clips %}
 <section class="panel twclips"><div class="ph"><h2>Clips</h2><span class="muted">Click to play in the player above.</span></div>
   <div class="clipgrid">{% for c in clips %}

@@ -82,7 +82,7 @@ def home():
                 streams = _cached('home-channel', ch, 60, lambda ch=ch: twitch._get('streams', user_login=[ch]))
                 if streams:
                     st = streams[0]
-                    live[ch] = dict(name=p['name'], title=st.get('title', 'Live on Twitch'), url='/p/'+p['slug']+'?'+urlencode({'tw':ch}))
+                    live[ch] = dict(name=p['name'], title=st.get('title', 'Live on Twitch'), url='/p/'+p['slug'])
             except Exception:
                 pass
     feed.sort(key=lambda s: (-s['score'], -s['at']))

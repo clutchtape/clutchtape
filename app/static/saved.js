@@ -12,9 +12,9 @@
     return Array.isArray(values) ? values.filter(valid).slice(0, 20) : [];
   }
   function current() {
-    var u = new URL(location.href), tw = u.searchParams.get('tw');
+    var u = new URL(location.href);
     // Save the player or squad, not a stale selected night, clip, or comparison.
-    u.search = ''; u.hash = ''; if (tw) u.searchParams.set('tw', tw);
+    u.search = ''; u.hash = '';   // never save a Twitch channel in a link (2026-10-10)
     return {label: button.dataset.label.slice(0, 180), url: u.pathname + u.search};
   }
   function notice(message) { if (window.toast) window.toast(message); }

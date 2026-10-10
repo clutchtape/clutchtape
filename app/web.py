@@ -46,7 +46,7 @@ MAX_PLAYERS = int(os.getenv("MAX_PLAYERS", "2000"))
 MAX_QUEUE = int(os.getenv("MAX_QUEUE", "25"))
 # "Gamertag|twitchlogin,Gamertag2|twitchlogin2" - public example profiles, created automatically at startup.
 FEATURED_SPEC = [x.strip() for x in os.getenv("FEATURED_PLAYERS", "CyKul|cykul").split(",") if x.strip() and not _blocked(x.split("|")[0])]
-# Test-host-only channel defaults ("gamertag|login,..."), so the owner's squad links need no ?tw=. Config, never the DB.
+# Test-host-only channel defaults ("gamertag|login,..."). Config, never the DB.
 PRIVATE_CHANNEL_SPEC = [x.strip() for x in os.getenv("PRIVATE_CHANNELS", "").split(",") if "|" in x]
 
 
@@ -372,16 +372,16 @@ def add():
         slugs.append(slug)
         if tw_login:
             chans.append((slug, tw_login))
-    # With a Twitch link, open the full page (player, clips, event timeline, Watch together); without one, the
-    # stats-first live dashboard. The channel rides in the URL; it is never saved.
+    # Twitch links typed here are remembered on this browser only (session cookie), never in the URL or database.
+    if chans:
+        _tw_save(chans)
     # "+ Add player" on a squad page: keep the current members (existing players only, never re-looked-up)
     keep = [x for x in (request.form.get("squad") or "").lower().split(",") if re.fullmatch(r"[a-z0-9-]+", x)
             and not _blocked(x) and db.q1("SELECT 1 FROM players WHERE slug=?", x)]
     slugs = list(dict.fromkeys(keep + slugs))[:MAX_SQUAD]
     if len(slugs) == 1:
-        return redirect(url_for("profile", slug=slugs[0], **({"tw": chans[0][1]} if chans else {})))
-    qs = {"tw": ",".join(f"{s}:{c}" for s, c in chans)} if chans else {}
-    return redirect(url_for("squad", slugs=",".join(slugs), **qs))
+        return redirect(url_for("profile", slug=slugs[0]))
+    return redirect(url_for("squad", slugs=",".join(slugs)))
 
 
 def _add_one(gt, tw_raw):
@@ -474,12 +474,6 @@ def squad(slugs, short=False, code=None, game=None):
         args = request.args.to_dict()
         if args.get("session"):
             args["session"] = _short_id(args["session"])
-        if "tw" in args:                    # drop channels the host already knows (PRIVATE_CHANNELS / FEATURED_PLAYERS)
-            known = {slugify(sp.partition("|")[0]): twitch.parse_login(sp.partition("|")[2]) for sp in _channel_specs()}
-            keep = [part for part in args["tw"].split(",") if known.get(part.partition(":")[0].lower()) != twitch.parse_login(part.partition(":")[2])]
-            args["tw"] = ",".join(keep)
-            if not args["tw"]:
-                del args["tw"]
         game = re.sub(r"[^0-9a-f]", "", (args.pop("game", "") or "").lower())[:8]
         if len(game) == 8:                  # /squad/a,b?game=<id> (links from match pages) -> that game's own address
             return redirect("/sq/" + squad_code(",".join(names)) + "/g/" + game)
@@ -518,13 +512,9 @@ def squad(slugs, short=False, code=None, game=None):
         for p in ps:
             if p["sync_state"] in ("ready", "error") and now - (p["last_synced"] or 0) > 45:
                 worker.enqueue(p["id"])
-    # Twitch channels ride in the URL as ?tw=slug:channel,slug:channel (never stored)
-    chans = {}
-    for part in (request.args.get("tw") or "").split(","):
-        s, _, c = part.partition(":")
-        c = twitch.parse_login(c)
-        if s.lower() in names and c:
-            chans[s.lower()] = c
+    # Twitch channels: this browser's own choices (session), then featured/test-host config
+    mine = _tw_map()
+    chans = {n: mine[n] for n in names if mine.get(n)}
     for spec in _channel_specs():
         gt, _, login = spec.partition("|")
         for p in ps:
@@ -567,9 +557,6 @@ def squad(slugs, short=False, code=None, game=None):
         mo["vod"] = twitch.vod_link(v, mo["at"], mo["dur_s"], lead=0) if v else None
         if mo["vod"]:
             _tag_source(mo, v, users.get(slug_of.get(mo["player_id"])))
-    data["plays"] = _plays(data["moments"], ps)                      # best plays from the films, video or not
-    _sids = {m["match_id"] for m in (data.get("night") or [])}
-    data["session_plays"] = _plays([mo for mo in data["moments"] if mo["match_id"] in _sids], ps, 6)
     data["moments"] = [mo for mo in data["moments"] if mo["vod"]][:14]
     gt_of = {p["id"]: p["gamertag"] for p in ps}
     for c in data["teamwork"]["good"] + data["teamwork"]["bad"]:
@@ -757,9 +744,53 @@ def _start_at_latest_match(pcfg, vm):
         pcfg["start"] = f"{s // 3600}h{s % 3600 // 60}m{s % 60}s"
 
 
+# ------------------------------------------------------------------ Twitch channels: this browser only (2026-10-10)
+# A channel someone attaches to a gamertag is remembered only in THEIR browser (the signed session cookie), never in
+# the database and never in a URL, so shared links carry stats only. Featured pros (FEATURED_PLAYERS) and the owner's
+# test squad (PRIVATE_CHANNELS, test host only) come from server config instead.
+TW_MAX = 40
+
+
+def _tw_map():
+    m = session.get("tw")
+    return dict(m) if isinstance(m, dict) else {}
+
+
+def _tw_save(pairs):
+    """pairs: [(slug, login or None)]; None/'' forgets that slug's channel on this browser."""
+    m = _tw_map()
+    for slug, ch in pairs:
+        ch = twitch.parse_login(ch or "") if ch else None
+        if ch:
+            m.pop(slug, None)
+            m[slug] = ch
+        else:
+            m.pop(slug, None)
+    session["tw"] = dict(list(m.items())[-TW_MAX:])
+
+
+@app.before_request
+def _tw_out_of_urls():
+    """Old/shared links with ?tw=: remember the channel on this browser and reload the clean address."""
+    if request.method != "GET" or "tw" not in request.args or request.path.startswith(("/api/", "/static/", "/og/")):
+        return None
+    raw, pairs = request.args.get("tw") or "", []
+    page_slug = (request.view_args or {}).get("slug") if request.view_args else None
+    for part in raw.split(","):
+        s_, sep, c = part.partition(":")
+        if sep and re.fullmatch(r"[a-z0-9-]+", s_.lower()):
+            pairs.append((s_.lower(), c))
+        elif not sep and page_slug:
+            pairs.append((page_slug.lower(), s_))
+    if pairs:
+        _tw_save(pairs)
+    args = [(k, v) for k, v in request.args.items(multi=True) if k != "tw"]
+    return redirect(request.path + ("?" + urlencode(args) if args else ""), code=302)
+
+
 def _channel_for(p):
-    """Twitch channel to show: ?tw=login in the URL, else the public example's own channel. Never read from the DB."""
-    tw = twitch.parse_login(request.args.get("tw") or "")
+    """Twitch channel to show: this browser's own choice for the player, else the featured example's channel."""
+    tw = _tw_map().get(p["slug"])
     if tw:
         return tw
     for spec in _channel_specs():
@@ -1007,16 +1038,6 @@ def _alts(main_id):
             if not _blocked(r["slug"])]
 
 
-def _plays(moments, players, n=12):
-    """Best plays from the Theater films (2026-10-09), for every player, Twitch or not: each opens the match page with
-    that moment marked on the timeline. Top n by highlight score, newest first on ties."""
-    slug = {p["id"]: p["slug"] for p in players}
-    out = []
-    for mo in moments[:n]:
-        out.append(dict(mo, url=f"/match/{mo['match_id']}?player={slug.get(mo['player_id'], '')}&at={max(0, mo['t_ms'] // 1000 - 3)}#timeline"))
-    return out
-
-
 def _hub_board(slugs):
     """Analysis tab: the former live dashboard's data and helpers."""
     b = _board_data(slugs)
@@ -1066,9 +1087,6 @@ def profile(slug):
         mo["vod"] = twitch.vod_link(vods, mo["at"], mo["dur_s"], lead=0) if vods else None
         if mo["vod"]:
             _tag_source(mo, vods, u if tw else None)
-    data["plays"] = _plays(data["moments"], [p])
-    _sids = {m["match_id"] for m in (data.get("latest_session") or {}).get("matches", [])}
-    data["session_plays"] = _plays([mo for mo in data["moments"] if mo["match_id"] in _sids], [p], 6)
     data["moments"] = [mo for mo in data["moments"] if mo["vod"]][:12]     # only clips you can actually watch
     psrc, plabel, pcfg = _player_src(tw, u if tw else None, vods, p["id"])
     s = data["latest_session"]
@@ -1468,7 +1486,7 @@ def _board_data(slugs):
         ch=_channel_for(ps[0])
         if ch: channels[ps[0]['id']]=ch
     else:
-        supplied=dict(x.split(':',1) for x in request.args.get('tw','').split(',') if ':' in x)
+        supplied=_tw_map()
         for p in ps:
             ch=twitch.parse_login(supplied.get(p['slug'],''))
             if not ch:
@@ -1489,10 +1507,10 @@ def _board_data(slugs):
     for moment in data['moments']:
         m=next(m for m in data['matches'] if m['match_id']==moment['match'])
         moment['video']=next((v for p in ps if (v:=twitch.vod_link(vods.get(p['id'],[]),(m.get('film_t0') or m['started_at'])+moment['at'],moment['duration'],lead=0))),None)
-    if any(request.args.get(k) for k in ('tw','scope','playlist','compare')):
+    if any(request.args.get(k) for k in ('scope','playlist','compare')):
         def preserve(url):
             u=urlsplit(url);q=dict(parse_qsl(u.query))
-            q.update({k:request.args[k] for k in ('tw','scope','playlist','compare') if request.args.get(k)})
+            q.update({k:request.args[k] for k in ('scope','playlist','compare') if request.args.get(k)})
             if 'session' in q and url in [s['url'] for s in data['sessions']]:q['scope']='session'
             return urlunsplit(('', '', u.path, urlencode(q), u.fragment))
         data['stable_url']=preserve(data['stable_url'])
@@ -1588,7 +1606,7 @@ def _close_games():
         link = twitch.vod_link(v, r["started_at"], r["duration_s"]) if v else None
         mm = re.search(r"videos/(\d+)\?t=([0-9hms]+)", link or "")
         if mm:
-            pov["watch"] = f"/p/{p['slug']}?tw={login}&session={r['match_id']}&vod={mm.group(1)}@{mm.group(2)}"
+            pov["watch"] = f"/p/{p['slug']}?session={r['match_id']}&vod={mm.group(1)}@{mm.group(2)}"
         g["povs"].append(pov)
     lobby = {}
     if games:
@@ -1640,7 +1658,7 @@ def _clutch_finishes(ranked, games, vods, by_id):
             link = twitch.vod_link(v, x["film_t0"] + f["start_ms"] / 1000, 40, lead=0) if v else None
             mm = re.search(r"videos/(\d+)\?t=([0-9hms]+)", link or "")
             if mm:
-                pov["watch"] = f"/p/{r['slug']}?tw={login}&session={x['match_id']}&vod={mm.group(1)}@{mm.group(2)}"
+                pov["watch"] = f"/p/{r['slug']}?session={x['match_id']}&vod={mm.group(1)}@{mm.group(2)}"
             povs.append(pov)
         povs.sort(key=lambda p: "watch" not in p)
         out.append({**{k: x[k] for k in ("match_id", "map", "mode", "scrim", "at", "final", "family", "pros_in_lobby")},
