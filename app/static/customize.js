@@ -90,3 +90,56 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready); else ready();
 })();
+
+/* Arrange the Latest tab (2026-10-10; ⚙ Arrange in the game-type bar): show/hide and reorder its sections, remembered
+   per device (localStorage ct-sections = {order, hidden}). Applied as CSS (html.lay-sec + --o-<key> orders, hide-<key>
+   classes), set before first paint by base.html. Nothing customised = the page's own layout, untouched. */
+(function () {
+  'use strict';
+  var KEY = 'ct-sections', html = document.documentElement;
+  var SECS = [['media', 'Stream & clips', '#mediasec'], ['tiles', 'Session tiles', '.hubkpis'], ['log', 'Game log', '#latest'], ['modes', 'By mode & medals', '.brk']];
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } }
+  function present() { return SECS.filter(function (x) { return document.querySelector(x[2]); }); }
+  function state() { var s = load(), keys = present().map(function (x) { return x[0]; });
+    var order = s && s.order ? s.order.filter(function (k) { return keys.indexOf(k) >= 0; }) : [];
+    keys.forEach(function (k) { if (order.indexOf(k) < 0) order.push(k); });
+    return { order: order, hidden: s && s.hidden ? s.hidden : [] }; }
+  function apply(s, store) {
+    var go = function () {
+      html.classList.toggle('lay-sec', !!s);
+      SECS.forEach(function (x) { html.classList.toggle('hide-' + x[0], !!s && s.hidden.indexOf(x[0]) >= 0); html.style.removeProperty('--o-' + x[0]); });
+      if (s) s.order.forEach(function (k, i) { html.style.setProperty('--o-' + k, i + 1); });
+      window.dispatchEvent(new Event('resize'));
+    };
+    if (store) { try { if (s) localStorage.setItem(KEY, JSON.stringify(s)); else localStorage.removeItem(KEY); } catch (e) {} }
+    /* sections slide to their new places (FLIP with plain animations: nothing blocks input, so quick taps all count;
+       a view transition would also cover a live video) */
+    var calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var els = SECS.map(function (x) { return document.querySelector(x[2]); }).filter(Boolean);
+    var before = els.map(function (el) { return el.getBoundingClientRect().top; });
+    go();
+    if (calm) return;
+    els.forEach(function (el, i) { if (!el.offsetHeight) return; var dy = before[i] - el.getBoundingClientRect().top;
+      if (Math.abs(dy) > 2) el.animate([{ transform: 'translateY(' + dy + 'px)' }, { transform: 'none' }], { duration: 300, easing: 'cubic-bezier(.2,.7,.2,1)' }); });
+  }
+  function ready() {
+    var d = document.querySelector('.arrpop'); if (!d) return; var list = d.querySelector('.arrlist');
+    function render() { var s = state(), names = {}; SECS.forEach(function (x) { names[x[0]] = x[1]; });
+      list.innerHTML = '';
+      s.order.forEach(function (k, i) { var li = document.createElement('li'); li.dataset.k = k;
+        li.innerHTML = '<label><input type="checkbox"' + (s.hidden.indexOf(k) < 0 ? ' checked' : '') + '> <span></span></label>' +
+          '<button type="button" data-mv="-1" aria-label="Move up"' + (i ? '' : ' disabled') + '>↑</button><button type="button" data-mv="1" aria-label="Move down"' + (i < s.order.length - 1 ? '' : ' disabled') + '>↓</button>';
+        li.querySelector('span').textContent = names[k]; list.appendChild(li); }); }
+    list.addEventListener('click', function (e) { var b = e.target.closest('[data-mv]'); if (!b) return; var s = state(), k = b.closest('li').dataset.k, i = s.order.indexOf(k), j = i + +b.dataset.mv;
+      if (j < 0 || j >= s.order.length) return; s.order.splice(i, 1); s.order.splice(j, 0, k); apply(s, true); render();
+      var again = list.querySelector('li[data-k="' + k + '"] [data-mv="' + b.dataset.mv + '"]'); if (again && !again.disabled) again.focus(); });
+    list.addEventListener('change', function (e) { var li = e.target.closest('li'); if (!li) return; var s = state(), k = li.dataset.k;
+      s.hidden = s.hidden.filter(function (x) { return x !== k; }); if (!e.target.checked) s.hidden.push(k); apply(s, true); });
+    d.querySelector('[data-arrreset]').onclick = function () { apply(null, true); render(); };
+    d.querySelector('[data-arrclose]').onclick = function () { d.open = false; };
+    d.addEventListener('toggle', function () { if (d.open) render(); });
+    /* the path, not contains(): moving a row redraws the list, so the clicked button is already detached */
+    document.addEventListener('click', function (e) { if (d.open && e.composedPath().indexOf(d) < 0) d.open = false; });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready); else ready();
+})();

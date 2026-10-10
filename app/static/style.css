@@ -1419,3 +1419,26 @@ html.lay-novs #livevs{display:none!important}
 .laycard input[type=radio],.laycard input[type=checkbox]{width:16px;height:16px;min-height:0;margin:0;padding:0;flex:none}
 html:has(.laypop[open]) .chattab{display:none!important}
 @media(max-width:400px){.laybtn{font-size:0!important;padding:0 10px!important}.laybtn::before{content:"⚙";font-size:15px}}
+/* Arrange the Latest tab (customize.js): only once someone customises (html.lay-sec) does main become a flex column
+   with their order; hide-<key> hides a section */
+html.lay-sec main:has(> .sumview){display:flex;flex-direction:column}
+html.lay-sec main:has(> .sumview)>*{order:0}
+html.lay-sec .sumview{display:contents}
+html.lay-sec #mediasec{order:var(--o-media,1)!important}html.lay-sec .hubkpis{order:var(--o-tiles,2)!important}html.lay-sec #latest{order:var(--o-log,3)!important}html.lay-sec .brk{order:var(--o-modes,4)!important}   /* beats the old <1200px #latest{order:2!important} */
+html.lay-sec main:has(> .sumview)>#raw,html.lay-sec main:has(> .sumview)>.foot,html.lay-sec main:has(> .sumview)>footer{order:20}
+html.hide-media #mediasec,html.hide-tiles .hubkpis,html.hide-log #latest,html.hide-modes .brk{display:none!important}
+.arrpop{position:relative;margin-left:auto}.arrpop>summary{list-style:none;cursor:pointer;min-height:32px;display:inline-flex;align-items:center;padding:0 12px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;font-weight:700;color:var(--mute)}
+.arrpop>summary::-webkit-details-marker{display:none}.arrpop[open]>summary{color:var(--ink);border-color:var(--acc2)}
+.arrcard{position:absolute;right:0;top:calc(100% + 8px);z-index:40;width:min(300px,calc(100vw - 24px));padding:12px;border-radius:14px;background:#17130f;border:1px solid var(--line);box-shadow:0 14px 40px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:8px}
+.arrcard>b{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.arrlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.arrlist li{display:flex;align-items:center;gap:6px;padding:4px 6px 4px 10px;border-radius:10px;border:1px solid var(--line);background:var(--panel2)}
+.arrlist label{flex:1;display:flex;align-items:center;gap:8px;min-height:36px;font-size:13.5px;cursor:pointer}
+.arrlist input{width:16px;height:16px;margin:0;flex:none;accent-color:var(--acc)}
+.arrlist button{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);font-size:16px;cursor:pointer}.arrlist button:disabled{opacity:.3;cursor:default}
+@media(max-width:700px){.arrcard{position:fixed;left:12px;right:12px;top:auto;bottom:calc(12px + env(safe-area-inset-bottom));width:auto}}
+html:has(.arrpop[open]) .chattab{display:none!important}
+html.vt-arr::view-transition-group(*){animation-duration:.26s}
+html.vt-arr::view-transition-old(*),html.vt-arr::view-transition-new(*){animation-duration:.2s}
+html.vt-arr::view-transition{pointer-events:none}   /* taps during the move reach the menu (a quick second ↑) */
+.arrlist button,.lm-aud,.lm-mode,.laycard label{touch-action:manipulation}   /* quick repeated taps are taps, not a double-tap gesture */
