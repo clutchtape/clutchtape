@@ -1,1 +1,35 @@
-{% extends 'base.html' %}{% block title %}Your data & privacy — Clutchtape{% endblock %}{% block content %}<section class="prose"><h1>Your data, your choice.</h1><p>Other visitors cannot browse your searches. Public Halo stats remain accessible by gamertag or a shared link. Saved shortcuts, gamertag colors, bookmarks, and personal notes stay in your browser. A player’s stats do not indicate that they use ClutchTape. We do not publish visitor lookup history, saved groups, follows, or color choices. Stats use a shared server cache of public Halo data; anyone can look up a gamertag, including one entered by someone else. Personal choices are not included in shared stat or moment links.</p><h2 id="alerts">Optional alerts</h2><p>If you follow players or squads under Alerts, we store those choices, alert types and quiet-hour time zone, any Twitch channels you explicitly include, and a private browser identifier on our server. Enabling phone alerts also stores your browser’s push subscription so notifications can arrive while the app is closed. Your browser’s push provider delivers them. These choices are not a public link between an Xbox player and a Twitch account. Unfollow to stop tracking a player; turn off phone alerts to delete the active push subscription. Alert history and inactive device settings expire after 90 days; rotating backups may retain them for about seven days. Installation does not enable notifications automatically.</p><h2>How long we keep stats</h2><p>Cached match stats expire after 180 days. Non-demo profiles expire after 90 days without a visit. You can look up a gamertag again to reload available recent history. This is a cache, not a permanent archive.</p><h2>Request removal</h2><p>We can remove your cached profile and prevent future lookups. To stop someone removing another player’s profile, an administrator must verify that you control the Xbox profile. After submitting, you’ll get a short code to temporarily place in your public Xbox bio. Keep the private status link to check progress. Do not send passwords or identity documents.</p>{% if error %}<p class="alert" role="alert">{{ error }}</p>{% endif %}<form method="post" class="lookup"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><label>Your Halo gamertag<input name="gamertag" required maxlength="20" autocomplete="off"></label><button type="submit">Request removal</button></form><p>Removal requests are private and reviewed manually. Pending requests expire after 30 days; completed receipts after 30 days. Local snapshots rotate over about seven days. Restoring an older backup must reapply the removal policy before serving traffic.</p><p><a href="/about#data">More about data storage</a></p></section>{% endblock %}
+{% extends 'base.html' %}{% block title %}Privacy — Clutchtape{% endblock %}{% block content %}<article class="doc">
+<h1>Privacy</h1>
+<p class="lede">Clutchtape shows public Halo Infinite match data. Here's what that means for you.</p>
+
+<h2>Your stats</h2>
+<ul>
+<li>Anyone who types your exact gamertag can see your stats, like on any Halo stats site.</li>
+<li>There's no list of players or searches, apart from a few pro players shown as examples on the home page. Player pages aren't shown in search engines.</li>
+<li>Match stats are deleted after 180 days. A player page nobody opens for 90 days is removed.</li>
+</ul>
+
+<h2>Twitch</h2>
+<ul>
+<li>If you add a Twitch channel, it's remembered only in your browser. It isn't saved on our server and isn't put in links you share.</li>
+<li>The only channels everyone sees are the featured streamers on the home page.</li>
+</ul>
+
+<h2>Things saved in your browser</h2>
+<ul>
+<li>Saved players and squads, player colors and your Twitch channels stay in this browser.</li>
+<li>Alerts (optional): the players you follow and your browser's notification address are stored on our server for that one device. Unfollow to remove them.</li>
+</ul>
+
+<h2>What we log</h2>
+<ul>
+<li>When you look up a new gamertag, your IP address and the time are kept for 24 hours to limit abuse.</li>
+<li>No accounts, no ads, no trackers.</li>
+</ul>
+
+<h2 id="remove">Remove your profile</h2>
+<p>We'll delete your stats and block your gamertag from being looked up again. To prove it's you, you'll be given a short code to put in your Xbox bio for a moment.</p>
+{% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
+<form method="post" class="doc-form"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><label>Your gamertag<input name="gamertag" required maxlength="20" autocomplete="off"></label><button type="submit">Request removal</button></form>
+<p class="muted">Requests are reviewed by hand. Never send passwords or ID documents.</p>
+</article>{% endblock %}

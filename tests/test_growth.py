@@ -35,8 +35,15 @@ class GrowthTests(unittest.TestCase):
         self.assertEqual({r['match_id'] for r in w['matches']},{'start','inside'})
         self.assertEqual(w['prior']['games'],1)
 
+class RoomsOffTests(unittest.TestCase):
+    def test_rooms_and_accounts_404_while_switched_off(self):
+        web.app.config.update(TESTING=True,SECRET_KEY='unit-test-only');c=web.app.test_client()
+        for path in ['/rooms','/rooms/x','/join/x/y']:self.assertEqual(c.get(path).status_code,404)
+        self.assertEqual(c.post('/account').status_code,404)
+
 class RoomTests(unittest.TestCase):
     def setUp(self):
+        self.on=patch.object(rooms,'ENABLED',True);self.on.start();self.addCleanup(self.on.stop)
         self.tmp=tempfile.TemporaryDirectory();self.conn=sqlite3.connect(self.tmp.name+'/test.db',isolation_level=None);self.conn.row_factory=sqlite3.Row
         self.patch=patch.object(db,'conn',return_value=self.conn);self.patch.start();db.init()
         web.app.config.update(TESTING=True,SECRET_KEY='unit-test-only')

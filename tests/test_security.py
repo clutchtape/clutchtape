@@ -24,9 +24,14 @@ class SecurityTests(unittest.TestCase):
         with patch.object(match_detail,'known',return_value=[stored(),other]),patch.object(match_detail,'ensure',return_value=(None,'loading')):
             r=self.client.get('/match/'+MID+'?player=one')
         self.assertEqual(r.status_code,200);self.assertNotIn(b'HiddenLookupCanary',r.data)
+    def test_error_pages_use_site_layout_but_api_stays_plain(self):
+        r=self.client.get('/no-such-page')
+        self.assertEqual(r.status_code,404);self.assertIn(b'class="doc errpage"',r.data);self.assertIn(b'Not found',r.data)
+        r=self.client.get('/api/no-such-thing')
+        self.assertEqual(r.status_code,404);self.assertNotIn(b'errpage',r.data)
     def test_untrusted_host_and_forwarded_host_rejected(self):
         for headers in [{'Host':'evil.example'},{'X-Forwarded-Host':'evil.example'}]:
-            self.assertEqual(self.client.get('/rooms',headers=headers).status_code,400)
+            self.assertEqual(self.client.get('/privacy',headers=headers).status_code,400)
     def test_admin_login_rotates_session_expires_and_revokes_on_password_change(self):
         with patch.object(web,'ADMIN_PASSWORD','test-admin-password'):
             self.csrf()
@@ -51,7 +56,7 @@ class SecurityTests(unittest.TestCase):
         with patch.object(web.log,'info') as log:
             self.assertEqual(self.client.post('/api/clientlog',data='private-name\nforged log').status_code,204);log.assert_not_called()
     def test_security_headers_and_malformed_room_links(self):
-        r=self.client.get('/rooms',base_url='https://clutchtape.com')
+        r=self.client.get('/admin',base_url='https://clutchtape.com')
         self.assertEqual(r.headers['Cache-Control'],'no-store')
         self.assertIn("form-action 'self'",r.headers['Content-Security-Policy']);self.assertIn('max-age=',r.headers['Strict-Transport-Security'])
         with web.app.test_request_context('/'):

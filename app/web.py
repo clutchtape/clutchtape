@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 
 from flask import Response, g, Flask, abort, jsonify, redirect, render_template, request, session, url_for
 
+from werkzeug.exceptions import HTTPException
 import analytics
 import capacity
 import privacy
@@ -190,6 +191,37 @@ def busy_response(code=503):
 
 @app.errorhandler(capacity.Busy)
 def cache_busy(error):return busy_response()
+
+
+ERROR_COPY = {400: ("Something went wrong", "That request didn't work. Go back and try again."),
+              403: ("Not allowed", "You don't have access to that page."),
+              404: ("Not found", "That page or player isn't here. Check the gamertag or link."),
+              405: ("Not allowed", "That page can't be used that way."),
+              414: ("Link too long", "That link is too long."),
+              429: ("Slow down", "Too many requests from your network. Try again in a few minutes."),
+              500: ("Something broke", "That one's on us. Try again in a minute.")}
+
+
+@app.errorhandler(HTTPException)
+def styled_error(e):
+    """Site-styled error pages for browsers; APIs and anything that can't render keep the plain response."""
+    if request.path.startswith(("/api/", "/og/", "/static/")) or e.code not in ERROR_COPY:
+        return e
+    title, default = ERROR_COPY[e.code]
+    message = e.description if e.code in (400, 404, 429) and e.description and "requested URL" not in e.description and "browser (or proxy)" not in e.description else default
+    try:
+        request.host                                   # untrusted Host header: don't render the site for it
+        return render_template("error.html", title=title, message=message), e.code
+    except Exception:
+        return e
+
+
+@app.errorhandler(500)
+def styled_500(e):
+    try:
+        return render_template("error.html", title=ERROR_COPY[500][0], message=ERROR_COPY[500][1]), 500
+    except Exception:
+        return "Something broke. Try again in a minute.", 500
 
 
 @app.before_request

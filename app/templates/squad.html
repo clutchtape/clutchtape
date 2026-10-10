@@ -158,7 +158,7 @@
 {% endblock %}
 
 {% block scripts %}
-{% if tab == 'analysis' %}<script nonce="{{ csp_nonce }}" src="/static/growth.js?v=2" defer></script><script nonce="{{ csp_nonce }}" src="/static/analysis.js?v=8" defer></script><script nonce="{{ csp_nonce }}" src="/static/analysis_trends.js?v=2" defer></script>{% endif %}
+{% if tab == 'analysis' %}<script nonce="{{ csp_nonce }}" src="/static/growth.js?v=3" defer></script><script nonce="{{ csp_nonce }}" src="/static/analysis.js?v=8" defer></script><script nonce="{{ csp_nonce }}" src="/static/analysis_trends.js?v=2" defer></script>{% endif %}
 {% if tab in ('latest', 'clips') %}
 <script nonce="{{ csp_nonce }}" src="https://player.twitch.tv/js/embed/v1.js"></script>
 <script nonce="{{ csp_nonce }}" src="/static/twitch-shim.js?v=2"></script>

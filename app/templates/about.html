@@ -2,40 +2,34 @@
 {% block title %}How it works — Clutchtape{% endblock %}
 {% block robots %}{% endblock %}
 {% block content %}
-<section class="prose about">
-  <h1>How Clutchtape works</h1>
-  <p class="lede">Halo Infinite stats for everyone who plays. Enter your gamertag to check your last game, follow your session and see where you're improving. No Twitch account, stream or sign-in required.</p>
-  <h2>Start with just a gamertag</h2>
-  <div class="feat">
-    <div><b>📊 After every game</b><span>Results, kills, deaths, assists, accuracy, damage and score share from completed public matches.</span></div>
-    <div><b>🔴 Follow your session</b><span>Leave your page open to follow your record, KDA and ranked rating change as new results arrive. Works whether you stream or not.</span></div>
-    <div><b>↔ Compare sessions</b><span>Compare the selected session with the previous session or up to five earlier sessions, using the same game-type filter.</span></div>
-    <div><b>⚔ Match recaps without video</b><span>Explore Theater kills, deaths, medals and objective events, with a momentum chart and time filters. No Twitch required.</span></div>
-    <div><b>★ Save your players & squads</b><span>Save a profile or squad on this device and reopen it from the home page. No account needed; you control what is saved.</span></div>
-    <div><b>📈 Track your progress</b><span>Revisit sessions in your loaded history, explore rank trends, and find your strongest maps and modes.</span></div>
-    <div><b>👥 Play as a squad</b><span>Add up to four gamertags to compare individual performance and see results from the nights you played together.</span></div>
-    <div><b>🔗 Share your stats</b><span>Share a profile, squad, session or filter with its own link and a preview card.</span></div>
-  </div>
-  <h2>Optional: add Twitch for replays</h2>
-  <div class="feat">
-    <div><b>🎬 Auto clips</b><span>Find standout plays from Theater match events and jump to them in a matching broadcast. Only moments with playable video are shown.</span></div>
-    <div><b>⚔ Event timeline</b><span>Follow kills, deaths, medals and objective events alongside the video.</span></div>
-    <div><b>📺 Watch together</b><span>Replay squad moments from available streams at the same in-game time, with angle switching on phones.</span></div>
-    <div><b>⬇ Save clips</b><span>Record a replay in desktop Chrome or Edge and download it from your browser.</span></div>
-  </div>
+<article class="doc">
+<h1>How it works</h1>
+<p class="lede">Type a gamertag. Clutchtape loads that player's recent Halo Infinite games and keeps adding new ones after each game.</p>
 
-  <h2>What we read</h2>
-  <p>Only public match data and Theater films for the gamertags you type. You never sign in to Xbox and we never see a password. If your Xbox privacy settings hide your match history, we can't show it. Stats become available after games finish. Clutchtape checks for new results automatically; it does not show in-match telemetry, and new results can take a few minutes to arrive.</p>
-  <h2 id="data">Where your data lives</h2>
-  <p>Entering a gamertag creates or reopens a shared public stats profile. We cache the gamertag, Xbox player ID, completed-match stats and available Theater events on our server. Full match reviews can also include teammates and opponents. Anyone can look up the same gamertag or open a shared link; a lookup does not verify ownership or create a private account. We do not publish recent searches, recent visitors, or a directory of cached profiles. Demo players are fixed examples, not a record of visitor activity. Your saved shortcuts stay in your browser.</p>
-  <p>The first lookup loads up to 25 recent games first, then expands toward 200 during quieter periods. Later refreshes add new games to that history. Cached match stats expire after 180 days; non-demo profiles expire after 90 days without a visit. This is not a permanent archive. Older games outside the loaded history may be missing. Changing Xbox privacy settings later does not automatically remove cached data. <a href="/privacy">Request removal and block future lookups</a>.</p>
-  <p>Saved players, personal goals, bookmarks and private review notes stay in this browser on this device. They do not automatically follow you to another device and can be lost if you clear browser storage. Optional squad-room accounts are separate: room notes are saved on the server and restricted to that room’s members. They do not make the linked match stats private.</p>
-  <p>We also store lookup IP addresses and timestamps to limit abuse. Visitors do not supply an Xbox password. Your Xbox privacy settings govern what new data Halo allows us to retrieve.</p>
-  <h2>Twitch</h2>
-  <p>You don't need Twitch for stats. If you add a channel, its link travels in the page address rather than being saved to your player profile. Replays use Twitch’s embedded player. Broadcasts can expire, so not every old match has video.</p>
-  <h2>Limits</h2>
-  <p>We start with up to 25 recent games and gradually expand toward 200. Film reads run in small batches; opening a match review also requests its available events. We check for new games about every 90 seconds while your stats page is open (plus API and queue delays). Lookups are rate-limited per network so the demo stays fast for everyone.</p>
-  <p class="muted">Fan-made demo. Not affiliated with Microsoft, Xbox, Halo Studios or 343 Industries.</p>
-</section>
-<section class="panel"><h2>Your session companion</h2><p>Open the <a href="/live">Live dashboard</a> for a full-screen session overview, game-by-game results, and automatic checks for new completed matches. Review strong stretches, difficult moments, and recoveries from Theater events without a stream.</p><p>Save timestamped notes on your device, share a stable game link, or download a session report. Compare map-and-mode results, your own progress, and confirmed teammate combinations. Objective stats fill in as Halo provides them; coverage is shown so missing data is never mistaken for zero.</p></section>
+<h2>What you get</h2>
+<ul>
+<li><b>Sessions.</b> Games are grouped into nights, with a game log and totals for each.</li>
+<li><b>The stats that matter.</b> Score share, KDA, damage per minute, damage per kill + assist, objective stats, CSR change.</li>
+<li><b>Squads.</b> Add up to 6 players to compare them and see which lineups win.</li>
+<li><b>Match pages.</b> The full lobby scoreboard and a timeline of every kill, death and medal.</li>
+<li><b>Analysis.</b> CSR and any stat over time, every player on one chart.</li>
+</ul>
+
+<h2>With Twitch (optional)</h2>
+<ul>
+<li><b>Auto clips.</b> Big moments are found in the game data and linked to that second of the stream.</li>
+<li><b>Watch together.</b> Every squadmate's stream of the same game, side by side and in sync.</li>
+<li><b>Live.</b> While you stream, the page tracks tonight's record as each game ends.</li>
+</ul>
+
+<h2>Good to know</h2>
+<ul>
+<li>Only public match data is used. You never sign in to Xbox here.</li>
+<li>If your Xbox privacy settings hide your match history, we can't load it.</li>
+<li>New games show up a few minutes after they end.</li>
+<li>The first lookup loads your latest games, then fills in up to 200.</li>
+</ul>
+
+<p><a href="/privacy">Privacy and removal →</a> · <a href="https://github.com/clutchtape/clutchtape" rel="noopener">Source code →</a></p>
+</article>
 {% endblock %}

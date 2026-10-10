@@ -1,10 +1,13 @@
 """Private review rooms: local accounts, expiring invitations and membership checks."""
-import hashlib, hmac, re, secrets, time
+import hashlib, hmac, os, re, secrets, time
 from urllib.parse import urlsplit, parse_qs, urlencode
 from flask import Blueprint, abort, redirect, render_template, request, session, g
 from werkzeug.security import generate_password_hash, check_password_hash
 import db
 bp=Blueprint('rooms',__name__)
+# Squad rooms and accounts are switched off for now (owner 2026-10-10): every /rooms, /account and /join URL 404s.
+# ROOMS_ENABLED=1 turns them back on; the tables stay so turning it back on loses nothing.
+ENABLED=os.environ.get('ROOMS_ENABLED')=='1'
 DUMMY=generate_password_hash('not-a-real-password')
 SCHEMA='''
 CREATE TABLE IF NOT EXISTS review_users(id TEXT PRIMARY KEY, name TEXT UNIQUE NOT NULL, password TEXT NOT NULL, created REAL NOT NULL);
@@ -64,6 +67,7 @@ def moment_url(raw):
 def install(app,csrf,ip):
     @bp.before_request
     def protect():
+        if not ENABLED: abort(404)
         if request.method=='POST': csrf()
 
     @bp.after_request
@@ -73,7 +77,7 @@ def install(app,csrf,ip):
         return resp
 
     @app.context_processor
-    def account_context(): return {'review_user':user()}
+    def account_context(): return {'review_user':user() if ENABLED else None}
 
     @bp.route('/rooms',methods=['GET','POST'])
     def home():
