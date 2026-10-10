@@ -93,7 +93,9 @@ body:has(>.mobile-player-surface)>.multi.focus .mgrid,body:has(>.mobile-player-s
   .mobile-actions a,.mobile-actions button{min-height:40px!important;padding:6px 10px!important;font-size:12px!important}
   .mobile-cards .cellvod{min-height:0}
   /* header: buttons on one row, chips smaller, short tab label */
-  .hub-actions{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:4px;max-width:100%}.hub-actions::-webkit-scrollbar{display:none}
+  /* wrap, never scroll: a scrolling row clips the ⋯ menu (2026-10-10) */
+  .hub-actions{flex-wrap:wrap;overflow:visible;gap:4px;max-width:100%}
+  .hub-more.edge-left .hub-menu{right:auto;left:0}
   .hub-actions .pill,.hub-actions .share,.hub-actions button{min-height:36px!important;padding:0 10px!important;font-size:12px!important;white-space:nowrap;flex:none}
   .hub-id.squadid a.mem{min-height:34px;font-size:13px;padding:0 10px}.hub-id.squadid .memx{width:26px;height:34px}
   .hub-id.squadid .addmem summary{min-height:34px;padding:0 10px}

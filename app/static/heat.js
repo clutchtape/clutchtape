@@ -152,3 +152,18 @@
   });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', sync); else sync();
 })();
+
+/* ⋯ header menu: open it toward the side with room, close on an outside tap or Escape */
+(function () {
+  document.addEventListener('toggle', function (e) {
+    var d = e.target; if (!d.classList || !d.classList.contains('hub-more') || !d.open) return;
+    d.classList.remove('edge-left'); var m = d.querySelector('.hub-menu'); if (m && m.getBoundingClientRect().left < 8) d.classList.add('edge-left');
+  }, true);
+  document.addEventListener('click', function (e) {
+    [].forEach.call(document.querySelectorAll('details.hub-more[open]'), function (d) { if (!d.contains(e.target)) d.open = false; });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    [].forEach.call(document.querySelectorAll('details.hub-more[open]'), function (d) { d.open = false; d.querySelector('summary').focus(); });
+  });
+})();

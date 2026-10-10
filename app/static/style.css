@@ -1041,3 +1041,4 @@ button.primary,button.secondary{align-items:center;justify-content:center;text-a
 @media(max-width:700px){.rawtable td:nth-child(1),.rawtable th:nth-child(1){position:sticky;left:0;box-sizing:border-box;width:32px;min-width:32px;max-width:32px;padding-left:6px;padding-right:4px;z-index:1;background:var(--panel,#16130f)}
 .rawtable td:nth-child(2),.rawtable th:nth-child(2){position:sticky;left:31px;z-index:1;background:var(--panel,#16130f);box-shadow:6px 0 8px -6px rgba(0,0,0,.7)}
 .rawtable .rawtot td:nth-child(-n+2){background:#2a1e15}}
+.hub-more.edge-left .hub-menu{right:auto;left:0}
