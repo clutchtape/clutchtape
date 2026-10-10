@@ -29,12 +29,27 @@ class LaunchHardeningTests(unittest.TestCase):
         self.assertEqual(self.client.get('/privacy/request/not-found').status_code,404)
         self.assertEqual(db.q1('SELECT state FROM removal_requests')['state'],'pending')
     def test_verified_removal_persists_and_scrubs_request(self):
-        with tempfile.TemporaryDirectory() as folder,patch.object(data_rights,'data_path',side_effect=lambda n:Path(folder)/n),patch.object(privacy,'HASHES',set()):
+        with tempfile.TemporaryDirectory() as folder,patch.object(privacy,'data_path',side_effect=lambda n:Path(folder)/n),patch.object(privacy,'HASHES',set()):
             db.run("INSERT INTO players(xuid,gamertag,slug,created_at) VALUES('999','ExamplePlayer','exampleplayer',0)")
             db.run("INSERT INTO removal_requests VALUES('id','ExamplePlayer','challenge',?,'pending')",time.time())
             self.assertTrue(data_rights.approve('id'));self.assertTrue(privacy.blocked('ExamplePlayer'));self.assertTrue(privacy.blocked('999'))
             self.assertIsNone(db.q1('SELECT * FROM players'));self.assertEqual(db.q1('SELECT gamertag FROM removal_requests')['gamertag'],'')
             self.assertTrue((Path(folder)/'privacy_exclusions.json').exists());self.assertFalse(data_rights.approve('id'))
+    def test_unblock_lifts_gamertag_and_xuid_and_admin_only(self):
+        with tempfile.TemporaryDirectory() as folder,patch.object(privacy,'data_path',side_effect=lambda n:Path(folder)/n),patch.object(privacy,'HASHES',set()):
+            db.run("INSERT INTO players(xuid,gamertag,slug,created_at) VALUES('999','Example Player','example-player',0)")
+            db.run("INSERT INTO removal_requests VALUES('id','Example Player','challenge',?,'pending')",time.time())
+            self.assertTrue(data_rights.approve('id'))
+            self.assertEqual(self.client.post('/admin/privacy',data={'csrf':'csrf','action':'unblock','gamertag':'Example Player'}).status_code,403)
+            import hmac
+            with patch.object(web,'ADMIN_PASSWORD','test-admin'),patch.object(data_rights,'_xuid_for',return_value='999'):
+                with self.client.session_transaction() as s:
+                    s.update(admin=True,admin_at=time.time(),admin_version=hmac.new(web.app.secret_key.encode(),b'test-admin','sha256').hexdigest())
+                r=self.client.post('/admin/privacy',data={'csrf':'csrf','action':'unblock','gamertag':'example-player'})
+                self.assertEqual(r.status_code,200);self.assertIn(b'Unblocked',r.data)
+                self.assertFalse(privacy.blocked('Example Player'));self.assertFalse(privacy.blocked('999'));self.assertFalse(privacy.blocked('example-player'))
+                self.assertIn('"hashes": []',(Path(folder)/'privacy_exclusions.json').read_text())
+                self.assertEqual(self.client.post('/admin/privacy',data={'csrf':'csrf','action':'unblock','gamertag':'Nobody'}).status_code,400)
     def test_retention_preserves_active_profiles_and_private_rooms(self):
         now=time.time()
         for i,(name,view) in enumerate([('Active',now),('Inactive',now-91*86400),('CyKul',now-91*86400)],1):

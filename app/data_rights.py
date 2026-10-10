@@ -18,16 +18,37 @@ def approve(rid):
         values=[r['gamertag']]
         p=db.q1('SELECT xuid,slug FROM players WHERE gamertag=? COLLATE NOCASE',r['gamertag'])
         if p:values += [p['xuid'],p['slug']]
-        hashes=privacy.HASHES|{privacy.digest(x) for x in values}
-        path=data_path('privacy_exclusions.json');tmp=path.with_suffix('.tmp')
         # Durable policy first: a restart cannot reimport the removed identity.
-        with open(tmp,'w',opener=lambda p,f:os.open(p,f,0o600)) as out:
-            json.dump({'hashes':sorted(hashes)},out);out.flush();os.fsync(out.fileno())
-        os.replace(tmp,path);privacy.HASHES=hashes
+        privacy.save(privacy.HASHES|{privacy.digest(x) for x in values})
         privacy.enforce()
         capacity.stats.clear();capacity.external.clear()
         db.run("UPDATE removal_requests SET state='completed',gamertag='',challenge='',created=? WHERE id=?",time.time(),rid)
         return True
+
+def _xuid_for(gamertag):
+    """Current XUID for a gamertag via the Xbox login, or None when that isn't available."""
+    import asyncio,ingest,xbox
+    if not xbox.status().get('connected'):return None
+    try:found=asyncio.run(asyncio.wait_for(ingest.resolve_gamertag(gamertag),timeout=15))
+    except Exception:return None
+    return found[0] if found else None
+
+def unblock(gamertag,xuid=''):
+    """Lift a removal block. Data deleted by the removal is not restored; the next lookup re-syncs from Halo.
+    Returns (lifted, message). Policy entries are anonymous hashes, so the admin names the gamertag."""
+    gamertag=gamertag.strip();xuid=re.sub(r'\D','',xuid or '')
+    if not gamertag and not xuid:return False,'Enter a gamertag.'
+    with _lock, capacity.lookup_write:
+        xuid=xuid or (_xuid_for(gamertag) if gamertag else None) or ''
+        drop={privacy.digest(x) for x in (gamertag,xuid) if x}
+        hit=drop&privacy.HASHES
+        if not hit:return False,'That gamertag isn\u2019t blocked.'
+        privacy.save(privacy.HASHES-drop)
+        capacity.stats.clear();capacity.external.clear()
+    note='' if xuid else ' The Xbox ID couldn\u2019t be checked (Xbox login offline), so if lookups still say unavailable, unblock again once it\u2019s back or paste the XUID.'
+    return True,f'Unblocked {gamertag or xuid}. Their stats reload on the next lookup.'+note
+
+def _pending():return db.q("SELECT * FROM removal_requests WHERE state='pending' ORDER BY created LIMIT 200")
 
 def install(app,csrf,is_admin,client_ip):
     @bp.after_request
@@ -55,11 +76,14 @@ def install(app,csrf,is_admin,client_ip):
         if not is_admin():abort(403)
         if request.method=='POST':
             csrf()
+            if request.form.get('action')=='unblock':
+                ok,msg=unblock(request.form.get('gamertag',''),request.form.get('xuid',''))
+                return render_template('privacy_admin.html',requests=_pending(),blocked=len(privacy.HASHES),notice=msg),200 if ok else 400
             if request.form.get('action')=='dismiss':
                 db.run("UPDATE removal_requests SET state='dismissed',gamertag='',challenge='',created=? WHERE id=? AND state='pending'",time.time(),request.form.get('request',''))
                 return redirect('/admin/privacy',303)
             if request.form.get('verified')!='yes':abort(400)
             if not approve(request.form.get('request','')):abort(404)
             return redirect('/admin/privacy',303)
-        return render_template('privacy_admin.html',requests=db.q("SELECT * FROM removal_requests WHERE state='pending' ORDER BY created LIMIT 200"))
+        return render_template('privacy_admin.html',requests=_pending(),blocked=len(privacy.HASHES))
     app.register_blueprint(bp)
