@@ -17,8 +17,24 @@
   <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
   <link rel="manifest" href="/static/manifest.webmanifest">
   <meta property="og:image" content="{{ og.image if og and og.image else request.host_url ~ 'og/home.png?v=1' }}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:type" content="website"><meta name="twitter:card" content="summary_large_image">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=191">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=192">
   <script nonce="{{ csp_nonce }}">try{if(localStorage.getItem('ct-view')==='raw')document.documentElement.classList.add('rawview')}catch(e){}try{if(localStorage.getItem('ct-statsonly')==='1')document.documentElement.classList.add('statsonly')}catch(e){}try{if(localStorage.getItem('ct-lvall')==='1')document.documentElement.classList.add('lvall')}catch(e){}</script>
+  {# page transitions (2026-10-10, style.css "page transitions"): runs before the new page's first paint. Adds the
+     transition types (page + the slide direction motion.js stored on click) and names the element that morphs:
+     arriving on a match page its header, coming back from one the row of that game. #}
+  <script nonce="{{ csp_nonce }}">(function(){
+    function take(k){try{var v=sessionStorage.getItem(k);sessionStorage.removeItem(k);return v||''}catch(e){return ''}}
+    function hero(e,el){if(!el)return;el.classList.add('vt-hero');e.viewTransition.finished.finally(function(){el.classList.remove('vt-hero')})}
+    addEventListener('pagereveal',function(e){var vt=e.viewTransition;if(!vt)return;var d=take('ct-vt-dir'),k=take('ct-vt');
+      try{vt.types.add('page');if(d)vt.types.add(d)}catch(x){}
+      if(k==='match'){hero(e,document.querySelector('.mhero'));return}
+      var from=window.navigation&&navigation.activation&&navigation.activation.from,m=from&&from.url&&from.url.match(/\/match\/([^/?#]+)/);
+      if(m&&!/\/match\//.test(location.pathname)){var a=document.querySelector('a[href^="/match/'+m[1]+'"]');if(a)hero(e,a.closest('tr, .gcard, .mo, li')||a)}});
+    addEventListener('pageswap',function(e){var vt=e.viewTransition;if(!vt)return;try{vt.types.add('page')}catch(x){}
+      if(/\/match\//.test(location.pathname)){var h=document.querySelector('.mhero');if(h)h.classList.add('vt-hero')}});
+  })();</script>
+  {# hovering a session arrow or a tab loads that page ahead, so the click opens it at once #}
+  <script type="speculationrules" nonce="{{ csp_nonce }}">{"prefetch":[{"where":{"selector_matches":".sessbtn[href], .hub-tabs a, .kinds a"},"eagerness":"moderate"}]}</script>
 {% block head %}{% endblock %}
 <link rel="stylesheet" href="/static/mobile.css?v=27">
 <link rel="stylesheet" href="/static/app-controls.css?v=2">
@@ -55,6 +71,7 @@ document.addEventListener('click',function(e){var b=e.target.closest('[data-shar
 <script nonce="{{ csp_nonce }}" src="/static/fullscreen.js?v=1" defer></script>
 <script nonce="{{ csp_nonce }}" src="/static/watchframe.js?v=18" defer></script>
 <script nonce="{{ csp_nonce }}" src="/static/saved.js?v=6" defer></script>
+<script nonce="{{ csp_nonce }}" src="/static/motion.js?v=1" defer></script>
 <script nonce="{{ csp_nonce }}" src="/static/heat.js?v=33" defer></script>
 <script nonce="{{ csp_nonce }}" src="/static/mediatoggle.js?v=7" defer></script>
 <script nonce="{{ csp_nonce }}" src="/static/recap-highlights.js?v=1" defer></script>

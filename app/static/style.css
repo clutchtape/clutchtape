@@ -1339,3 +1339,29 @@ html.dragging-split iframe{pointer-events:none}
 .chtab.on{border-color:#9146ff;color:#fff;background:rgba(145,70,255,.22)}
 @media(max-width:480px){.lm-bar{padding:0 12px}}
 @media(max-width:1199px){#player.lm-on:not(:fullscreen){height:auto!important}#player.lm-on:not(:fullscreen) .embed{flex:none;height:auto!important}}
+/* ---- page transitions & motion (2026-10-10; motion.js + the head script in base.html) ----
+   Same-site page changes crossfade (tabs and session arrows slide in their direction); the header, player name and
+   tab bar stay put; the active tab slides to its new place; a clicked game row morphs into the match header.
+   Nothing for prefers-reduced-motion. */
+@media (prefers-reduced-motion: no-preference){
+ @view-transition{navigation:auto}
+ .top{view-transition-name:site-top}
+ .hub-head{view-transition-name:hub-head}
+ .hub-tabs{view-transition-name:hub-tabs}
+ .hub-tabs a.on{view-transition-name:hub-tab}
+ .kinds a.on{view-transition-name:kind-on}
+ .vt-hero{view-transition-name:match-hero}
+ html:active-view-transition-type(page)::view-transition-old(root){animation:vtPageOut .14s ease-in both}
+ html:active-view-transition-type(page)::view-transition-new(root){animation:vtPageIn .3s cubic-bezier(.2,.7,.2,1) both}
+ html:active-view-transition-type(fwd)::view-transition-new(root){animation-name:vtPageFwd}
+ html:active-view-transition-type(back)::view-transition-new(root){animation-name:vtPageBack}
+ ::view-transition-group(hub-tab),::view-transition-group(kind-on),::view-transition-group(match-hero){animation-duration:.32s;animation-timing-function:cubic-bezier(.2,.7,.2,1)}
+ ::view-transition-old(match-hero),::view-transition-new(match-hero){height:100%;object-fit:cover}
+ @keyframes vtPageOut{to{opacity:0}}
+ @keyframes vtPageIn{from{opacity:0;transform:translateY(10px)}}
+ @keyframes vtPageFwd{from{opacity:0;transform:translateX(32px)}}
+ @keyframes vtPageBack{from{opacity:0;transform:translateX(-32px)}}
+ /* a table's heat colours fade in the first time it shows (motion.js .heat-in) */
+ table.heat-in td[class*="h-"],table.heat-in td[style*="background"]{animation:heatIn .9s ease-out both}
+ @keyframes heatIn{from{background-color:transparent}}
+}
