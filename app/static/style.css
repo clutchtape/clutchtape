@@ -1038,7 +1038,14 @@ button.primary,button.secondary{align-items:center;justify-content:center;text-a
 .rawtable tbody tr.win td:first-child{box-shadow:inset 3px 0 0 #3fbf75}.rawtable tbody tr.loss td:first-child{box-shadow:inset 3px 0 0 #e0604f}
 @media(max-width:700px){.kinds{flex-wrap:wrap}.kinds .viewsw{margin-left:0}.viewsw button{min-height:40px}}
 .rawtable .pos{color:#5fd38d}.rawtable .neg{color:#f17b6b}
-@media(max-width:700px){.rawtable td:nth-child(1),.rawtable th:nth-child(1){position:sticky;left:0;box-sizing:border-box;width:32px;min-width:32px;max-width:32px;padding-left:6px;padding-right:4px;z-index:1;background:var(--panel,#16130f)}
-.rawtable td:nth-child(2),.rawtable th:nth-child(2){position:sticky;left:31px;z-index:1;background:var(--panel,#16130f);box-shadow:6px 0 8px -6px rgba(0,0,0,.7)}
-.rawtable .rawtot td:nth-child(-n+2){background:#2a1e15}}
+/* frozen columns (heat.js rawStick sets .stk + left) */
+.rawtable .stk{position:sticky;z-index:2;background:var(--panel,#16130f)}
+.rawtable .stk-last{box-shadow:6px 0 8px -6px rgba(0,0,0,.7)}
+.rawtable .rawtot td.stk{background:#2a1e15}
+.rawtable tbody tr:hover td.stk{background:#1d1914}
+.rawtable td.gnum,.rawtable thead th:first-child{width:32px;min-width:32px;padding-left:6px;padding-right:4px}
+.rawsquad tbody tr.gfirst td{border-top:2px solid #3a3129}
+.rawsquad .rawtot td{border-bottom:1px solid rgba(255,140,60,.2)}
+.rawsquad .rawtot:last-child td{border-bottom:2px solid rgba(255,140,60,.35)}
+.rawtable .stk.rg-core b{white-space:nowrap}
 .hub-more.edge-left .hub-menu{right:auto;left:0}

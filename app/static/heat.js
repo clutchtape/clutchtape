@@ -81,6 +81,7 @@
     if (hint) hint.remove(); wrap.classList.remove('swipe');
     if (table.classList.contains('mobile-cards') && innerWidth <= 700) return;
     if (table.scrollWidth <= wrap.clientWidth + 1) return;
+    if (table.classList.contains('rawtable')) { swipe(wrap); rawStick(table); return; }   /* raw data: always scroll, frozen name/time */
     if (wrap.clientWidth < 700) { swipe(wrap); return; }      /* phones: swipe sideways (no visible scrollbar) with a › arrow */
     var heads = [].slice.call(head.cells), n = heads.length;
     var widths = heads.map(function (th) { return th.getBoundingClientRect().width; });
@@ -105,6 +106,16 @@
     rows.forEach(function (r) { if (r !== head && r.cells.length === n) { var td = document.createElement('td'); td.className = 'colnav'; r.appendChild(td); } });
   }
   var PAGED = '.tablewrap > table, table.heat';
+  /* raw data table: freeze the columns whose header has data-stick (all widths) or data-stick="wide" (above 700px),
+     left offsets measured from the real column widths */
+  function rawStick(table) {
+    var heads = [].slice.call(table.tHead.rows[0].cells), left = 0, last = -1, at = {};
+    [].forEach.call(table.querySelectorAll('.stk'), function (c) { c.classList.remove('stk', 'stk-last'); c.style.left = ''; });
+    heads.forEach(function (th, i) { var v = th.getAttribute('data-stick'); if (v === null || (v === 'wide' && innerWidth <= 700)) return;
+      if (i !== last + 1 && last !== -1) return;            /* only a run of columns from the left can freeze */
+      at[i] = left; left += th.getBoundingClientRect().width; last = i; });
+    [].forEach.call(table.rows, function (r) { [].forEach.call(r.cells, function (c, i) { if (i in at) { c.classList.add('stk'); c.style.left = at[i] + 'px'; if (i === last) c.classList.add('stk-last'); } }); });
+  }
   function swipe(wrap) {
     wrap.classList.add('swipe');
     /* a zero-height sticky holder before the table keeps the › arrow at mid-screen while the table is in view */

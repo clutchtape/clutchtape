@@ -70,7 +70,7 @@ class BreakdownTests(unittest.TestCase):
 
 
 class RawViewTests(unittest.TestCase):
-    def test_every_stat_objectives_and_medals_with_totals(self):
+    def test_every_stat_objectives_and_medals_with_averages(self):
         import raw_view
         from test_companion import row
         a=row('a',2000,mode='Oddball',medals='{"Perfect": 1, "Boxer": 2}',advanced='{"melee_kills": 3, "team_mmr": 1500, "enemy_mmr": 1480}',
@@ -83,7 +83,26 @@ class RawViewTests(unittest.TestCase):
         col=lambda k:keys.index(k)
         self.assertEqual([x['match_id'] for x in r['rows']],['b','a'])                                    # oldest first
         self.assertEqual(r['rows'][1]['cells'][col('obj:time_as_skull_carrier')],50.5);self.assertIsNone(r['rows'][0]['cells'][col('obj:time_as_skull_carrier')])
-        self.assertEqual(r['total'][col('melee_kills')],4);self.assertEqual(r['total'][col('kills')],20)
-        self.assertEqual(r['total'][col('medal:Boxer')],3);self.assertEqual(r['total'][col('medals_all')],4)
+        av=r['avg'][0]['cells'];self.assertEqual(len(r['avg']),1);self.assertEqual((r['avg'][0]['wins'],r['avg'][0]['losses']),(1,1))
+        self.assertEqual(av[col('melee_kills')],2);self.assertEqual(av[col('kills')],10)                    # per game, not totals
+        self.assertEqual(av[col('medal:Boxer')],1.5);self.assertEqual(av[col('medals_all')],2)
+        h=lambda k:[x['heat'][col(k)] for x in r['rows']]
+        self.assertEqual(h('kills'),[None,None])                                                           # <3 games: no heat
+        self.assertEqual(h('map'),[None,None])
         self.assertEqual(r['rows'][1]['cells'][col('mmr_edge')],None if a.get('mmr_edge') is None else a['mmr_edge'])
         self.assertIsNone(raw_view.build([]))
+
+    def test_heat_direction_and_squad_rows(self):
+        import raw_view
+        from test_companion import row
+        ms=[row(f'g{i}',1000*i,kills=k,deaths=d) for i,(k,d) in enumerate([(5,9),(10,6),(20,3)],1)]
+        r=raw_view.build(list(reversed(ms)))
+        keys=[c['key'] for c in r['cols']];col=keys.index
+        self.assertIn('63,191,117',r['rows'][2]['heat'][col('kills')]);self.assertIn('224,96,79',r['rows'][0]['heat'][col('kills')])
+        self.assertIn('63,191,117',r['rows'][2]['heat'][col('deaths')])                                   # fewest deaths = green
+        night=[dict(match_id=m['match_id'],members={1:m,2:dict(m,kills=1)}) for m in reversed(ms)]
+        q=raw_view.build(night,squad=[(1,'Ann'),(2,'Bo')])
+        self.assertTrue(q['squad']);self.assertEqual([c['key'] for c in q['cols']][0],'who')
+        self.assertEqual([(x['gnum'],x['who']) for x in q['rows']][:4],[(1,'Ann'),(1,'Bo'),(2,'Ann'),(2,'Bo')])
+        self.assertEqual([a['who'] for a in q['avg']],['Ann','Bo'])
+        kc=[c['key'] for c in q['cols']].index('kills');self.assertEqual(q['avg'][1]['cells'][kc],1)
