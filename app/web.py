@@ -934,7 +934,17 @@ def _is_current(matches):
     return time.time() - (last["started_at"] + (last.get("duration_s") or 0)) < analytics.SESSION_GAP_S
 
 
-def _live_board(games, ps=None):
+def _usual_of(matches, rows):
+    """The player's usual per-game numbers: the 90 days before this session (session left out), at least 5 games."""
+    if not matches:
+        return None
+    ids = {m["match_id"] for m in matches}
+    cutoff = min(m["started_at"] for m in matches) - BASE_DAYS * 86400
+    base = [r for r in rows if r["match_id"] not in ids and r["started_at"] >= cutoff]
+    return analytics._agg(base) if len(base) >= 5 else None
+
+
+def _live_board(games, ps=None, usual=None):
     """Stats-only live dashboard (2026-10-10): big session tiles + one card per game, newest first. games = the current
     session's match rows (player page) or the night's games with members {pid: row} (squad, ps = its players)."""
     if not games:
@@ -955,7 +965,7 @@ def _live_board(games, ps=None):
         cards.append({"match_id": g["match_id"], "outcome": (g.get("outcome") or ref.get("outcome") or ""), "map": analytics.clean_map(g.get("map") or ref.get("map")),
                       "mode": analytics.clean_mode(g.get("mode") or ref.get("mode")), "t": g["started_at"], "lines": lines,
                       "score": f"{round(ref['team_score'])}–{round(ref['enemy_score'])}" if ref.get("team_score") is not None and ref.get("enemy_score") is not None else None})
-    return {"a": a, "cards": cards}
+    return {"a": a, "cards": cards, "u": usual}     # u: tiles and game numbers are tinted against it (player page)
 
 
 def _solo_table(matches, rows, label="This session"):
@@ -1351,7 +1361,7 @@ def profile(slug):
     comparison = session_review.comparison(data['sessions'], data['s_idx'], 'recent' if request.args.get('compare') == 'recent' else 'previous')
     tab = _tab()
     extra = _hub_board(p["slug"]) if tab == "analysis" else {}
-    return render_template("profile.html", session_picks=session_watch.for_sessions(data["sessions"], [p["id"] for p in [p] + alts], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(s["matches"] if s else [], [p["id"]] + [a["id"] for a in alts]) if tab == "latest" else {}, tab=tab, onair=onair, alts=alts, kpis=_kpis(s["matches"]) if s else [], adv=_adv_kpis({p["gamertag"]: s["matches"]}) if s else [], sess_agg=analytics._agg(s["matches"]) if s else None, brk=_breakdown(s["matches"], data["rows"]) if s and tab == "latest" else None, pt=_solo_table(s["matches"], data["rows"], "This session" if data["s_idx"] == 0 and _is_current(s["matches"]) else fmt_dt(s["start"], "%a %b %-d")) if s and tab == "latest" else None, sess_current=bool(s) and data["s_idx"] == 0 and _is_current(s["matches"]), sb=_live_board(s["matches"] if s and data["s_idx"] == 0 and _is_current(s["matches"]) else []) if tab == "latest" else None, raw=raw_view.build(s["matches"]) if s and tab == "latest" else None, periods=_periods({p["gamertag"]: data["rows"]}, solo=True) if tab == "records" else None, **extra, comparison=comparison, recap_matches=session_review.recap_matches(s['matches'] if s else []), recap_names=[p['gamertag']], pcfg=pcfg, vm=vm, og=og, p=p, d=data, clips=clips, vods=vods, tw=tw, psrc=psrc, plabel=plabel,
+    return render_template("profile.html", session_picks=session_watch.for_sessions(data["sessions"], [p["id"] for p in [p] + alts], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(s["matches"] if s else [], [p["id"]] + [a["id"] for a in alts]) if tab == "latest" else {}, tab=tab, onair=onair, alts=alts, kpis=_kpis(s["matches"]) if s else [], adv=_adv_kpis({p["gamertag"]: s["matches"]}) if s else [], sess_agg=analytics._agg(s["matches"]) if s else None, brk=_breakdown(s["matches"], data["rows"]) if s and tab == "latest" else None, pt=_solo_table(s["matches"], data["rows"], "This session" if data["s_idx"] == 0 and _is_current(s["matches"]) else fmt_dt(s["start"], "%a %b %-d")) if s and tab == "latest" else None, sess_current=bool(s) and data["s_idx"] == 0 and _is_current(s["matches"]), sb=_live_board(s["matches"] if s and data["s_idx"] == 0 and _is_current(s["matches"]) else [], usual=_usual_of(s["matches"], data["rows"]) if s else None) if tab == "latest" else None, raw=raw_view.build(s["matches"]) if s and tab == "latest" else None, periods=_periods({p["gamertag"]: data["rows"]}, solo=True) if tab == "records" else None, **extra, comparison=comparison, recap_matches=session_review.recap_matches(s['matches'] if s else []), recap_names=[p['gamertag']], pcfg=pcfg, vm=vm, og=og, p=p, d=data, clips=clips, vods=vods, tw=tw, psrc=psrc, plabel=plabel,
                            host=request.host.split(":")[0])
 
 

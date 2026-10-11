@@ -1186,7 +1186,7 @@ html.statsonly #player,html.statsonly #twchat,html.statsonly .chattab,html.stats
 /* with the stream off, the live stats lead: side column becomes the main stats column */
 @media(min-width:1200px){html.statsonly .cols.video-layout{grid-template-columns:minmax(0,1fr) clamp(380px,32vw,560px)}}
 html.statsonly #livevs{margin-top:0}
-@media(max-width:1199px){html.statsonly .cols #onair{order:0}}
+/* (was: live box first in Stats only on phones — the stats board now takes the video spot, 2026-10-10) */
 /* "Playing now" (no stream): the live panel look in green */
 .onair.playnow{border-color:rgba(74,222,128,.45);background:linear-gradient(90deg,rgba(46,160,90,.14),rgba(255,176,102,.05) 60%,transparent),var(--panel,#16130f);margin:0 0 16px}
 .oa-live.pn{background:#1f9d55}
@@ -1418,7 +1418,7 @@ html.lay-novs #livevs{display:none!important}
 .laycard label{white-space:nowrap;justify-content:flex-start;width:auto;flex:none}
 .laycard input[type=radio],.laycard input[type=checkbox]{width:16px;height:16px;min-height:0;margin:0;padding:0;flex:none}
 html:has(.laypop[open]) .chattab{display:none!important}
-@media(max-width:400px){.laybtn{font-size:0!important;padding:0 10px!important}.laybtn::before{content:"⚙";font-size:15px}}
+
 /* Arrange the Latest tab (customize.js): only once someone customises (html.lay-sec) does main become a flex column
    with their order; hide-<key> hides a section */
 html.lay-sec main:has(> .sumview){display:flex;flex-direction:column}
@@ -1461,7 +1461,7 @@ body:has(.errpage)>.foot{flex:none;width:100%;box-sizing:border-box}
 .colnav button,.swipehint button{min-width:40px!important;min-height:40px!important}
 .memchip .memx{position:relative}.memchip .memx::after{content:"";position:absolute;inset:-10px}
 .hub-meta a.tw,.foot .foot-btn,.foot a,.oa-title,.oa-prev,.oa-last,.mobile-field a,.gamelog .ph .muted a{display:inline-flex;align-items:center;min-height:40px;margin-top:-12px;margin-bottom:-12px;padding-top:0;padding-bottom:0}
-.oa-title,.oa-prev,.oa-last{display:flex}
+.oa-title,.oa-prev,.oa-last{display:block;min-height:0;padding-top:10px;padding-bottom:10px;margin-top:-7px;margin-bottom:-7px}   /* 40px hit area without breaking the text into flex items */
 .et-clip,.et-timing{position:relative}.et-clip::after,.et-timing::after{content:"";position:absolute;left:50%;top:50%;width:40px;height:40px;transform:translate(-50%,-50%)}
 .foot .foot-btn,.foot a{min-width:40px;justify-content:center;padding-left:4px;padding-right:4px}
 /* live box detail views (livedetail.js): a game's own numbers, or a clip playing from the stream's recording */
@@ -1487,3 +1487,14 @@ body:has(.errpage)>.foot{flex:none;width:100%;box-sizing:border-box}
 .oa-best a.noreplay{opacity:.75}.oa-best a.noreplay::after{content:"no replay";margin-left:6px;padding:0 6px;border-radius:999px;border:1px solid var(--line);font-size:10px;color:var(--mute);vertical-align:1px}
 .od-noreplay{font-size:12px;color:var(--mute);line-height:1.4}
 .od-play small{font-weight:600;opacity:.8}
+/* stats-only dashboard: tiles and game numbers heat-tinted against the player's usual (_statsboard.html hv()) */
+.sb-tile.h-ex{background:linear-gradient(180deg,rgba(34,197,94,.20),rgba(34,197,94,.06));border-color:rgba(34,197,94,.45)}.sb-tile.h-ex b{color:#8ee6a8}
+.sb-tile.h-good{background:linear-gradient(180deg,rgba(74,222,128,.12),rgba(74,222,128,.03));border-color:rgba(74,222,128,.28)}.sb-tile.h-good b{color:#9fd9ad}
+.sb-tile.h-below{background:linear-gradient(180deg,rgba(249,115,22,.13),rgba(249,115,22,.03));border-color:rgba(249,115,22,.3)}.sb-tile.h-below b{color:#e0a87a}
+.sb-tile.h-poor{background:linear-gradient(180deg,rgba(239,68,68,.18),rgba(239,68,68,.05));border-color:rgba(239,68,68,.42)}.sb-tile.h-poor b{color:#f0a3a3}
+.sb-usual{display:block;margin-top:2px;font-size:11px;color:var(--mute);font-variant-numeric:tabular-nums}
+.sb-line span.h-ex b,.sb-line span.h-good b{color:#8ee6a8}.sb-line span.h-poor b,.sb-line span.h-below b{color:#f0a3a3}
+.sb-line span.h-ex,.sb-line span.h-poor{border-radius:6px;padding:0 4px}.sb-line span.h-ex{background:rgba(34,197,94,.12)}.sb-line span.h-poor{background:rgba(239,68,68,.12)}
+/* Stats only: the clips row sits last on the page (heat.js), after the game log and medals */
+main>.liveclips.at-end{order:30;margin-top:18px}
+@media(max-width:1199px){html.statsonly .cols #statsboard{order:1}}   /* phones/tablets: the stats board takes the video's spot, above the live box */

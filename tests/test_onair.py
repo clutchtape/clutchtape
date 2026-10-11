@@ -96,6 +96,17 @@ class OnAir(unittest.TestCase):
         with web.app.test_request_context('/p/pro'):
             html=web.render_template('_onair.html',onair=o)
         self.assertIn('data-tclip="TripleClip"',html); self.assertIn('viewer clip',html)
+    def test_stats_only_board_heat_vs_usual(self):
+        # 2026-10-10: the stats-only tiles are tinted against the player's usual; squad boards (no usual) stay plain
+        from test_companion import row
+        usual=[row(f'u{i}',1000+i*900,kills=8,deaths=8) for i in range(6)]
+        now=[row('n1',100000,kills=20,deaths=5)]
+        sb=web._live_board(now, usual=web._usual_of(now, usual+now))
+        self.assertIsNotNone(sb['u'])
+        with web.app.test_request_context('/p/pro'):
+            html=web.render_template('_statsboard.html',onair={'channel':'x'},sb=sb)
+            plain=web.render_template('_statsboard.html',onair={'channel':'x'},sb=web._live_board(now))
+        self.assertIn('sb-tile h-ex',html); self.assertIn('usual',html); self.assertNotIn('h-ex',plain)
     def test_offline_is_none(self):
         self.assertIsNone(web._onair(self.g(),None,'pro'))
 

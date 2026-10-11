@@ -266,7 +266,15 @@ document.addEventListener('toggle', function (e) {
   var secs = document.querySelectorAll('.colside .clipsec, .colside .twclips'); if (!secs.length) return;
   var row = document.createElement('div'); row.className = 'liveclips';
   [].forEach.call(secs, function (s) { row.appendChild(s); });
-  (document.getElementById('livevs') || player).after(row);   /* after the session table when there is one */
+  /* under the session table while the stream shows; in Stats only the clips go last on the page (2026-10-10: the stats
+     come first there, clips are extra) — and back under the video when the stream comes back */
+  var html = document.documentElement, main = document.querySelector('main');
+  function place() {
+    if (html.classList.contains('statsonly') && main) { if (row.parentElement !== main || row.nextElementSibling) main.appendChild(row); row.classList.add('at-end'); }
+    else { var at = document.getElementById('livevs') || player; if (at.nextElementSibling !== row) at.after(row); row.classList.remove('at-end'); }
+  }
+  place();
+  new MutationObserver(place).observe(html, { attributes: true, attributeFilter: ['class'] });
 })();
 
 /* live: the video comes first, so the game-type / Summary-Raw row (it only filters the stats) moves below it */
