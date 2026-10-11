@@ -659,7 +659,7 @@ def squad(slugs, short=False, code=None, game=None):
         gt_slug = {p["slug"]: p["gamertag"] for p in ps}
         onair["streams"] = [{"channel": chans.get(sl), "gamertag": gt_slug.get(sl), "title": st.get("title"),
                              "viewers": st.get("viewers")} for sl, st in lives]
-        _onair_links(onair, lambda slug: vods.get(slug))
+        _onair_links(onair, lambda slug: vods.get(slug), lambda slug: (users.get(slug) or {}).get("id"))
     return render_template("squad.html", sb=_live_board(night if data.get("s_idx") == 0 and _is_current(night) else [], ps) if tab == "latest" else None, sess_current=bool(night) and data.get("s_idx") == 0 and _is_current(night), pt=_squad_table(night, ps) if tab == "latest" else None, raw=raw_view.build(night, squad=[(p["id"], p["gamertag"]) for p in ps]) if tab == "latest" else None, session_picks=session_watch.for_sessions(data["nights"], [p["id"] for p in ps], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(night, [p["id"] for p in ps]) if tab == "latest" else {}, tab=tab, kpis=kp, adv=adv, periods=periods, pidgt=gt, onair=onair, **extra, comparison=comparison, recap_matches=session_review.recap_matches(data.get('night') or []), recap_names=[p['gamertag'] for p in ps], gtmap={p["slug"]: p["gamertag"] for p in ps}, pcfg=pcfg, vm=vm, og=og, share_url=share_url, d=data, ps=ps, chans=chans, tw=first, psrc=psrc, plabel=plabel, host=request.host.split(":")[0],
                            slugs=",".join(names), vods=vods, sq_base=("/sq/" + code) if code else None, open_game=game)
 
@@ -1254,21 +1254,33 @@ def _onair(groups, stream, channel):
             "quiet": halo_s >= PREGAME_S and not any(x["games"] for x in per)}
 
 
-def _onair_links(onair, vods_of):
+def _onair_links(onair, vods_of, uid_of=None):
     """Stream-recording links for the live card: each best play and each game of this stream, so they play inside the
-    live box (livedetail.js) while the stream keeps going. vods_of(slug) -> that player's Twitch videos."""
+    live box (livedetail.js) while the stream keeps going. vods_of(slug) -> that player's Twitch videos.
+    A channel that doesn't save broadcasts has no recording: then a viewer clip made right after a play stands in
+    (uid_of(slug) -> Twitch user id), and x["no_vod"] lets the card say why there's no replay."""
     if not onair:
         return
+    since = (onair["stream"].get("started") or time.time()) - PREGAME_S
     for x in onair["per"]:
         vods = vods_of(x["p"]["slug"]) or []
-        if not vods:
-            continue
+        uid = uid_of(x["p"]["slug"]) if uid_of else None
+        clips = _cached("liveclips", uid, 90, lambda: twitch.clips_between(uid, since, time.time())) if uid else []
+        clips = clips or []
+        x["no_vod"] = bool(vods) and not any(v["start"] <= time.time() and v["start"] + v["dur_s"] >= since for v in vods)
+        def link(at, dur, lead):
+            return twitch.vod_link(vods, at, dur, lead=lead) if vods else None
+        def tclip(at, dur):
+            c = twitch.clip_for(clips, at, dur)
+            return c["id"] if c else None
         for m in x.get("best") or []:
-            m["vod"] = twitch.vod_link(vods, m["at"], m["dur_s"], lead=0)
+            m["vod"] = link(m["at"], m["dur_s"], 0)
+            m["tclip"] = None if m["vod"] else tclip(m["at"], m["dur_s"])
         for g in x.get("detail") or []:
-            g["vod"] = twitch.vod_link(vods, g["started_at"], g["duration_s"])
+            g["vod"] = link(g["started_at"], g["duration_s"], 5)
             if g["best"]:
-                g["best"]["vod"] = twitch.vod_link(vods, g["best"]["at"], g["best"]["dur_s"], lead=0)
+                g["best"]["vod"] = link(g["best"]["at"], g["best"]["dur_s"], 0)
+                g["best"]["tclip"] = None if g["best"]["vod"] else tclip(g["best"]["at"], g["best"]["dur_s"])
 
 
 def _alts(main_id):
@@ -1313,7 +1325,7 @@ def profile(slug):
         else:
             tw = None
     onair = _onair([(p, [p["id"]] + [a["id"] for a in alts])], _cached("stream", u["id"], 60, lambda: twitch.stream(u["id"])), tw) if tw and u else None
-    _onair_links(onair, lambda slug: vods)
+    _onair_links(onair, lambda slug: vods, lambda slug: u["id"] if u else None)
     for r in data["rows"]:
         r["vod"] = twitch.vod_link(vods, r["started_at"], r["duration_s"]) if vods else None
     data["vod_games"] = [r for r in data["rows"] if r["vod"]][:40]

@@ -1484,3 +1484,6 @@ body:has(.errpage)>.foot{flex:none;width:100%;box-sizing:border-box}
 .od-cliplab{font-weight:800;font-size:14px}
 .od-vid{position:relative;width:100%;aspect-ratio:16/9;min-width:300px;border-radius:10px;overflow:hidden;background:#000}.od-vid>div,.od-vid iframe{position:absolute;inset:0;width:100%!important;height:100%!important}
 .od-note{margin:0;color:var(--mute);font-size:12px}
+.oa-best a.noreplay{opacity:.75}.oa-best a.noreplay::after{content:"no replay";margin-left:6px;padding:0 6px;border-radius:999px;border:1px solid var(--line);font-size:10px;color:var(--mute);vertical-align:1px}
+.od-noreplay{font-size:12px;color:var(--mute);line-height:1.4}
+.od-play small{font-weight:600;opacity:.8}

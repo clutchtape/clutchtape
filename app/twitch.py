@@ -129,6 +129,30 @@ def recent_clips(user_id, n=12):
             if c.get("game_id") == HALO_INFINITE_GAME_ID][:n]
 
 
+def clips_between(user_id, start, end):
+    """Viewer clips of this channel made between two unix times (any game): [{id, created, title, url, dur}].
+    Used when a channel doesn't save its broadcasts: a clip someone made right after a play can stand in for it."""
+    if not enabled() or not user_id:
+        return []
+    iso = lambda t: time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(t))
+    out = []
+    for c in _get("clips", broadcaster_id=user_id, started_at=iso(start), ended_at=iso(end), first=50):
+        try:
+            created = calendar.timegm(time.strptime(c["created_at"], "%Y-%m-%dT%H:%M:%SZ"))
+        except Exception:
+            continue
+        out.append({"id": c["id"], "created": created, "title": c.get("title") or "", "url": c["url"], "dur": c.get("duration")})
+    return out
+
+
+def clip_for(clips, at, dur_s):
+    """The viewer clip that most likely shows a play that started at `at`: made during it or up to 150s after it
+    ended (people press Clip after the moment), closest to its end. None if nothing fits."""
+    end = at + (dur_s or 0)
+    fits = [c for c in clips if at <= c["created"] <= end + 150]
+    return min(fits, key=lambda c: abs(c["created"] - end)) if fits else None
+
+
 def vod_link(videos, match_start, duration_s, lead=5):
     """If a VOD covers this moment, return a timestamped URL into it (`lead` seconds early)."""
     for v in videos:

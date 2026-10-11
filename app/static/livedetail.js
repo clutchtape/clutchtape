@@ -41,19 +41,24 @@
   }
 
   function parse(url) { var m = String(url || '').match(/videos\/(\d+)\?t=([0-9hms]+)/); return m ? { id: m[1], t: m[2] } : null; }
-  function clipView(c, url, label, gid) {
-    var src = parse(url); if (!src || !window.Twitch || !Twitch.Player) return false;
+  function clipView(c, url, label, gid, tclip) {
+    var src = parse(url); if (!tclip && (!src || !window.Twitch || !Twitch.Player)) return false;
     stopClip();
     var v = document.createElement('div');
     v.innerHTML = '<div class="od-head"><button type="button" class="od-back" data-odback>← Live stats</button>' +
       (gid && c.querySelector('template.oa-gtpl[data-g="' + gid + '"]') ? '<button type="button" class="od-gamebtn" data-odgame="' + gid + '">Game stats</button>' : '') +
       '<a class="od-full" target="_blank" rel="noopener">Open on Twitch ↗</a></div><div class="od-cliplab"></div><div class="od-vid"><div id="odclip"></div></div>' +
       '<p class="od-note">The live stream keeps playing; its sound is off until you go back.</p>';
-    v.querySelector('.od-full').href = url; v.querySelector('.od-cliplab').textContent = '▶ ' + (label || 'Clip');
+    v.querySelector('.od-full').href = tclip ? 'https://clips.twitch.tv/' + encodeURIComponent(tclip) : url;
+    v.querySelector('.od-cliplab').textContent = '▶ ' + (label || 'Clip') + (tclip ? ' · viewer clip' : '');
     show(c, v, false); open = { kind: 'clip' };
     var oa = document.getElementById('onair'); if (oa) oa.setAttribute('data-hold', '');     /* live.js waits until we're done */
     try { if (window.__sp && liveMuted === null) { liveMuted = window.__sp.getMuted(); window.__sp.setMuted(true); } } catch (e) {}
-    clipPlayer = new Twitch.Player('odclip', { video: 'v' + src.id, time: src.t, parent: [location.hostname], autoplay: true, muted: false, width: '100%', height: '100%' });
+    if (tclip) {   /* no recording of this stream: a clip a viewer made right after the play (Twitch clip embed) */
+      var f = document.createElement('iframe'); f.src = 'https://clips.twitch.tv/embed?clip=' + encodeURIComponent(tclip) + '&parent=' + encodeURIComponent(location.hostname) + '&autoplay=true&muted=false';
+      f.allow = 'autoplay; fullscreen'; f.allowFullscreen = true; f.title = 'Twitch clip'; v.querySelector('#odclip').appendChild(f);
+      clipPlayer = { pause: function () { f.remove(); } };
+    } else clipPlayer = new Twitch.Player('odclip', { video: 'v' + src.id, time: src.t, parent: [location.hostname], autoplay: true, muted: false, width: '100%', height: '100%' });
     return true;
   }
   function stopClip() {
@@ -73,7 +78,7 @@
     var c = card(t); if (!c) return;
     var gb = t.closest('[data-odgame]'); if (gb) { e.preventDefault(); gameView(c, gb.dataset.odgame); return; }
     var cl = t.closest('[data-clip]');
-    if (cl && cl.dataset.clip) { if (clipView(c, cl.dataset.clip, cl.dataset.cliplabel, cl.dataset.g)) { e.preventDefault(); } return; }
+    if (cl && (cl.dataset.clip || cl.dataset.tclip)) { if (clipView(c, cl.dataset.clip, cl.dataset.cliplabel, cl.dataset.g, cl.dataset.tclip)) { e.preventDefault(); } return; }
     var g = t.closest('a[data-g]'); if (g && gameView(c, g.dataset.g)) e.preventDefault();
   });
   /* while live, ▶ on an auto clip or a game's recording (under the video) plays in the live box too, instead of

@@ -77,6 +77,25 @@ class OnAir(unittest.TestCase):
             html=web.render_template('_onair.html',onair=o)
         self.assertIn('class="oa-gtpl" data-g="m1-1800"',html); self.assertIn('Full game stats',html); self.assertIn('data-g="m1-1800"',html)
         self.assertIn('+12 CSR',html); self.assertIn('Watch the game',html)
+    def test_viewer_clip_stands_in_without_a_recording(self):
+        # 2026-10-10: channel saves no broadcasts -> a viewer clip made right after the play is used, else 'no replay'
+        import twitch
+        clips=[{'id':'early','created':1000-50},{'id':'right','created':1000+20+40},{'id':'late','created':1000+20+400}]
+        self.assertEqual(twitch.clip_for(clips,1000,20)['id'],'right')
+        self.assertIsNone(twitch.clip_for(clips[2:],1000,20))
+        for d in range(5): self.add((3+d)*86400, kills=8)
+        self.add(30*60, kills=20)
+        mid='m1-1800'; at=time.time()-25*60
+        self.conn.execute("INSERT INTO moments(player_id,match_id,t_ms,at,dur_s,label,kills,score) VALUES(1,?,60000,?,20,'Triple Kill',3,90)",(mid,at))
+        o=web._onair(self.g(),{'started':time.time()-60*60,'halo':True,'title':'t','game':'Halo Infinite','viewers':3},'pro')
+        old=[{'url':'https://www.twitch.tv/videos/9','start':time.time()-30*86400,'dur_s':3600}]     # only an old broadcast
+        with patch.object(web.twitch,'clips_between',return_value=[{'id':'TripleClip','created':at+20+30}]):
+            web._onair_links(o, lambda s: old, lambda s: 'uid-x')
+        x=o['per'][0]
+        self.assertTrue(x['no_vod']); self.assertIsNone(x['best'][0]['vod']); self.assertEqual(x['best'][0]['tclip'],'TripleClip')
+        with web.app.test_request_context('/p/pro'):
+            html=web.render_template('_onair.html',onair=o)
+        self.assertIn('data-tclip="TripleClip"',html); self.assertIn('viewer clip',html)
     def test_offline_is_none(self):
         self.assertIsNone(web._onair(self.g(),None,'pro'))
 
