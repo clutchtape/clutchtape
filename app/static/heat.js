@@ -390,19 +390,24 @@ document.addEventListener('click', function (e) {
   });
 })();
 
-/* live: browsers pause a muted video that is scrolled off screen (phones, scrolling down to the stats). When the video
-   comes back into view and it was playing when it left, start it again (2026-10-10). */
+/* the video gets paused when it's scrolled off screen (browsers do that to muted video) or slides under the sticky header /
+   Stream & clips bar (Twitch pauses a covered player). When it's back in the clear and it was playing when it left, start it
+   again (2026-10-10, covered case 2026-10-11). A video you paused yourself stays paused. */
 (function () {
-  var emb = document.querySelector('#player .embed'); if (!emb || !('IntersectionObserver' in window)) return;
-  var lastPlaying = 0, leftAt = 0, inView = true;
-  setInterval(function () { if (!inView) return; try { if (window.__sp && !window.__sp.isPaused()) lastPlaying = Date.now(); } catch (e) {} }, 1000);
-  new IntersectionObserver(function (es) {
-    var e = es[es.length - 1], vis = e.intersectionRatio >= 0.5;
-    if (!vis && inView) { inView = false; leftAt = Date.now(); return; }
-    if (vis && !inView) { inView = true;
+  var emb = document.querySelector('#player .embed'); if (!emb) return;
+  var lastPlaying = 0, leftAt = 0, clear = true, q = false;
+  function stackBottom() { var b = 0; [document.querySelector('.top'), document.querySelector('.hub-head'), document.querySelector('.mediasec[open]>.mediabar')].forEach(function (e) {
+      if (e && /sticky|fixed/.test(getComputedStyle(e).position)) b = Math.max(b, e.getBoundingClientRect().bottom); }); return b; }
+  function check() { q = false;
+    var r = emb.getBoundingClientRect(); if (!r.height) return;
+    var vis = Math.max(0, Math.min(r.bottom, innerHeight) - Math.max(r.top, 0)) / r.height, now = vis >= 0.5 && r.top >= stackBottom() - 1;
+    if (!now && clear) { clear = false; leftAt = Date.now(); return; }
+    if (now && !clear) { clear = true;
       if (document.documentElement.classList.contains('statsonly') || lastPlaying < leftAt - 2500) return;
-      var n = 0, iv = setInterval(function () { n++; try { var p = window.__sp; if (!p || !p.isPaused() || n > 10) { clearInterval(iv); return; } p.play(); } catch (x) { clearInterval(iv); } }, 400); }
-  }, { threshold: [0, 0.5, 1] }).observe(emb);
+      var n = 0, iv = setInterval(function () { n++; try { var p = window.__sp; if (!p || !p.isPaused() || n > 10) { clearInterval(iv); return; } p.play(); } catch (x) { clearInterval(iv); } }, 400); } }
+  setInterval(function () { if (!clear) return; try { if (window.__sp && !window.__sp.isPaused()) lastPlaying = Date.now(); } catch (e) {} }, 1000);
+  function soon() { if (!q) { q = true; requestAnimationFrame(check); } }
+  addEventListener('scroll', soon, { passive: true }); addEventListener('resize', soon);
 })();
 
 /* chat | live stats side by side (wide right side, or Stats only + Keep chat): a handle between them resizes the two
@@ -489,4 +494,21 @@ document.addEventListener('click', function (e) {
   addEventListener('resize', soon); new MutationObserver(soon).observe(html, { attributes: true, attributeFilter: ['class'] });
   if (window.ResizeObserver) { var ro = new ResizeObserver(soon); ro.observe(side); ro.observe(player); ro.observe(cols); }
   window.dispatchEvent(new Event('resize')); setTimeout(place, 300);
+})();
+
+/* short pages: the footer sits at the bottom of the screen instead of floating mid-screen (main grows by the gap).
+   Home and error pages do this in CSS; this covers every other page (e.g. a squad's Sessions tab). 2026-10-11 */
+(function () {
+  var m = document.querySelector('main'), f = document.querySelector('footer.foot'); if (!m || !f) return;
+  if (document.body.matches(':has(.home-page), :has(.errpage)')) return;
+  function fit() {
+    m.style.minHeight = '';
+    var gap = Math.floor(innerHeight - (f.getBoundingClientRect().bottom + scrollY));   /* scrollHeight never reports less than the window */
+    if (gap > 0) { var cs = getComputedStyle(m), pad = cs.boxSizing === 'border-box' ? 0 : parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+      m.style.minHeight = Math.floor(m.getBoundingClientRect().height - pad + gap) + 'px'; }
+  }
+  var t; function soon() { clearTimeout(t); t = setTimeout(fit, 120); }
+  addEventListener('load', fit); addEventListener('resize', soon); fit();
+  new MutationObserver(soon).observe(m, { childList: true, subtree: true });
+  document.addEventListener('toggle', soon, true);
 })();

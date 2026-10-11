@@ -81,10 +81,10 @@
 {{ player_block|safe }}
 {% if tab == 'latest' %}
 {% if tw %}<div class="tracker-quiet">{% include "_live.html" %}</div>{% endif %}
-{% else %}
-{% include "_moments.html" %}
+{% else %}{# Clips tab with a Twitch link: the clip lists sit to the right of the video (colside), like Latest #}
+{% if not (tw and tab == 'clips') %}{% include "_moments.html" %}{% endif %}
 {% if not tw and tab == 'clips' %}<section class="panel"><p class="muted">Clips come from the player's Twitch stream. Look them up again with their Twitch link (home page → "+ Add Twitch") to get auto clips here.</p></section>{% endif %}
-{% if tw and clips %}
+{% if tw and clips and tab != 'clips' %}
 <section class="panel twclips"><div class="ph"><h2>{{ 'Twitch clips from this session' if tab == 'latest' else 'Clips' }}</h2><span class="muted">Click to play in the player above.</span></div>
   <div class="clipgrid">{% for c in clips %}
     <a class="clip" href="{{ c.url }}" data-clip="{{ c.id }}" target="_blank" rel="noopener"><img loading="lazy" src="{{ c.thumb }}" alt=""><span>{{ c.title }}</span><small>{{ c.views }} views</small></a>
@@ -93,7 +93,7 @@
 {% endif %}
 {% endif %}
 </div><aside class="colside">{% if onair and tw %}{% include "_onair.html" %}{% endif %}{% include "_chat.html" %}
-{% if tab == 'latest' %}
+{% if tab == 'latest' or (tw and tab == 'clips') %}
 {% include "_moments.html" %}
 {% if tw and clips %}
 <section class="panel twclips"><div class="ph"><h2>{{ 'Twitch clips from this session' if tab == 'latest' else 'Clips' }}</h2><span class="muted">Click to play in the player above.</span></div>
@@ -116,10 +116,10 @@
 {{ player_block|safe }}
 {% if tab == 'latest' %}
 {% if tw %}<div class="tracker-quiet">{% include "_live.html" %}</div>{% endif %}
-{% else %}
-{% include "_moments.html" %}
+{% else %}{# Clips tab with a Twitch link: the clip lists sit to the right of the video (colside), like Latest #}
+{% if not (tw and tab == 'clips') %}{% include "_moments.html" %}{% endif %}
 {% if not tw and tab == 'clips' %}<section class="panel"><p class="muted">Clips come from the player's Twitch stream. Look them up again with their Twitch link (home page → "+ Add Twitch") to get auto clips here.</p></section>{% endif %}
-{% if tw and clips %}
+{% if tw and clips and tab != 'clips' %}
 <section class="panel twclips"><div class="ph"><h2>{{ 'Twitch clips from this session' if tab == 'latest' else 'Clips' }}</h2><span class="muted">Click to play in the player above.</span></div>
   <div class="clipgrid">{% for c in clips %}
     <a class="clip" href="{{ c.url }}" data-clip="{{ c.id }}" target="_blank" rel="noopener"><img loading="lazy" src="{{ c.thumb }}" alt=""><span>{{ c.title }}</span><small>{{ c.views }} views</small></a>
@@ -128,7 +128,7 @@
 {% endif %}
 {% endif %}
 </div><aside class="colside">{% if onair and tw %}{% include "_onair.html" %}{% endif %}{% include "_chat.html" %}
-{% if tab == 'latest' %}
+{% if tab == 'latest' or (tw and tab == 'clips') %}
 {% include "_moments.html" %}
 {% if tw and clips %}
 <section class="panel twclips"><div class="ph"><h2>{{ 'Twitch clips from this session' if tab == 'latest' else 'Clips' }}</h2><span class="muted">Click to play in the player above.</span></div>
@@ -159,7 +159,7 @@
 <script nonce="{{ csp_nonce }}" src="/static/archiveplayer.js?v=3"></script>
 <script nonce="{{ csp_nonce }}" src="/static/clipsaver.js?v=2"></script>
 <script nonce="{{ csp_nonce }}">if(!window.ClutchSave||!ClutchSave.supported)document.documentElement.classList.add("nosave")</script>
-<script nonce="{{ csp_nonce }}" src="/static/eventlog.js?v=25"></script>
+<script nonce="{{ csp_nonce }}" src="/static/eventlog.js?v=27"></script>
 <script nonce="{{ csp_nonce }}">
 (function(){var cfg={{ pcfg|tojson }},host=location.hostname,label=document.getElementById('playerlabel');
 var opts={parent:[host],autoplay:true,muted:true,width:'100%',height:'100%'};if(cfg.video){opts.video='v'+cfg.video;if(cfg.start)opts.time=cfg.start}else opts.channel=cfg.channel;

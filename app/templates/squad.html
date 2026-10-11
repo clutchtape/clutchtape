@@ -171,7 +171,7 @@
 <script nonce="{{ csp_nonce }}" src="/static/archiveplayer.js?v=3"></script>
 <script nonce="{{ csp_nonce }}" src="/static/clipsaver.js?v=2"></script>
 <script nonce="{{ csp_nonce }}">if(!window.ClutchSave||!ClutchSave.supported)document.documentElement.classList.add("nosave")</script>
-<script nonce="{{ csp_nonce }}" src="/static/eventlog.js?v=25"></script><script nonce="{{ csp_nonce }}" src="/static/multistats.js?v=2"></script>
+<script nonce="{{ csp_nonce }}" src="/static/eventlog.js?v=27"></script><script nonce="{{ csp_nonce }}" src="/static/multistats.js?v=2"></script>
 <script nonce="{{ csp_nonce }}">window.CT_SQ={{ {'base': sq_base, 'game': open_game}|tojson }};window.CT_VM={{ vm|tojson }};window.CT_NAMES={{ ps|map(attribute="gamertag")|list|tojson }};</script>
 <script nonce="{{ csp_nonce }}">window.addEventListener('load',function(){var sp=new URLSearchParams(location.search);if(sp.get('tab')==='bad'){var t0=document.querySelector('#teamwork .tab[data-tab="bad"]');if(t0)t0.click()}var k=sp.get('watch');if(!k)return;
  var b=document.querySelector('button.watch[data-key="'+k+'"]');var row=b&&b.closest('.mo')||document.querySelector('[data-link$="watch='+k+'"]');

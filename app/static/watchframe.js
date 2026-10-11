@@ -5,7 +5,8 @@ function fit(){queued=false;
 if(document.documentElement.classList.contains('statsonly')){player.closest('.cols')?.style.removeProperty('grid-template-columns');return;}
 if(document.fullscreenElement||!player.getClientRects().length)return;
 const header=document.querySelector('.top'),bar=document.querySelector('.mediasec[open]>.mediabar');
-const anchor=(header?.getBoundingClientRect().height||0)+(bar?.getBoundingClientRect().height||0)+8;
+const hh=document.querySelector('.hub-head'),stickyHub=hh&&getComputedStyle(hh).position==='sticky'?hh.getBoundingClientRect().height:0;   /* squad names row pinned under the header */
+const anchor=(header?.getBoundingClientRect().height||0)+stickyHub+(bar?.getBoundingClientRect().height||0)+8;
 const viewport=window.visualViewport?.height||innerHeight;
 const embed=player.querySelector('.embed'),width=embed?.clientWidth||player.clientWidth;
 const live=player.classList.contains('is-live'),tl=live?0:160;   /* live: no event log under the video (2026-10-10) */

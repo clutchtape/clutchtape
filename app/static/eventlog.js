@@ -133,6 +133,9 @@
       var br=bar.getBoundingClientRect(),mr=marker&&marker.getBoundingClientRect();
       var center=mr?mr.left+mr.width/2-br.left:Math.max(0,Math.min(1,ms/(+bar.dataset.dur||1)))*br.width;
       popup.style.left=Math.max(0,Math.min(br.width-popup.offsetWidth,center-popup.offsetWidth/2))+'px';
+      /* 2026-10-11: the pop-up opens below the timeline (never over the video): fit it to the room left on screen, and if
+         there's hardly any it scrolls inside itself */
+      var room=innerHeight-br.bottom-16;popup.style.maxHeight=Math.max(96,Math.min(240,room))+'px';   /* no page scroll: moving the page would slide the video under the sticky bar and pause it */
       popupTimer=setTimeout(function(){popup.hidden=true},5000);
     }
     picks.addEventListener('change',function(){if(this.value==='')return;var c=clips[+this.value];if(o.onClip)o.onClip(c.player);seekFilm(c.t+LEAD);this.value='';});
