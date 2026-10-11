@@ -122,7 +122,11 @@
     var box = document.createElement('div'); box.className = 'swipehint';
     var b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-label', 'Scroll the table for more columns'); b.textContent = '›';
     box.appendChild(b);
-    function place() { box.hidden = wrap.scrollLeft + wrap.clientWidth >= wrap.scrollWidth - 4; }
+    /* short tables (a few rows): centre the arrow on the table instead of mid-screen, which would sit below it */
+    function place() { box.hidden = wrap.scrollLeft + wrap.clientWidth >= wrap.scrollWidth - 4;
+      var short = wrap.offsetHeight < innerHeight * 0.45; box.classList.toggle('short', short);
+      b.style.top = short ? Math.max(0, Math.round(wrap.offsetHeight / 2 - 32)) + 'px' : ''; }
+    if (window.ResizeObserver) new ResizeObserver(place).observe(wrap);
     b.onclick = function () { wrap.scrollBy({ left: wrap.clientWidth * 0.8, behavior: 'smooth' }); };
     wrap.addEventListener('scroll', place, { passive: true }); wrap.before(box); place();
   }

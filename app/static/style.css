@@ -1530,3 +1530,6 @@ html.dragging-cols iframe{pointer-events:none}   /* the chat iframe would swallo
 .mainsplit i{width:4px;height:60px;border-radius:999px;background:rgba(255,255,255,.16);transition:background .15s,height .15s;position:sticky;top:45vh}
 .mainsplit:hover i,.mainsplit:focus-visible i,html.dragging-cols .mainsplit i{background:var(--acc2);height:90px}
 @media(min-width:1200px){html.statsonly.has-sow:not(.x1):not(.x2):not(.x3) .cols.video-layout{grid-template-columns:minmax(0,1fr) var(--sow)!important}}   /* beats the Keep-chat layout rule */
+.sqtop{margin-bottom:14px}.sqtop .ph{margin-bottom:8px}
+.playnow .pn-vs{margin:6px 0 12px}
+.swipehint.short{position:relative;top:0}

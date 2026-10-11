@@ -52,7 +52,7 @@
     }).catch(function () { if (status) status.textContent = 'Could not check for new results. Retrying automatically; your stats are still here.'; }).finally(function () { clearTimeout(timeout);busy = false; });
   }
   /* New game: re-fetch this page and swap the stat sections in place; the video (and its position) is never touched. */
-  var SWAP = ['#onair', '#playnow', '#statsboard', '#livevs', '.hubkpis', '.advhelp', '.gamelog', '#raw', '.brk', '#periods', '.hub-sessions', '.clipsec', '.twclips'];
+  var SWAP = ['#onair', '#playnow', '#sqtable', '#statsboard', '#livevs', '.hubkpis', '.advhelp', '.gamelog', '#raw', '.brk', '#periods', '.hub-sessions', '.clipsec', '.twclips'];
   /* what changed gets animated: numbers roll from the old value to the new one and glow, new game rows slide in */
   var NUM = /^([^\d\-+−]{0,3})([+\-−]?)(\d[\d,]*(?:\.\d+)?)(%|s|m)?$/;
   function leaves(root) { return [].slice.call(root.querySelectorAll('b,td,span,small,strong,div')).filter(function (e) { return !e.children.length && NUM.test(e.textContent.trim()); }); }

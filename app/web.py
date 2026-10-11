@@ -993,7 +993,7 @@ def _solo_table(matches, rows, label="This session"):
     cutoff = min(m["started_at"] for m in matches) - BASE_DAYS * 86400
     base = [r for r in rows if r["match_id"] not in ids and r["started_at"] >= cutoff]
     t = player_table.build([(label, matches, None),
-                            ("Usual", base if len(base) >= 5 else [], f"{len(base)} games in the 90 days before")])
+                            ("Usual", base if len(base) >= 5 else [], f"{len(base)} games in the 90 days before")], vs_usual=True)
     # CSR change is a session total: 90 days of it isn't a "usual" to compare a session with, so the Usual row leaves it blank
     if t and len(t["rows"]) == 2:
         i = next((n for n, c in enumerate(t["cols"]) if c["key"] == "csr_net"), None)

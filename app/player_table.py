@@ -80,7 +80,7 @@ def _level(v, vals, better):
     return LEVELS[min(4, int(p * 5))]
 
 
-def build(groups):
+def build(groups, vs_usual=False):
     """groups: [(label, rows, extra)] -> dict(cols, rows=[dict(label, extra, cells=[(value, cls)])]). Rows with no
     games are skipped; a column every row leaves empty is dropped."""
     data = [(lbl, stats(rs), extra) for lbl, rs, extra in groups if rs]
@@ -96,7 +96,8 @@ def build(groups):
             vals = [x.get(c["key"]) for _, x, _ in data if x.get(c["key"]) is not None]
             cells.append((v, _level(v, vals, c["better"])))
         out.append(dict(label=lbl, extra=extra, cells=cells))
-    if len(out) == 2:                   # session vs usual: how far the session is from usual, + = better (the bars)
+    if vs_usual and len(out) == 2:      # session vs usual: how far the session is from usual, + = better (the bars;
+                                        # not on a 2-player squad table, where row 2 isn't a "usual")
         out[0]["delta"] = [None if c["key"] in NO_BAR else _delta(a[0], b[0], c["better"])
                           for a, b, c in zip(out[0]["cells"], out[1]["cells"], cols)]
     return dict(cols=cols, rows=out)

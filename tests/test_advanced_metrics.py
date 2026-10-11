@@ -132,7 +132,7 @@ class VsUsualBarTests(unittest.TestCase):
     def test_direction_clamp_and_skips(self):
         import player_table
         from test_companion import row
-        t=player_table.build([('This session',[row('x',1,kills=15,deaths=4)],None),('Usual',[row('y',1,kills=10,deaths=8)],'')])
+        t=player_table.build([('This session',[row('x',1,kills=15,deaths=4)],None),('Usual',[row('y',1,kills=10,deaths=8)],'')],vs_usual=True)
         k=[c['key'] for c in t['cols']]
         d=t['rows'][0]['delta']
         self.assertEqual(d[k.index('kills_pg')],1.0)                       # +50% kills = full bar, better
@@ -141,6 +141,8 @@ class VsUsualBarTests(unittest.TestCase):
         self.assertNotIn('delta',t['rows'][1])
         three=player_table.build([('A',[row('a',1)],None),('B',[row('b',1,pid=2)],None),('C',[row('c',1,pid=3)],None)])
         self.assertTrue(all('delta' not in r for r in three['rows']))       # squads: no bars
+        two=player_table.build([('A',[row('a',1)],None),('B',[row('b',1,pid=2)],None)])
+        self.assertTrue(all('delta' not in r for r in two['rows']))         # a 2-player squad isn't 'vs usual'
 
     def test_fresh_records(self):
         import time,analytics
