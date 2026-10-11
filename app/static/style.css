@@ -1505,3 +1505,14 @@ main>.liveclips.at-end{order:30;margin-top:18px}
 /* Customize → Stats only: Keep chat (html.lay-sochat): chat stays beside the stats; phones keep the Chat pill */
 html.statsonly.lay-sochat:not(.lay-chat-hidden) #twchat{display:flex!important}
 @media(max-width:700px){html.statsonly.lay-sochat:not(.lay-chat-hidden) .chattab:not([hidden]):not(.off){display:flex!important}html.statsonly.lay-sochat.chat-open .chattab{display:none!important}}
+/* Stats only + Keep chat, desktop: chat on the left, live stats on the right, both full height (like the wide side
+   layout); with no video the stats board gives up width for them. Chat side: Right swaps them. */
+@media(min-width:1200px){
+ html.statsonly.lay-sochat:not(.lay-chat-hidden) .cols.video-layout{grid-template-columns:minmax(0,1fr) minmax(680px,44%)!important}
+ html.statsonly.lay-sochat:not(.lay-chat-hidden) .colside{display:grid!important;grid-template-columns:minmax(320px,1fr) minmax(340px,1fr);column-gap:12px;align-items:start}
+ html.statsonly.lay-sochat:not(.lay-chat-hidden) .colside>#twchat{order:-1;grid-column:1;grid-row:1;height:calc(100dvh - 250px)!important;min-height:360px;margin:0}
+ html.statsonly.lay-sochat:not(.lay-chat-hidden) .colside>#onair{grid-column:2;grid-row:1;margin:0;max-height:calc(100dvh - 250px);overflow:auto}
+ html.statsonly.lay-sochat:not(.lay-chat-hidden) .colside>*:not(#twchat):not(#onair){grid-column:1/-1}
+ html.statsonly.lay-sochat.lay-chat-right .colside>#twchat{grid-column:2}html.statsonly.lay-sochat.lay-chat-right .colside>#onair{grid-column:1}
+ html.statsonly.lay-sochat .colside>.sidesplit{display:none!important}
+}
