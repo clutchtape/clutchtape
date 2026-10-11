@@ -307,7 +307,8 @@ document.addEventListener('toggle', function (e) {
   document.body.append(tab);
   function fixedTop() { var t = document.querySelector('.top'); if (!t) return 0; var p = getComputedStyle(t).position; return (p === 'sticky' || p === 'fixed') ? t.getBoundingClientRect().bottom : 0; }
   function place() {
-    var e = document.querySelector('#player .embed'); if (!e) return;
+    var e = document.querySelector('#player .embed');
+    if (!e || !e.getClientRects().length) { html.style.setProperty('--sheet-top', '28vh'); return; }   /* Stats only: no video to keep clear */
     window.scrollBy(0, e.getBoundingClientRect().top - fixedTop() - 6);
     html.style.setProperty('--sheet-top', Math.round(e.getBoundingClientRect().bottom + 8) + 'px');
   }
@@ -322,7 +323,7 @@ document.addEventListener('toggle', function (e) {
     ph.addEventListener('touchend', function (e) { if (sy != null && e.changedTouches[0].clientY - sy > 60) close(); sy = null; }, { passive: true }); }
   /* the Chat pill waits until the video is playing (or 10s): on small phones it can sit over the video, which stops
      Twitch's autoplay. No pill while the stream section is collapsed. */
-  var ready = false, waited = 0, wv = setInterval(function () { waited += 500; var go = waited >= 10000;
+  var ready = false, waited = 0, wv = setInterval(function () { waited += 500; var go = waited >= 10000 || html.classList.contains('statsonly');
     try { go = go || (window.__sp && !window.__sp.isPaused() && window.__sp.getCurrentTime() > 0); } catch (e) {}
     if (go) { clearInterval(wv); ready = true; sync(); } }, 500);
   function sync() { tab.hidden = !ready || !!(ms && !ms.open); if (ms && !ms.open) close(); clear(); }

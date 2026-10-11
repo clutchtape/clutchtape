@@ -660,7 +660,7 @@ def squad(slugs, short=False, code=None, game=None):
         onair["streams"] = [{"channel": chans.get(sl), "gamertag": gt_slug.get(sl), "title": st.get("title"),
                              "viewers": st.get("viewers")} for sl, st in lives]
         _onair_links(onair, lambda slug: vods.get(slug), lambda slug: (users.get(slug) or {}).get("id"))
-    return render_template("squad.html", sb=_live_board(night if data.get("s_idx") == 0 and _is_current(night) else [], ps) if tab == "latest" else None, sess_current=bool(night) and data.get("s_idx") == 0 and _is_current(night), pt=_squad_table(night, ps) if tab == "latest" else None, raw=raw_view.build(night, squad=[(p["id"], p["gamertag"]) for p in ps]) if tab == "latest" else None, session_picks=session_watch.for_sessions(data["nights"], [p["id"] for p in ps], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(night, [p["id"] for p in ps]) if tab == "latest" else {}, tab=tab, kpis=kp, adv=adv, periods=periods, pidgt=gt, onair=onair, **extra, comparison=comparison, recap_matches=session_review.recap_matches(data.get('night') or []), recap_names=[p['gamertag'] for p in ps], gtmap={p["slug"]: p["gamertag"] for p in ps}, pcfg=pcfg, vm=vm, og=og, share_url=share_url, d=data, ps=ps, chans=chans, tw=first, psrc=psrc, plabel=plabel, host=request.host.split(":")[0],
+    return render_template("squad.html", sb=_live_board(night if data.get("s_idx") == 0 and _is_current(night) else [], ps, *_squad_usuals(night, data["members"])) if tab == "latest" and night else None, sess_current=bool(night) and data.get("s_idx") == 0 and _is_current(night), pt=_squad_table(night, ps) if tab == "latest" else None, raw=raw_view.build(night, squad=[(p["id"], p["gamertag"]) for p in ps]) if tab == "latest" else None, session_picks=session_watch.for_sessions(data["nights"], [p["id"] for p in ps], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(night, [p["id"] for p in ps]) if tab == "latest" else {}, tab=tab, kpis=kp, adv=adv, periods=periods, pidgt=gt, onair=onair, **extra, comparison=comparison, recap_matches=session_review.recap_matches(data.get('night') or []), recap_names=[p['gamertag'] for p in ps], gtmap={p["slug"]: p["gamertag"] for p in ps}, pcfg=pcfg, vm=vm, og=og, share_url=share_url, d=data, ps=ps, chans=chans, tw=first, psrc=psrc, plabel=plabel, host=request.host.split(":")[0],
                            slugs=",".join(names), vods=vods, sq_base=("/sq/" + code) if code else None, open_game=game)
 
 
@@ -934,17 +934,34 @@ def _is_current(matches):
     return time.time() - (last["started_at"] + (last.get("duration_s") or 0)) < analytics.SESSION_GAP_S
 
 
-def _usual_of(matches, rows):
-    """The player's usual per-game numbers: the 90 days before this session (session left out), at least 5 games."""
+def _usual_base(matches, rows):
+    """A player's games in the 90 days before this session (session left out)."""
     if not matches:
-        return None
+        return []
     ids = {m["match_id"] for m in matches}
     cutoff = min(m["started_at"] for m in matches) - BASE_DAYS * 86400
-    base = [r for r in rows if r["match_id"] not in ids and r["started_at"] >= cutoff]
+    return [r for r in rows if r["match_id"] not in ids and r["started_at"] >= cutoff]
+
+
+def _usual_of(matches, rows):
+    """The player's usual per-game numbers: the 90 days before this session (session left out), at least 5 games."""
+    base = _usual_base(matches, rows)
     return analytics._agg(base) if len(base) >= 5 else None
 
 
-def _live_board(games, ps=None, usual=None):
+def _squad_usuals(night, members):
+    """Squad stats-only board (2026-10-10): each member's usual (their own 90 days) and the squad's combined usual."""
+    by, allb = {}, []
+    for m in members:
+        pid = m["p"]["id"]
+        mine = [g["members"][pid] for g in night if pid in g["members"]]
+        base = _usual_base(mine, m["rows"] or [])
+        by[pid] = analytics._agg(base) if len(base) >= 5 else None
+        allb += base
+    return (analytics._agg(allb) if len(allb) >= 5 else None), by
+
+
+def _live_board(games, ps=None, usual=None, usual_by=None):
     """Stats-only live dashboard (2026-10-10): big session tiles + one card per game, newest first. games = the current
     session's match rows (player page) or the night's games with members {pid: row} (squad, ps = its players)."""
     if not games:
@@ -960,7 +977,7 @@ def _live_board(games, ps=None, usual=None):
             if r:
                 lines.append({"who": next((p["gamertag"] for p in ps if p["id"] == pid), None) if ps else None,
                               "k": r["kills"], "d": r["deaths"], "a": r["assists"], "kda": r.get("kda"), "dmg_pm": r.get("dmg_pm"),
-                              "sc_pct": r.get("sc_pct"), "csr_d": r.get("csr_d")})
+                              "sc_pct": r.get("sc_pct"), "csr_d": r.get("csr_d"), "u": (usual_by or {}).get(pid)})
         ref = g if not ps else next(iter(g["members"].values()))
         cards.append({"match_id": g["match_id"], "outcome": (g.get("outcome") or ref.get("outcome") or ""), "map": analytics.clean_map(g.get("map") or ref.get("map")),
                       "mode": analytics.clean_mode(g.get("mode") or ref.get("mode")), "t": g["started_at"], "lines": lines,

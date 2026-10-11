@@ -2,13 +2,14 @@
      chat: auto | beside | below | hidden   (desktop; auto = beside when the right side is wide enough, heat.js)
      side: left | right                     (chat's side when beside)
      vs:   true | false                     (the session-vs-usual table under the video)
+     sochat: true | false                   (keep chat in Stats only)
      pins: ['kda', ...]                     (live box headline numbers, in order; [] = the default set)
    Layout = classes on <html> (lay-chat-*, lay-chat-right, lay-novs), set early by base.html so nothing jumps.
    Pins move the matching [data-k] stats into the headline row of each live card (and first among the phone tiles);
    live.js matches stats by data-k, so rolling numbers survive the move. Re-applied after every live.js swap. */
 (function () {
   'use strict';
-  var KEY = 'ct-layout', html = document.documentElement, DEF = { chat: 'auto', side: 'left', vs: true, pins: [] };
+  var KEY = 'ct-layout', html = document.documentElement, DEF = { chat: 'auto', side: 'left', vs: true, sochat: false, pins: [] };
   function load() { try { var v = JSON.parse(localStorage.getItem(KEY) || '{}'); return Object.assign({}, DEF, v); } catch (e) { return Object.assign({}, DEF); } }
   function save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
   var s = load();
@@ -17,6 +18,7 @@
     ['auto', 'beside', 'below', 'hidden'].forEach(function (c) { html.classList.toggle('lay-chat-' + c, s.chat === c && c !== 'auto'); });
     html.classList.toggle('lay-chat-right', s.side === 'right');
     html.classList.toggle('lay-novs', !s.vs);
+    html.classList.toggle('lay-sochat', !!s.sochat);              /* chat stays in Stats only */
     window.dispatchEvent(new Event('resize')); if (window.ctSideFit) window.ctSideFit();
   }
 
@@ -54,13 +56,14 @@
       [].forEach.call(f.querySelectorAll('input[name=chat]'), function (i) { i.checked = i.value === s.chat; });
       [].forEach.call(f.querySelectorAll('input[name=side]'), function (i) { i.checked = i.value === s.side; });
       f.querySelector('input[name=vs]').checked = !!s.vs;
+      f.querySelector('input[name=sochat]').checked = !!s.sochat;
       [].forEach.call(f.querySelectorAll('input[name=pin]'), function (i) { i.checked = s.pins.indexOf(i.value) >= 0;
         var n = s.pins.indexOf(i.value); i.parentElement.dataset.order = n >= 0 ? n + 1 : ''; });
       var full = s.pins.length >= 6; [].forEach.call(f.querySelectorAll('input[name=pin]'), function (i) { i.disabled = full && !i.checked; });
     }
     f.addEventListener('change', function (e) {
       var i = e.target;
-      if (i.name === 'chat') s.chat = i.value; else if (i.name === 'side') s.side = i.value; else if (i.name === 'vs') s.vs = i.checked;
+      if (i.name === 'chat') s.chat = i.value; else if (i.name === 'side') s.side = i.value; else if (i.name === 'vs') s.vs = i.checked; else if (i.name === 'sochat') s.sochat = i.checked;
       else if (i.name === 'pin') { s.pins = s.pins.filter(function (k) { return k !== i.value; }); if (i.checked) s.pins.push(i.value); }
       save(s); fill(); layout(); pins();
     });

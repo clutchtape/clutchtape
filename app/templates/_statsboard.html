@@ -2,7 +2,8 @@
    Big session tiles + a card per game this session, newest first; live.js refreshes it in place (#statsboard) and
    rolls the numbers that changed. Needs sb = web._live_board() (None before the first game of the session). #}
 {# heat vs the player's usual (2026-10-10, like the live box): h-ex/h-good better, h-below/h-poor worse, ±3% neutral,
-   ±15% strong; lo = lower is better. Squad boards have no usual (u none) and stay plain. #}
+   ±15% strong; lo = lower is better. Squad boards: tiles vs the members' combined usual, each player's game numbers
+   vs that player's own usual (l.u). #}
 {% macro hv(v, u, lo=False) %}{% if v is not none and u is not none and u != 0 %}{% set d = (v - u) / (u|abs) %}{% if lo %}{% set d = -d %}{% endif %}{{ 'h-ex' if d > 0.15 else 'h-good' if d > 0.03 else 'h-poor' if d < -0.15 else 'h-below' if d < -0.03 else 'h-avg' }}{% endif %}{% endmacro %}
 {% macro uv(u, k, fmt='') %}{% if u and u[k] is not none %}<small class="sb-usual">usual {% if fmt == 'kda' %}{{ u[k]|kda }}{% elif fmt == 'pct' %}{{ u[k]|round(1) }}%{% elif fmt == 'int' %}{{ u[k]|round|int }}%{% else %}{{ u[k] }}{% endif %}</small>{% endif %}{% endmacro %}
 {% if onair %}<section class="panel statsboard" id="statsboard" aria-label="Live stats">
@@ -20,8 +21,8 @@
   <div class="sb-games">{% for g in sb.cards %}
     <a class="sb-game {{ g.outcome|lower }}" href="/match/{{ g.match_id }}{% if p is defined and p.slug %}?player={{ p.slug }}{% endif %}">
       <div class="sb-gh"><b class="res {{ g.outcome|lower }}">{{ g.outcome or '—' }}</b><span>{{ g.map or 'Unknown map' }}{% if g.mode %} · {{ g.mode }}{% endif %}</span><small>{{ g.t|dt('%-I:%M %p') }}{% if g.score %} · {{ g.score }}{% endif %}</small></div>
-      {% for l in g.lines %}<div class="sb-line">{% if l.who %}<span class="sb-who">{{ l.who }}</span>{% endif %}<b class="sb-kda3">{{ l.k }}/{{ l.d }}/{{ l.a }}</b>
-        <span class="{{ hv(l.kda, u.kda if u else none) }}"><b>{{ l.kda|kda if l.kda is not none else '—' }}</b> KDA</span>{% if l.dmg_pm is not none %}<span class="{{ hv(l.dmg_pm, u.dmg_pm if u else none) }}"><b>{{ l.dmg_pm }}</b> /min</span>{% endif %}{% if l.sc_pct is not none %}<span class="{{ hv(l.sc_pct, u.sc_pct if u else none) }}"><b>{{ l.sc_pct }}%</b> SC</span>{% endif %}{% if l.csr_d is not none %}<span class="{{ 'pos' if l.csr_d > 0 else 'neg' if l.csr_d < 0 }}"><b>{{ '{:+}'.format(l.csr_d) }}</b> CSR</span>{% endif %}</div>{% endfor %}
+      {% for l in g.lines %}{% set lu = l.u if l.u else u %}<div class="sb-line">{% if l.who %}<span class="sb-who">{{ l.who }}</span>{% endif %}<b class="sb-kda3">{{ l.k }}/{{ l.d }}/{{ l.a }}</b>
+        <span class="{{ hv(l.kda, lu.kda if lu else none) }}"><b>{{ l.kda|kda if l.kda is not none else '—' }}</b> KDA</span>{% if l.dmg_pm is not none %}<span class="{{ hv(l.dmg_pm, lu.dmg_pm if lu else none) }}"><b>{{ l.dmg_pm }}</b> /min</span>{% endif %}{% if l.sc_pct is not none %}<span class="{{ hv(l.sc_pct, lu.sc_pct if lu else none) }}"><b>{{ l.sc_pct }}%</b> SC</span>{% endif %}{% if l.csr_d is not none %}<span class="{{ 'pos' if l.csr_d > 0 else 'neg' if l.csr_d < 0 }}"><b>{{ '{:+}'.format(l.csr_d) }}</b> CSR</span>{% endif %}</div>{% endfor %}
     </a>{% endfor %}</div>
 {% else %}
   <div class="sb-empty"><span class="oa-live"><i></i>LIVE</span><b>No finished games yet this stream</b><p>Stats land here the moment each game ends. The page checks every 15 seconds; nothing to reload.</p></div>

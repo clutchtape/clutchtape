@@ -107,6 +107,21 @@ class OnAir(unittest.TestCase):
             html=web.render_template('_statsboard.html',onair={'channel':'x'},sb=sb)
             plain=web.render_template('_statsboard.html',onair={'channel':'x'},sb=web._live_board(now))
         self.assertIn('sb-tile h-ex',html); self.assertIn('usual',html); self.assertNotIn('h-ex',plain)
+    def test_squad_board_heat_per_player(self):
+        # 2026-10-10: squad stats-only board — each player's numbers vs their own usual, tiles vs the combined usual
+        from test_companion import row
+        a_hist=[row(f'a{i}',1000+i*900,kills=8,deaths=8) for i in range(6)]
+        b_hist=[row(f'b{i}',1000+i*900,kills=8,deaths=8,pid=2) for i in range(6)]
+        ga=row('g1',100000,kills=24,deaths=6); gb=row('g1',100000,kills=3,deaths=15,pid=2)
+        night=[{'match_id':'g1','started_at':100000,'outcome':'Win','map':'Recharge','mode':'Oddball','members':{1:ga,2:gb}}]
+        ps=[{'id':1,'gamertag':'A'},{'id':2,'gamertag':'B'}]
+        members=[{'p':ps[0],'rows':a_hist+[ga]},{'p':ps[1],'rows':b_hist+[gb]}]
+        su,by=web._squad_usuals(night,members)
+        self.assertIsNotNone(su); self.assertIsNotNone(by[1]); self.assertIsNotNone(by[2])
+        sb=web._live_board(night,ps,su,by)
+        with web.app.test_request_context('/sq/x'):
+            html=web.render_template('_statsboard.html',onair={'channel':'x'},sb=sb)
+        self.assertIn('class="h-ex"',html); self.assertIn('class="h-poor"',html)     # A well above usual, B well below
     def test_offline_is_none(self):
         self.assertIsNone(web._onair(self.g(),None,'pro'))
 

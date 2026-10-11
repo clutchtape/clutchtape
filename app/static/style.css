@@ -1502,3 +1502,6 @@ main>.liveclips.at-end{order:30;margin-top:18px}
 .color-group{margin:10px 0}.color-group h3{margin:0 0 6px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
 .color-group .color-presets{gap:6px}.color-group .color-presets button{width:40px;height:40px}
 .color-presets button:hover{transform:scale(1.12)}.color-presets button{transition:transform .12s}
+/* Customize → Stats only: Keep chat (html.lay-sochat): chat stays beside the stats; phones keep the Chat pill */
+html.statsonly.lay-sochat:not(.lay-chat-hidden) #twchat{display:flex!important}
+@media(max-width:700px){html.statsonly.lay-sochat:not(.lay-chat-hidden) .chattab:not([hidden]):not(.off){display:flex!important}html.statsonly.lay-sochat.chat-open .chattab{display:none!important}}
