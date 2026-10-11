@@ -1446,3 +1446,41 @@ html.vt-arr::view-transition{pointer-events:none}   /* taps during the move reac
 .oa-usual{margin-top:10px}.oa-usual .lab{display:block;margin-bottom:4px}.oa-usual .oa-nums{opacity:.92}
 .oa-prev{display:block;margin-top:8px}
 .oa-usual .lab{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+/* short pages (errors, 404s): fill the screen, footer at the bottom instead of floating mid-screen */
+body:has(.errpage){display:flex;flex-direction:column;min-height:100dvh}
+body:has(.errpage)>main{flex:1 0 auto;width:100%;box-sizing:border-box}
+body:has(.errpage)>.foot{flex:none;width:100%;box-sizing:border-box}
+/* ---- touch targets (2026-10-10): every control at least 40x40 on desktop too (phones already get 44 in mobile.css).
+   Buttons/tabs/pills grow to 40px; inline links get a 40px hit area via padding + equal negative margin, so the line
+   they sit in keeps its height. Checkboxes count through their (40px) label. */
+.hub-tabs a,.kinds a,.viewsw button,.sessbtn,.arrbtn,.allstats-btn,.stathelp>summary,.addmem>summary,.twbtn,.hub-actions .pill,
+.hub-menu .share,.hub-menu .color-link,.livepill,.laybtn,.oa-mode,.memchip .mem,.lm-aud,.lm-mode,.chtab,.lookup-actions button,
+.laycard label,.panel>details>summary,.panel>summary,.et-picks,.layfoot button,.arrlist label{min-height:40px!important;box-sizing:border-box}
+.hub-tabs a,.kinds a,.sessbtn,.hub-menu .share,.hub-menu .color-link,.memchip .mem,.addmem>summary,.twbtn,.arrbtn,.allstats-btn,.stathelp>summary,.oa-mode{display:inline-flex!important;align-items:center}
+.kinds a,.viewsw button{min-width:44px;justify-content:center}
+.colnav button,.swipehint button{min-width:40px!important;min-height:40px!important}
+.memchip .memx{position:relative}.memchip .memx::after{content:"";position:absolute;inset:-10px}
+.hub-meta a.tw,.foot .foot-btn,.foot a,.oa-title,.oa-prev,.oa-last,.mobile-field a,.gamelog .ph .muted a{display:inline-flex;align-items:center;min-height:40px;margin-top:-12px;margin-bottom:-12px;padding-top:0;padding-bottom:0}
+.oa-title,.oa-prev,.oa-last{display:flex}
+.et-clip,.et-timing{position:relative}.et-clip::after,.et-timing::after{content:"";position:absolute;left:50%;top:50%;width:40px;height:40px;transform:translate(-50%,-50%)}
+.foot .foot-btn,.foot a{min-width:40px;justify-content:center;padding-left:4px;padding-right:4px}
+/* live box detail views (livedetail.js): a game's own numbers, or a clip playing from the stream's recording */
+#onair [data-g],#onair [data-clip]{cursor:pointer}
+.oa-card.det-on>:not(.oa-view):not(template){display:none!important}
+.oa-view{display:flex;flex-direction:column;gap:10px}
+.od-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.od-back,.od-gamebtn{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--acc2);background:rgba(255,138,61,.12);color:var(--ink);font-weight:800;font-size:13px;cursor:pointer}
+.od-gamebtn{border-color:var(--line);background:transparent}
+.od-full{margin-left:auto;display:inline-flex;align-items:center;min-height:40px;color:var(--acc2);font-weight:700;font-size:13px}
+.od-title{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px}.od-title .res{font-size:13px;text-transform:uppercase;letter-spacing:.06em}
+.od-map{font-weight:800;font-size:16px}.od-mode,.od-score{color:var(--mute);font-size:13px}.od-score{font-variant-numeric:tabular-nums}
+.od-csr{font-weight:800;font-size:13px}.od-csr.pos{color:#7ee2a0}.od-csr.neg{color:#f0a3a3}
+.od-kda{display:flex;align-items:baseline;gap:4px;font-variant-numeric:tabular-nums}.od-kda b{font-size:30px;line-height:1}.od-kda i{color:var(--mute);font-style:normal;font-size:20px}.od-kda small{margin-left:8px;color:var(--mute);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.oa-view .od-more{display:flex!important;flex-direction:column;gap:6px}
+.od-medals{display:flex;flex-wrap:wrap;gap:6px}.od-medals span{padding:3px 9px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--ink)}
+.od-acts{display:flex;flex-wrap:wrap;gap:8px}
+.od-play{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid #9146ff;background:rgba(145,70,255,.22);color:#fff;font-weight:800;font-size:13px;cursor:pointer}
+.od-play.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.od-cliplab{font-weight:800;font-size:14px}
+.od-vid{position:relative;width:100%;aspect-ratio:16/9;min-width:300px;border-radius:10px;overflow:hidden;background:#000}.od-vid>div,.od-vid iframe{position:absolute;inset:0;width:100%!important;height:100%!important}
+.od-note{margin:0;color:var(--mute);font-size:12px}

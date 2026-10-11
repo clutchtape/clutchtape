@@ -93,7 +93,9 @@
       var doc = new DOMParser().parseFromString(html, 'text/html');
       SWAP.forEach(function (sel) {
         var olds = document.querySelectorAll(sel), news = doc.querySelectorAll(sel);
-        if (olds.length && olds.length === news.length) olds.forEach(function (o, i) { var n = document.importNode(news[i], true); o.replaceWith(n); try { diff(o, n); } catch (e) {} });
+        if (olds.length && olds.length === news.length) olds.forEach(function (o, i) { var n = document.importNode(news[i], true);
+          if (o.hasAttribute('data-hold')) { o.__next = n; return; }   /* a clip is playing in the live box (livedetail.js): applied when it closes */
+          o.replaceWith(n); try { diff(o, n); } catch (e) {} });
       });
       if (window.ctHeat) window.ctHeat(); if (window.ctPage) window.ctPage();
       beat(); glow();

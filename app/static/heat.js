@@ -376,3 +376,18 @@ document.addEventListener('click', function (e) {
       if (!left.length || n > 12 || document.hidden) clearInterval(iv); }, 500);
   });
 })();
+
+/* live: browsers pause a muted video that is scrolled off screen (phones, scrolling down to the stats). When the video
+   comes back into view and it was playing when it left, start it again (2026-10-10). */
+(function () {
+  var emb = document.querySelector('#player .embed'); if (!emb || !('IntersectionObserver' in window)) return;
+  var lastPlaying = 0, leftAt = 0, inView = true;
+  setInterval(function () { if (!inView) return; try { if (window.__sp && !window.__sp.isPaused()) lastPlaying = Date.now(); } catch (e) {} }, 1000);
+  new IntersectionObserver(function (es) {
+    var e = es[es.length - 1], vis = e.intersectionRatio >= 0.5;
+    if (!vis && inView) { inView = false; leftAt = Date.now(); return; }
+    if (vis && !inView) { inView = true;
+      if (document.documentElement.classList.contains('statsonly') || lastPlaying < leftAt - 2500) return;
+      var n = 0, iv = setInterval(function () { n++; try { var p = window.__sp; if (!p || !p.isPaused() || n > 10) { clearInterval(iv); return; } p.play(); } catch (x) { clearInterval(iv); } }, 400); }
+  }, { threshold: [0, 0.5, 1] }).observe(emb);
+})();

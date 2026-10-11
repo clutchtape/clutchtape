@@ -63,6 +63,20 @@ class OnAir(unittest.TestCase):
         with web.app.test_request_context('/p/pro'):
             html=web.render_template('_onair.html',onair=o)
         self.assertIn('Usual · last 90 days',html); self.assertIn('Last session: <b>3-1</b>',html)
+    def test_game_views_and_recording_links(self):
+        # 2026-10-10: each game this stream gets an in-box view (template) and, with a recording, playable links
+        for d in range(5): self.add((3+d)*86400, kills=8)
+        self.add(30*60, kills=20, pre=1500, post=1512)
+        o=web._onair(self.g(),{'started':time.time()-60*60,'halo':True,'title':'t','game':'Halo Infinite','viewers':3},'pro')
+        x=o['per'][0]; g=x['detail'][0]
+        self.assertEqual((g['kills'],g['csr_d']),(20,12))
+        start=time.time()-2*3600
+        web._onair_links(o, lambda slug: [{'url':'https://www.twitch.tv/videos/123','start':start,'dur_s':3*3600}])
+        self.assertTrue(g['vod'].startswith('https://www.twitch.tv/videos/123?t='))
+        with web.app.test_request_context('/p/pro'):
+            html=web.render_template('_onair.html',onair=o)
+        self.assertIn('class="oa-gtpl" data-g="m1-1800"',html); self.assertIn('Full game stats',html); self.assertIn('data-g="m1-1800"',html)
+        self.assertIn('+12 CSR',html); self.assertIn('Watch the game',html)
     def test_offline_is_none(self):
         self.assertIsNone(web._onair(self.g(),None,'pro'))
 

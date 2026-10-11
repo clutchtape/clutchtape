@@ -31,6 +31,8 @@
     t.nodeValue = fmt(0); requestAnimationFrame(step);
   }
 
+  window.ctCountUp = count;   /* livedetail.js: numbers in a newly shown game view */
+
   /* ---- chart lines draw in ----------------------------------------------------------------------------------- */
   var LINES = 'path.tr-line, svg path.race-line, .an-chart path[fill="none"], svg.growth path[fill="none"]';
   function draw(svg) {

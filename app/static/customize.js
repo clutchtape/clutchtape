@@ -25,7 +25,7 @@
     if (applying) return; applying = true;
     try {
       [].forEach.call(document.querySelectorAll('#onair .oa-card'), function (card) {
-        var nums = card.querySelector('.oa-nums'), more = card.querySelector('.oa-more'); if (!nums) return;
+        var nums = card.querySelector(':scope > .oa-nums'), more = card.querySelector(':scope > .oa-more');   /* not the usual-numbers row (.oa-usual) */ if (!nums) return;
         if (!nums.dataset.home) { nums.dataset.home = [].map.call(nums.querySelectorAll('[data-k]'), function (e) { return e.dataset.k; }).join(','); }
         var want = s.pins.length ? s.pins : nums.dataset.home.split(',');
         var other = card.querySelector('.oa-unpinned');
