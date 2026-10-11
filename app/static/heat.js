@@ -400,3 +400,43 @@ document.addEventListener('click', function (e) {
       var n = 0, iv = setInterval(function () { n++; try { var p = window.__sp; if (!p || !p.isPaused() || n > 10) { clearInterval(iv); return; } p.play(); } catch (x) { clearInterval(iv); } }, 400); }
   }, { threshold: [0, 0.5, 1] }).observe(emb);
 })();
+
+/* chat | live stats side by side (wide right side, or Stats only + Keep chat): a handle between them resizes the two
+   widths — drag, arrow keys, double-click resets; remembered per device (localStorage ct-sidecols = chat's share). */
+(function () {
+  var side = document.querySelector('.colside'), chat = document.getElementById('twchat'); if (!side || !chat) return;
+  var html = document.documentElement, KEY = 'ct-sidecols', share = null, MIN = 280;
+  try { var v = parseFloat(localStorage.getItem(KEY)); if (v > 0 && v < 1) share = v; } catch (e) {}
+  var h = document.createElement('div'); h.className = 'colsplit'; h.setAttribute('role', 'separator'); h.setAttribute('aria-orientation', 'vertical');
+  h.tabIndex = 0; h.title = 'Drag to resize chat and live stats · double-click to reset'; h.innerHTML = '<i></i>'; h.hidden = true; side.appendChild(h);
+  function oa() { return side.querySelector(':scope > #onair'); }
+  function active() { var o = oa(); if (!o || innerWidth < 1200 || getComputedStyle(side).display !== 'grid') return false;
+    var a = chat.getBoundingClientRect(), b = o.getBoundingClientRect(); return a.width > 0 && b.width > 0 && Math.abs(a.top - b.top) < 6; }
+  function apply() {
+    if (!active()) { side.style.removeProperty('grid-template-columns'); h.hidden = true; return; }
+    var o = oa(), gap = parseFloat(getComputedStyle(side).columnGap) || 12, total = side.clientWidth - gap, left = chat.getBoundingClientRect().left < o.getBoundingClientRect().left;
+    if (share !== null) { var cw = Math.max(MIN, Math.min(total - MIN, Math.round(total * share)));
+      side.style.setProperty('grid-template-columns', left ? cw + 'px ' + (total - cw) + 'px' : (total - cw) + 'px ' + cw + 'px'); }
+    else side.style.removeProperty('grid-template-columns');
+    var first = left ? chat : o, sr = side.getBoundingClientRect(), fr = first.getBoundingClientRect();
+    h.hidden = false; h.style.left = (fr.right - sr.left + gap / 2 - 6 + side.scrollLeft) + 'px'; h.style.top = (fr.top - sr.top + side.scrollTop) + 'px';
+    h.style.height = Math.max(chat.offsetHeight, o.offsetHeight) + 'px';
+  }
+  var drag = null;
+  h.addEventListener('pointerdown', function (e) { var o = oa(); if (!o) return; drag = { left: chat.getBoundingClientRect().left < o.getBoundingClientRect().left };
+    h.setPointerCapture(e.pointerId); html.classList.add('dragging-cols'); e.preventDefault(); });
+  h.addEventListener('pointermove', function (e) { if (!drag) return; var sr = side.getBoundingClientRect(), gap = parseFloat(getComputedStyle(side).columnGap) || 12, total = sr.width - gap;
+    var x = Math.max(MIN, Math.min(total - MIN, e.clientX - sr.left - gap / 2)); share = (drag.left ? x : total - x) / total; apply(); });
+  function end() { if (!drag) return; drag = null; html.classList.remove('dragging-cols'); try { localStorage.setItem(KEY, String(share)); } catch (e) {} if (window.ctSideFit) window.ctSideFit(); }
+  h.addEventListener('pointerup', end); h.addEventListener('pointercancel', end);
+  h.addEventListener('dblclick', function () { share = null; try { localStorage.removeItem(KEY); } catch (e) {} apply(); });
+  h.addEventListener('keydown', function (e) { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; var o = oa(); if (!o) return;
+    var left = chat.getBoundingClientRect().left < o.getBoundingClientRect().left, cur = chat.getBoundingClientRect().width / (side.clientWidth - 12);
+    share = Math.max(.2, Math.min(.8, cur + ((e.key === 'ArrowRight') === left ? .04 : -.04))); apply(); try { localStorage.setItem(KEY, String(share)); } catch (x) {} e.preventDefault(); });
+  var q = false; function soon() { if (!q) { q = true; requestAnimationFrame(function () { q = false; apply(); }); } }
+  addEventListener('resize', soon);
+  new MutationObserver(soon).observe(html, { attributes: true, attributeFilter: ['class'] });
+  new MutationObserver(soon).observe(side, { childList: true, attributes: true, attributeFilter: ['class'] });
+  if (window.ResizeObserver) { var ro = new ResizeObserver(soon); ro.observe(side); ro.observe(chat); }
+  setTimeout(apply, 300); apply();
+})();

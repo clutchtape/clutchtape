@@ -1516,3 +1516,10 @@ html.statsonly.lay-sochat:not(.lay-chat-hidden) #twchat{display:flex!important}
  html.statsonly.lay-sochat.lay-chat-right .colside>#twchat{grid-column:2}html.statsonly.lay-sochat.lay-chat-right .colside>#onair{grid-column:1}
  html.statsonly.lay-sochat .colside>.sidesplit{display:none!important}
 }
+/* chat | live stats width handle (heat.js .colsplit) */
+.colside{position:sticky}.colsplit{position:absolute;z-index:6;width:12px;display:flex;align-items:center;justify-content:center;cursor:col-resize;touch-action:none;user-select:none}
+.colsplit[hidden]{display:none}
+.colsplit i{width:4px;height:46px;border-radius:999px;background:rgba(255,255,255,.18);transition:background .15s,height .15s}
+.colsplit:hover i,.colsplit:focus-visible i,html.dragging-cols .colsplit i{background:var(--acc2);height:72px}
+html.dragging-cols,html.dragging-cols *{cursor:col-resize!important;user-select:none}
+html.dragging-cols iframe{pointer-events:none}   /* the chat iframe would swallow the drag */
