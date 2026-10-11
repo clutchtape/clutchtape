@@ -9,7 +9,7 @@
    live.js matches stats by data-k, so rolling numbers survive the move. Re-applied after every live.js swap. */
 (function () {
   'use strict';
-  var KEY = 'ct-layout', html = document.documentElement, DEF = { chat: 'auto', side: 'left', vs: true, sochat: false, pins: [] };
+  var KEY = 'ct-layout', html = document.documentElement, DEF = { chat: 'auto', side: 'left', vs: true, sochat: false, stats: true, pins: [] };
   function load() { try { var v = JSON.parse(localStorage.getItem(KEY) || '{}'); return Object.assign({}, DEF, v); } catch (e) { return Object.assign({}, DEF); } }
   function save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
   var s = load();
@@ -19,6 +19,8 @@
     html.classList.toggle('lay-chat-right', s.side === 'right');
     html.classList.toggle('lay-novs', !s.vs);
     html.classList.toggle('lay-sochat', !!s.sochat);              /* chat stays in Stats only */
+    html.classList.toggle('lay-stats-hidden', s.stats === false);  /* Show switch: live stats off */
+    document.dispatchEvent(new Event('ct-layout'));
     window.dispatchEvent(new Event('resize')); if (window.ctSideFit) window.ctSideFit();
   }
 
@@ -83,6 +85,9 @@
     });
   }
 
+  /* the Show switch (below) reads and changes the same settings */
+  window.ctLay = { get: function () { return Object.assign({}, s); }, set: function (p) { Object.assign(s, p); save(s); layout(); } };
+
   function ready() {
     form(); layout(); pins();
     /* live.js replaces #onair / #livevs on every finished game: pin again */
@@ -145,4 +150,72 @@
     document.addEventListener('click', function (e) { if (d.open && e.composedPath().indexOf(d) < 0) d.open = false; });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready); else ready();
+})();
+
+/* Show switch (2026-10-11; _hub_head.html .showseg): ▶ Video · 📊 Stats · 💬 Chat, each on/off, remembered per device.
+   Video = Stats only (heat.js ctStatsOnly, keeps chat when chat is on); Chat = Customize's chat: hidden; Stats = the
+   live box (ct-layout stats:false). One view always stays. Hiding: the panel shrinks + fades, the rest glide into
+   the space (FLIP); showing: it springs in. Plain animations, never a view transition (it would cover the video), and
+   a stream that was playing is started again afterwards (Twitch pauses a player something passed over). */
+(function () {
+  'use strict';
+  var html = document.documentElement, EL = { video: ['#player'], stats: ['#onair', '#statsboard'], chat: ['#twchat'] };
+  function lay() { return window.ctLay ? window.ctLay.get() : {}; }
+  function st() { var L = lay(); return { video: !html.classList.contains('statsonly'), stats: L.stats !== false, chat: L.chat !== 'hidden' }; }
+  function count(s) { return (s.video ? 1 : 0) + (s.stats ? 1 : 0) + (s.chat ? 1 : 0); }
+  function vis(e) { return !!(e && e.getClientRects().length); }
+  function q(s) { return document.querySelector(s); }
+  function sync() {
+    var s = st(), n = count(s);
+    [].forEach.call(document.querySelectorAll('.showseg [data-show]'), function (b) {
+      var k = b.dataset.show, on = s[k]; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('only', on && n === 1);
+      b.title = on ? (n === 1 ? 'At least one view stays on' : 'Hide ' + b.dataset.label) : 'Show ' + b.dataset.label;
+    });
+  }
+  function players() { var l = window.__sp ? [window.__sp] : []; return window.ctLiveMulti ? l.concat(window.ctLiveMulti.players()) : l; }
+  function resume(list) { if (!list.length) return; var n = 0, iv = setInterval(function () { n++;
+    var left = list.filter(function (p) { try { if (p.isPaused()) { p.play(); return true; } } catch (e) {} return false; });
+    if (!left.length || n > 12) clearInterval(iv); }, 400); }
+  function flip(change, k, showing) {
+    var calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    /* never #player: Twitch pauses a player that is transformed or faded, even for a moment — the video just takes
+       its new size while everything around it glides */
+    var movers = [].slice.call(document.querySelectorAll('#onair,#twchat,#livevs,#statsboard'));
+    var before = new Map(); movers.forEach(function (e) { if (vis(e)) before.set(e, e.getBoundingClientRect()); });
+    var playing = players().filter(function (p) { try { return !p.isPaused() || !(p.getCurrentTime() > 0); } catch (e) { return false; } });   /* playing, or not started yet */
+    var leaving = showing ? [] : EL[k].map(q).filter(vis);
+    function go() {
+      change(); window.dispatchEvent(new Event('resize')); if (window.ctSideFit) window.ctSideFit();
+      if (calm) { sync(); resume(playing); return; }
+      requestAnimationFrame(function () { requestAnimationFrame(function () {
+        movers.forEach(function (e) {
+          if (!vis(e)) return; var a = before.get(e), b = e.getBoundingClientRect();
+          if (!a) { e.animate([{ opacity: 0, transform: 'translateY(16px) scale(.95)' }, { opacity: 1, transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.2,.9,.25,1.18)' }); return; }
+          var dx = a.left - b.left, dy = a.top - b.top, sx = a.width / (b.width || 1), sy = a.height / (b.height || 1);
+          if (Math.abs(dx) < 2 && Math.abs(dy) < 2 && Math.abs(sx - 1) < .01 && Math.abs(sy - 1) < .01) return;
+          e.animate([{ transformOrigin: 'top left', transform: 'translate(' + dx + 'px,' + dy + 'px) scale(' + sx + ',' + sy + ')' },
+                     { transformOrigin: 'top left', transform: 'none' }], { duration: 380, easing: 'cubic-bezier(.2,.75,.2,1)' });
+        });
+        sync(); setTimeout(function () { resume(playing); }, 420);
+      }); });
+    }
+    if (!leaving.length || calm) { go(); return; }
+    var outs = leaving.map(function (e) { return e.animate([{ opacity: 1, transform: 'none', filter: 'none' }, { opacity: 0, transform: 'scale(.92)', filter: 'blur(3px)' }],
+      { duration: 210, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' }); });
+    Promise.all(outs.map(function (a) { return a.finished; })).then(function () { go(); outs.forEach(function (a) { a.cancel(); }); });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('.showseg [data-show]'); if (!b || !window.ctLay) return;
+    var k = b.dataset.show, s = st(), L = lay();
+    if (s[k] && count(s) === 1) { b.animate([{ transform: 'none' }, { transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], { duration: 300 }); return; }
+    if (k === 'video') {
+      if (s.video && s.chat) window.ctLay.set({ sochat: true });          /* video off, chat on: chat stays */
+      if (window.ctStatsOnly) window.ctStatsOnly(s.video); setTimeout(sync, 60); return;
+    }
+    if (k === 'chat') flip(function () { window.ctLay.set(s.chat ? { chat: 'hidden', chatWas: L.chat } : { chat: L.chatWas && L.chatWas !== 'hidden' ? L.chatWas : 'auto', sochat: true }); }, 'chat', !s.chat);
+    else flip(function () { window.ctLay.set({ stats: !s.stats }); }, 'stats', !s.stats);
+  });
+  document.addEventListener('ct-layout', sync);
+  new MutationObserver(sync).observe(html, { attributes: true, attributeFilter: ['class'] });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', sync); else sync();
 })();

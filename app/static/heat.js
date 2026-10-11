@@ -220,43 +220,83 @@ document.addEventListener('toggle', function (e) {
   }, true);
 })();
 
-/* live, two columns: the right column (live stats + chat) is exactly as tall as the left (video + session table), and a
-   handle between stats and chat resizes both together — drag it, one grows and the other shrinks; double-click resets.
-   The split is remembered per device. Phones/tablets: chat is a drawer / sits under the stats, so none of this runs.
-   A right side ≥680px wide puts chat and stats side by side instead (.colside.side2). */
+/* live: live stats + chat heights (2026-10-11 rewrite: resizable at every size above phones).
+   ≥1200px (two columns): the right column defaults to the video's height (+ the vs board) but the handle UNDER it
+   (.sidefoot) sets its own total height — taller or shorter than the video. Chat under stats: the handle between them
+   splits that total. Chat beside stats (.colside.side2, wide right side): both take the total height.
+   701–1199px (one column): the handle under the live stats sizes the stats box, the one under chat sizes chat.
+   Phones: chat is a bottom sheet, none of this runs. Everything is remembered per device; double-click resets. */
 (function () {
   var chat = document.getElementById('twchat'), player = document.getElementById('player'); if (!chat || !player) return;
-  var side = chat.parentElement, html = document.documentElement, split = null, KEY = 'ct-livesplit';
-  try { var v = parseInt(localStorage.getItem(KEY), 10); if (v > 0) split = v; } catch (e) {}
-  var bar = document.createElement('div'); bar.className = 'sidesplit'; bar.setAttribute('role', 'separator'); bar.setAttribute('aria-orientation', 'horizontal');
-  bar.title = 'Drag to resize live stats and chat · double-click to reset'; bar.tabIndex = 0; bar.innerHTML = '<i></i>';
-  function oa() { return side.querySelector('#onair'); }
-  function on() { return window.innerWidth >= 1200 && !html.classList.contains('statsonly') && oa() && player.offsetHeight > 200; }
+  var side = chat.parentElement, html = document.documentElement;
+  function num(k) { try { var v = parseInt(localStorage.getItem(k), 10); return v > 0 ? v : null; } catch (e) { return null; } }
+  function save(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, String(v)); } catch (e) {} }
+  var split = num('ct-livesplit'), tall = num('ct-sideh'), chatH = num('ct-chath'), total = 0;
+  function mk(cls, title) { var b = document.createElement('div'); b.className = 'sidesplit' + cls; b.setAttribute('role', 'separator'); b.setAttribute('aria-orientation', 'horizontal'); b.title = title; b.tabIndex = 0; b.innerHTML = '<i></i>'; b.hidden = true; return b; }
+  var bar = mk('', 'Drag to resize live stats and chat · double-click to reset');
+  var foot = mk(' sidefoot', 'Drag to make live stats and chat taller or shorter · double-click to reset');
+  function oa() { return document.getElementById('onair'); }   /* one column: it may sit in the main column */
+  function mode() {
+    var o = oa(); if (!o || html.classList.contains('statsonly') || window.innerWidth <= 700 || (html.classList.contains('lay-stats-hidden') && html.classList.contains('lay-chat-hidden'))) return '';
+    if (window.innerWidth < 1200) return 'mid';
+    return player.offsetHeight > 200 && o.parentElement === side ? 'wide' : '';
+  }
+  function before(el, ref) { if (el.parentElement !== side || el.nextElementSibling !== ref) side.insertBefore(el, ref); }
+  function after(el, ref) { if (ref.nextElementSibling !== el) ref.after(el); }
+  function natural(o) { o.style.height = ''; o.classList.remove('split'); return o.scrollHeight; }
   function fit() {
-    var o = oa();
-    if (!on()) { side.classList.remove('side2'); chat.style.removeProperty('--chat-h'); if (o) { o.style.height = ''; o.classList.remove('split'); } bar.hidden = true; return; }
-    var vs = document.getElementById('livevs'), total = player.offsetHeight + (vs && vs.offsetHeight ? vs.offsetHeight + 12 : 0);
-    /* 2026-10-10: when the right side is wide enough for both (screens are wider than tall, so a height-limited video
-       leaves width over), chat and live stats sit side by side, chat on the left, both the full height. No handle. */
-    /* Customize (customize.js): chat hidden = the stats take the whole side; beside/below force the arrangement */
-    if (html.classList.contains('lay-chat-hidden')) { side.classList.remove('side2'); bar.hidden = true; o.style.height = total + 'px'; o.classList.add('split'); return; }
+    var o = oa(), m = mode(), noChat = html.classList.contains('lay-chat-hidden'), noStats = html.classList.contains('lay-stats-hidden');
+    if (!m) { side.classList.remove('side2'); chat.style.removeProperty('--chat-h'); if (o) { o.style.height = ''; o.classList.remove('split'); } bar.hidden = foot.hidden = true; return; }
+    if (noStats) {   /* Show switch: live stats hidden — chat alone gets the handle under it */
+      side.classList.remove('side2'); bar.hidden = true;
+      if (m === 'wide') { var vs1 = document.getElementById('livevs'), auto1 = player.offsetHeight + (vs1 && vs1.offsetHeight ? vs1.offsetHeight + 12 : 0);
+        total = Math.max(300, Math.min(tall || Math.max(auto1, Math.round(window.innerHeight * 0.85)), 2400)); chat.style.setProperty('--chat-h', total + 'px'); }
+      else chat.style.setProperty('--chat-h', Math.max(220, Math.min(chatH || 460, 1600)) + 'px');
+      after(foot, chat); foot.hidden = noChat; return;
+    }
+    if (m === 'mid') {
+      side.classList.remove('side2');
+      var nat = natural(o); o.style.height = Math.max(150, Math.min(split || nat, 1600)) + 'px'; o.classList.add('split');
+      chat.style.setProperty('--chat-h', Math.max(220, Math.min(chatH || 460, 1600)) + 'px');
+      after(bar, o); bar.hidden = false;
+      after(foot, chat); foot.hidden = noChat;
+      return;
+    }
+    var vs = document.getElementById('livevs'), auto = player.offsetHeight + (vs && vs.offsetHeight ? vs.offsetHeight + 12 : 0);
+    total = Math.max(300, Math.min(tall || Math.max(auto, Math.round(window.innerHeight * 0.85)), 2400));   /* default: at least most of the screen */
+    if (noChat) { side.classList.remove('side2'); bar.hidden = true; o.style.height = total + 'px'; o.classList.add('split'); after(foot, o); foot.hidden = false; return; }
     var two = html.classList.contains('lay-chat-below') ? false : side.clientWidth >= (html.classList.contains('lay-chat-beside') ? 560 : 680);
     side.classList.toggle('side2', two);
-    if (two) { bar.hidden = true; o.style.height = total + 'px'; o.classList.add('split'); chat.style.setProperty('--chat-h', total + 'px'); return; }
-    if (bar.parentElement !== side || bar.nextElementSibling !== chat) side.insertBefore(bar, chat);
-    bar.hidden = false;
-    o.style.height = ''; o.classList.remove('split'); var natural = o.scrollHeight, gaps = bar.offsetHeight;   /* measure without the size container */
-    var h = Math.max(150, Math.min(split || natural, total - gaps - 220));
+    if (two) {
+      bar.hidden = true; o.style.height = total + 'px'; o.classList.add('split'); chat.style.setProperty('--chat-h', total + 'px');
+      after(foot, (o.compareDocumentPosition(chat) & Node.DOCUMENT_POSITION_FOLLOWING) ? chat : o); foot.hidden = false;
+      return;
+    }
+    before(bar, chat); bar.hidden = false;
+    var n = natural(o), gaps = bar.offsetHeight;
+    var h = Math.max(150, Math.min(split || n, total - gaps - 160));
     o.style.height = h + 'px'; o.classList.add('split');
-    chat.style.setProperty('--chat-h', Math.max(220, total - h - gaps) + 'px');
+    chat.style.setProperty('--chat-h', Math.max(160, total - h - gaps) + 'px');
+    after(foot, chat); foot.hidden = false;
   }
-  var drag = null;
-  bar.addEventListener('pointerdown', function (e) { var o = oa(); if (!o) return; drag = { y: e.clientY, h: o.offsetHeight }; bar.setPointerCapture(e.pointerId); html.classList.add('dragging-split'); e.preventDefault(); });
-  bar.addEventListener('pointermove', function (e) { if (!drag) return; split = Math.round(drag.h + e.clientY - drag.y); fit(); });
-  function end() { if (!drag) return; drag = null; html.classList.remove('dragging-split'); try { localStorage.setItem(KEY, String(split)); } catch (e) {} }
-  bar.addEventListener('pointerup', end); bar.addEventListener('pointercancel', end);
-  bar.addEventListener('dblclick', function () { split = null; try { localStorage.removeItem(KEY); } catch (e) {} fit(); });
-  bar.addEventListener('keydown', function (e) { if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return; var o = oa(); if (!o) return; split = o.offsetHeight + (e.key === 'ArrowDown' ? 24 : -24); fit(); try { localStorage.setItem(KEY, String(split)); } catch (x) {} e.preventDefault(); });
+  /* each handle: what it sizes (get), how to store it (set), how to reset */
+  var acts = {
+    bar: { get: function () { return oa().offsetHeight; }, set: function (v) { split = v; }, key: 'ct-livesplit' },
+    foot: { get: function () { return mode() === 'mid' ? chat.offsetHeight : total; },
+            set: function (v) { if (mode() === 'mid') chatH = v; else tall = v; },
+            key: function () { return mode() === 'mid' ? 'ct-chath' : 'ct-sideh'; } }
+  };
+  function keyOf(a) { return typeof a.key === 'function' ? a.key() : a.key; }
+  function cur(a) { return a === acts.bar ? split : (mode() === 'mid' ? chatH : tall); }
+  [[bar, acts.bar], [foot, acts.foot]].forEach(function (pair) {
+    var el = pair[0], a = pair[1], drag = null;
+    el.addEventListener('pointerdown', function (e) { if (!oa()) return; drag = { y: e.clientY, h: a.get() }; el.setPointerCapture(e.pointerId); html.classList.add('dragging-split'); e.preventDefault(); });
+    el.addEventListener('pointermove', function (e) { if (!drag) return; a.set(Math.round(drag.h + e.clientY - drag.y)); fit(); });
+    function end() { if (!drag) return; drag = null; html.classList.remove('dragging-split'); save(keyOf(a), cur(a)); }
+    el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+    el.addEventListener('dblclick', function () { a.set(null); save(keyOf(a), null); fit(); });
+    el.addEventListener('keydown', function (e) { if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown' || !oa()) return; a.set(a.get() + (e.key === 'ArrowDown' ? 24 : -24)); fit(); save(keyOf(a), cur(a)); e.preventDefault(); });
+  });
   if (window.ResizeObserver) { var ro = new ResizeObserver(function () { requestAnimationFrame(fit); }); ro.observe(player); var vs0 = document.getElementById('livevs'); if (vs0) ro.observe(vs0); }
   new MutationObserver(function () { requestAnimationFrame(fit); }).observe(side, { childList: true });   /* live.js swaps #onair in place */
   if (player.parentElement) new MutationObserver(function () { requestAnimationFrame(fit); }).observe(player.parentElement, { childList: true });   /* ...and #livevs */
@@ -360,7 +400,10 @@ document.addEventListener('toggle', function (e) {
     [].forEach.call(document.querySelectorAll('[data-statsonly]'), function (b) { b.setAttribute('aria-pressed', String(on)); }); }
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-statsonly]'); if (!b) return;
-    var on = !html.classList.contains('statsonly');
+    go(!html.classList.contains('statsonly'));
+  });
+  /* window.ctStatsOnly(on): also used by the Show switch (customize.js) for its Video button */
+  function go(on) {
     function apply() { html.classList.toggle('statsonly', on);
       try { localStorage.setItem('ct-statsonly', on ? '1' : '0'); } catch (x) {}
       if (on) { try { window.__sp && window.__sp.pause(); } catch (x) {} html.classList.remove('chat-open'); }
@@ -376,7 +419,8 @@ document.addEventListener('toggle', function (e) {
     if (document.startViewTransition && !calm) { html.classList.add(on ? 'vt-to-stats' : 'vt-to-stream'); var vt = document.startViewTransition(apply);
       vt.finished.finally(function () { html.classList.remove('vt-to-stats', 'vt-to-stream'); resume(); }); }
     else { apply(); resume(); }
-  });
+  }
+  window.ctStatsOnly = go;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', sync); else sync();
   new MutationObserver(sync).observe(document.body, { childList: true, subtree: true });
 })();
@@ -479,7 +523,7 @@ document.addEventListener('click', function (e) {
   var h = document.createElement('div'); h.className = 'mainsplit'; h.setAttribute('role', 'separator'); h.setAttribute('aria-orientation', 'vertical'); h.tabIndex = 0;
   h.title = 'Drag to make the video bigger or smaller · double-click for the automatic size'; h.innerHTML = '<i></i>'; h.hidden = true; cols.appendChild(h);
   function so() { return html.classList.contains('statsonly'); }
-  function active() { return innerWidth >= 1200 && side.getClientRects().length && (so() || player.getClientRects().length); }
+  function active() { return innerWidth >= 1200 && side.getClientRects().length && (so() || player.getClientRects().length) && !(!so() && html.classList.contains('lay-stats-hidden') && html.classList.contains('lay-chat-hidden')); }
   function place() {
     if (!active()) { h.hidden = true; return; }
     var cr = cols.getBoundingClientRect(), sr = side.getBoundingClientRect(), gap = parseFloat(getComputedStyle(cols).columnGap) || 16;

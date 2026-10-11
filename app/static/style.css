@@ -459,7 +459,7 @@ select{max-width:100%;min-width:0;min-height:44px;background:var(--panel2);color
  .cols.stats-layout{grid-template-columns:minmax(0,1.45fr) minmax(380px,1fr)!important}
  .stats-layout .colside{position:static;max-height:none;overflow:visible;display:block!important}
  .stats-layout .colside>.panel{margin-bottom:14px!important}
- .video-layout .colside{top:60px;max-height:calc(100dvh - 70px)}
+ .video-layout .colside{top:calc(var(--hdr,53px) + 8px);max-height:calc(100dvh - var(--hdr,53px) - 16px)}   /* below everything pinned at the top (mediatoggle.js --hdr), 2026-10-11 */
 }
 @media(min-width:2200px){
  .cols.stats-layout{grid-template-columns:minmax(0,1.4fr) minmax(700px,1fr)!important}
@@ -1100,7 +1100,7 @@ a.sessbtn:hover{border-color:var(--acc2);color:var(--acc2)}.sessbtn.off{opacity:
 .twchat{display:flex;flex-direction:column;height:var(--chat-h,560px);min-height:360px;box-sizing:border-box}
 .twchat .ph{flex:0 0 auto;gap:8px}.twchat .ph h2{display:inline-flex;align-items:center;gap:8px}.twchat .ph .vod{margin-left:auto}
 .twchat-frame{flex:1 1 auto;min-height:0;width:100%;border:0;border-radius:10px;background:#0e0e10}
-@media(max-width:1199px){.twchat{height:460px}}
+@media(max-width:1199px){.twchat{height:var(--chat-h,460px)}}
 /* live: the stats panel beside the player (colside) */
 .colside .onair{margin:0 0 16px}.colside .oa-grid{grid-template-columns:minmax(0,1fr)}
 .colside .oa-top{flex-wrap:wrap;row-gap:4px}.colside .oa-title{flex-basis:100%;order:3;font-size:13px}
@@ -1619,3 +1619,25 @@ html.dragging-cols iframe{pointer-events:none}   /* the chat iframe would swallo
 @media (prefers-reduced-motion:no-preference){.firsttip:not([hidden]){animation:tipIn .35s ease-out}@keyframes tipIn{from{opacity:0;transform:translateY(-4px)}}}
 @media(max-width:700px){.firsttip{font-size:12.5px}.firsttip>span{flex-basis:100%}}
 .elog .etl .et-picks{height:40px;min-height:40px}.elog .etl:has(.et-picks){margin-bottom:52px!important}   /* 40px touch target (2026-10-11 scan) */
+
+/* live stats + chat heights (heat.js, 2026-10-11): a handle under the side column (.sidefoot) sets its total height at
+   every size above phones; side by side it spans both columns; one column (701-1199px) the handles sit under each box */
+.sidesplit[hidden]{display:none!important}
+.colside.side2>.sidefoot{display:flex}
+.sidefoot{margin-top:2px}
+@media(max-width:1199px){.cols .sidesplit{order:2}.cols .sidefoot{order:4}}
+
+/* Show switch (customize.js, 2026-10-11): ▶ Video · 📊 Stats · 💬 Chat on/off */
+.showseg{display:inline-flex;align-items:center;gap:2px;padding:3px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid var(--line)}
+.showseg .lab{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mute);padding:0 5px 0 9px}
+.showseg button{appearance:none;border:0;background:transparent;color:var(--mute);font:inherit;font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;cursor:pointer;min-height:34px;white-space:nowrap;transition:background .25s,color .25s,box-shadow .25s,opacity .25s,transform .12s}
+.showseg button[aria-pressed=true]{background:rgba(145,70,255,.2);color:#f1e9ff;box-shadow:inset 0 0 0 1px rgba(145,70,255,.6)}
+.showseg button[aria-pressed=false]{opacity:.62}
+.showseg button[aria-pressed=false]:hover{opacity:1;color:var(--ink);background:rgba(255,255,255,.06)}
+.showseg button:active{transform:scale(.93)}
+.showseg button.only{cursor:default}
+@media(max-width:700px){.showseg{width:100%;justify-content:space-between}.showseg .lab{display:none}.showseg button{flex:1;min-height:44px;padding:6px 8px}}
+html.lay-stats-hidden #onair,html.lay-stats-hidden #statsboard{display:none!important}
+html.statsonly.lay-sochat.lay-stats-hidden .colside{grid-template-columns:minmax(0,1fr)!important}
+@media(min-width:1200px){html.lay-stats-hidden.lay-chat-hidden:not(.statsonly) .cols.video-layout{grid-template-columns:minmax(0,1fr)!important}
+ html.lay-stats-hidden.lay-chat-hidden:not(.statsonly) .cols.video-layout>.colside{grid-column:1;position:static;max-height:none}}

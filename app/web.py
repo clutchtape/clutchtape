@@ -674,7 +674,7 @@ def squad(slugs, short=False, code=None, game=None):
         onair["streams"] = [{"channel": chans.get(sl), "gamertag": gt_slug.get(sl), "title": st.get("title"),
                              "viewers": st.get("viewers")} for sl, st in lives]
         _onair_links(onair, lambda slug: vods.get(slug), lambda slug: (users.get(slug) or {}).get("id"))
-    return render_template("squad.html", sb=_live_board(night if data.get("s_idx") == 0 and _is_current(night) else [], ps, *_squad_usuals(night, data["members"])) if tab == "latest" and night else None, sess_current=bool(night) and data.get("s_idx") == 0 and _is_current(night), pt=_squad_table(night, ps) if tab == "latest" else None, raw=raw_view.build(night, squad=[(p["id"], p["gamertag"]) for p in ps]) if tab == "latest" and request.args.get("raw") == "1" else None, raw_lazy=tab == "latest" and bool(night), session_picks=session_watch.for_sessions(data["nights"], [p["id"] for p in ps], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(night, [p["id"] for p in ps]) if tab == "latest" else {}, tab=tab, kpis=kp, adv=adv, periods=periods, pidgt=gt, onair=onair, **extra, comparison=comparison, recap_matches=session_review.recap_matches(data.get('night') or []), recap_names=[p['gamertag'] for p in ps], gtmap={p["slug"]: p["gamertag"] for p in ps}, pcfg=pcfg, vm=vm, og=og, share_url=share_url, d=data, ps=ps, chans=chans, tw=first, psrc=psrc, plabel=plabel, host=request.host.split(":")[0],
+    return render_template("squad.html", sb=_live_board(night if data.get("s_idx") == 0 and _is_current(night) else [], ps, *_squad_usuals(night, data["members"])) if tab == "latest" and night else None, sess_current=bool(night) and data.get("s_idx") == 0 and _is_current(night), pt=_squad_table(night, ps) if tab == "latest" else None, pt_apart=_apart_table(data["members"], ps) if tab == "latest" and not data["nights"] else None, raw=raw_view.build(night, squad=[(p["id"], p["gamertag"]) for p in ps]) if tab == "latest" and request.args.get("raw") == "1" else None, raw_lazy=tab == "latest" and bool(night), session_picks=session_watch.for_sessions(data["nights"], [p["id"] for p in ps], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(night, [p["id"] for p in ps]) if tab == "latest" else {}, tab=tab, kpis=kp, adv=adv, periods=periods, pidgt=gt, onair=onair, **extra, comparison=comparison, recap_matches=session_review.recap_matches(data.get('night') or []), recap_names=[p['gamertag'] for p in ps], gtmap={p["slug"]: p["gamertag"] for p in ps}, pcfg=pcfg, vm=vm, og=og, share_url=share_url, d=data, ps=ps, chans=chans, tw=first, psrc=psrc, plabel=plabel, host=request.host.split(":")[0],
                            slugs=",".join(names), vods=vods, sq_base=("/sq/" + code) if code else None, open_game=game)
 
 
@@ -1037,6 +1037,23 @@ def _solo_table(matches, rows, label="This session"):
 def _squad_table(night, ps):
     """Player stats table on a squad page: one row per player for the night, best SC% first."""
     t = player_table.build([(p["gamertag"], [g["members"][p["id"]] for g in night if p["id"] in g["members"]], None) for p in ps])
+    if t:
+        i = next((n for n, c in enumerate(t["cols"]) if c["key"] == "sc_pct"), None)
+        if i is not None:
+            t["rows"].sort(key=lambda r: -(r["cells"][i][0] if r["cells"][i][0] is not None else -1))
+    return t
+
+
+def _apart_table(members, ps):
+    """Squad that hasn't played together (no shared session): each player's OWN last 30 days (or their latest 25 games
+    when they played less), so the page still leads with a table. A member with private Xbox history has no row."""
+    now, groups = time.time(), []
+    for m, p in zip(members, ps):
+        rs = m.get("rows") or []
+        recent = [r for r in rs if now - r["started_at"] < 30 * 86400]
+        use = recent if len(recent) >= 5 else rs[:25]
+        groups.append((p["gamertag"], use, f"{len(use)} games" + (", last 30 days" if use is recent else ", latest")))
+    t = player_table.build(groups)
     if t:
         i = next((n for n, c in enumerate(t["cols"]) if c["key"] == "sc_pct"), None)
         if i is not None:

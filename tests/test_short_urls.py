@@ -23,6 +23,16 @@ class ShortSquad(unittest.TestCase):
         self.assertEqual(c.get('/sq/zzzzzz/g/a1b2c3d4').status_code,404)          # unknown squad
         self.assertEqual(c.get(f'/sq/{code}/g/not-hex!').status_code,404)          # junk game id
         self.assertEqual(c.get(f'/sq/{code}/g/a1b2c3d4').status_code,404)          # game not in this squad's history
+    def test_apart_squad_still_leads_with_overall_table(self):
+        # 2026-10-11: two players who never played together (and one private) still get the overall table
+        import time
+        for i in range(6):
+            self.conn.execute("INSERT INTO matches(player_id,match_id,started_at,duration_s,mode,playlist,outcome,kills,deaths,assists,damage_dealt) VALUES(1,?,?,600,'Ranked:Slayer','Ranked Arena','Win',12,6,3,3200)",(f'a{i}',time.time()-86400-i*900))
+        self.conn.execute("UPDATE players SET sync_state='private' WHERE slug='bb'")
+        with web.app.test_request_context('/'):code=web.squad_code('aa,bb')
+        h=web.app.test_client().get(f'/sq/{code}').get_data(as_text=True)
+        self.assertIn('id="sqtable"',h);self.assertIn('not played together yet',h)
+        self.assertIn('6 games, last 30 days',h)
     def test_unknown_code_404(self):
         self.assertEqual(web.app.test_client().get('/sq/zzzzzz').status_code,404)
 

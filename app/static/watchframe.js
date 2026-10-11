@@ -10,7 +10,7 @@ const anchor=(header?.getBoundingClientRect().height||0)+stickyHub+(bar?.getBoun
 const viewport=window.visualViewport?.height||innerHeight;
 const embed=player.querySelector('.embed'),width=embed?.clientWidth||player.clientWidth;
 const live=player.classList.contains('is-live'),tl=live?0:160;   /* live: no event log under the video (2026-10-10) */
-const cols=player.closest('.cols'),two=live&&innerWidth>=1200&&cols,padX=player.offsetWidth-(embed?.clientWidth||player.clientWidth),
+const cl=document.documentElement.classList,cols=player.closest('.cols'),two=live&&innerWidth>=1200&&cols&&!(cl.contains('lay-stats-hidden')&&cl.contains('lay-chat-hidden')),padX=player.offsetWidth-(embed?.clientWidth||player.clientWidth),
   gap=cols?parseFloat(getComputedStyle(cols).columnGap)||16:16,maxW=two?cols.clientWidth-(document.documentElement.classList.contains('lay-chat-beside')?700:380)-gap-padX:width;   /* Customize: chat beside stats needs ~700px on the right */
 /* live two-column: size from the widest the video could be (the column then shrinks to fit it), never from its
    current width, or narrowing the column would shrink the target again on the next pass */
