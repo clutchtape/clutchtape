@@ -57,7 +57,7 @@
   }, { threshold: .2 }) : null;
   function scan(root) {
     if (!io) return;
-    [].forEach.call(root.querySelectorAll(COUNT), function (el) { if (!seen.has(el) && !el.closest('#onair')) { seen.add(el); io.observe(el); } });
+    [].forEach.call(root.querySelectorAll(COUNT), function (el) { if (!seen.has(el) && !el.closest('#onair, .mh-pop, .mh-run')) {   /* replay pop-ups: a medal named "360" is not a number to count */ seen.add(el); io.observe(el); } });
     [].forEach.call(root.querySelectorAll('svg'), function (s) { if (!seen.has(s) && s.querySelector(LINES)) { seen.add(s); io.observe(s); } });
     [].forEach.call(root.querySelectorAll('table.ptable, table.rawtable'), function (t) { if (!seen.has(t)) { seen.add(t); io.observe(t); } });
   }

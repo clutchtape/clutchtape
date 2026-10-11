@@ -76,3 +76,37 @@
 .mv2 .match-nav a.primary{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:999px;background:var(--acc);color:#1a0f08;font-weight:800;text-decoration:none}
 .mv2 .match-nav a.primary:hover{filter:brightness(1.08)}
 .mtl-svg .at-band{fill:rgba(255,211,107,.16);stroke:#ffd36b;stroke-width:1}.mtl-svg .at-lab{fill:#ffd36b;font-size:11px;font-weight:800}
+/* replay (match_timeline.js, 2026-10-11): plays pop up beside the score — left your team, right theirs */
+.mh-score{position:relative}
+.mh-pops{position:absolute;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px;width:210px;pointer-events:none;z-index:5}
+.mh-pops.l{right:calc(100% + 16px);align-items:flex-end}.mh-pops.r{left:calc(100% + 16px);align-items:flex-start}
+.mh-pop{max-width:100%;padding:6px 11px;border-radius:10px;background:rgba(16,13,11,.94);border:1px solid rgba(255,255,255,.08);box-shadow:0 8px 22px rgba(0,0,0,.45);text-align:left;transition:opacity .35s,transform .35s}
+.mh-pops.l .mh-pop{border-right:3px solid currentColor;text-align:right;animation:mhPopL .42s cubic-bezier(.2,.9,.3,1.35) both}
+.mh-pops.r .mh-pop{border-left:3px solid currentColor;animation:mhPopR .42s cubic-bezier(.2,.9,.3,1.35) both}
+.mh-pop b{display:block;font-size:14px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mh-pop span{display:block;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mh-pop.huge b{font-size:17px;text-shadow:0 0 14px currentColor}.mh-pop.huge{box-shadow:0 0 0 1px currentColor,0 10px 26px rgba(0,0,0,.5)}
+.mh-pop.out{opacity:0;transform:scale(.9)}
+@keyframes mhPopL{from{opacity:0;transform:translateX(18px) scale(.8)}to{opacity:1;transform:none}}
+@keyframes mhPopR{from{opacity:0;transform:translateX(-18px) scale(.8)}to{opacity:1;transform:none}}
+.mh-score .mh-run{display:none;font-variant-numeric:tabular-nums;color:var(--acc2);font-weight:700}.mh-score.replaying .mh-run{display:block}
+.mtl-svg .playhead{stroke:#fff;stroke-width:2;opacity:.9}
+.mtl-replay{display:inline-flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap}
+.mtl-replay button{appearance:none;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--ink);font:inherit;font-size:13px;font-weight:800;padding:6px 14px;border-radius:999px;cursor:pointer;min-height:36px}
+.mtl-replay .rp-go{border-color:rgba(255,140,60,.6);background:rgba(255,140,60,.14)}
+.mtl-replay button[hidden]{display:none}
+.mtl-replay label{font-size:12px;color:var(--mute);display:inline-flex;gap:6px;align-items:center}
+.mtl-replay select{background:#1a1613;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:4px 6px;font:inherit;font-size:13px;min-height:32px}
+/* scrolled away during a replay: the score docks under the header */
+.mh-bug{--tA:#4aa3ff;--tB:#ff6b6b;position:fixed;top:calc(var(--hdr,53px) + 8px);left:0;right:0;margin:0 auto;width:max-content;z-index:50;display:flex;align-items:center;gap:14px;padding:6px 18px;border-radius:999px;background:rgba(14,12,10,.95);border:1px solid var(--line);box-shadow:0 10px 30px rgba(0,0,0,.5);animation:mhBug .3s ease both}
+.mh-bug[hidden]{display:none}
+.mh-bug>b{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums;text-shadow:0 0 16px currentColor}.mh-bug .tA{color:var(--tA)}.mh-bug .tB{color:var(--tB)}
+.mh-bug .sb-t{font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums}
+.mh-bug .mh-pop .tA,.mh-bug .mh-pop.tA{color:var(--tA)}.mh-bug .mh-pop.tB{color:var(--tB)}
+@keyframes mhBug{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+@media(max-width:900px){.mhero .mh-pops{top:auto;bottom:calc(100% + 4px);transform:none;width:48%}.mhero .mh-pops.l{left:0;right:auto;align-items:flex-start}.mhero .mh-pops.r{right:0;left:auto;align-items:flex-end}
+  .mhero .mh-pops.l .mh-pop{text-align:left;border-right:0;border-left:3px solid currentColor}.mhero .mh-pops.r .mh-pop{text-align:right;border-left:0;border-right:3px solid currentColor}
+  .mh-score{width:100%}}
+@media(max-width:700px){.mh-bug{top:auto;bottom:max(12px,env(safe-area-inset-bottom))}.mh-bug .mh-pops{position:fixed;top:auto;bottom:calc(max(12px,env(safe-area-inset-bottom)) + 58px);transform:none;width:46vw;flex-direction:column-reverse}.mh-bug .mh-pops.l{left:8px;right:auto}.mh-bug .mh-pops.r{right:8px;left:auto}
+  .mtl-replay{margin-left:0;width:100%}.mtl-replay button{min-height:44px}}
+@media(prefers-reduced-motion:reduce){.mh-pop,.mh-bug{animation:none!important}}

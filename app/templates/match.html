@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}{{ m.map or 'Match' }} · {{ m.mode }} — Clutchtape{% endblock %}
-{% block head %}<link rel="stylesheet" href="/static/match.css?v=4">{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/match.css?v=6">{% endblock %}
 {% block content %}
 {% set tA = team_scores|selectattr('id', 'equalto', team_id)|first if team_id is not none else none %}
 {% set tB = team_scores|rejectattr('id', 'equalto', team_id)|first if team_id is not none else none %}
@@ -18,7 +18,7 @@
   <div class="mh-id"><p class="eyebrow">{{ m.mode }} · {{ m.playlist or 'Custom game' }}{% if detail and not detail.teams_enabled %} · Free-for-all{% endif %}</p><h1>{{ m.map or 'Unknown map' }}</h1>
     <p class="muted">{{ m.started_at|dt('%a %b %-d, %Y · %-I:%M %p') }} · {{ m.duration_s|dur }}{% if tA and tA.fields %}{% set rw = tA.fields|selectattr(0, 'equalto', 'Rounds won')|map(attribute=1)|first %}{% set rl = tA.fields|selectattr(0, 'equalto', 'Rounds lost')|map(attribute=1)|first %}{% if rw is not none and (rw or rl) and (rw + rl) > 1 %} · Rounds {{ rw }}–{{ rl }}{% endif %}{% endif %}</p></div>
   <div class="mh-score"><span class="res {{ m.outcome|lower }}">{{ m.outcome }}</span>
-    <div class="sc"><b class="{{ tcls(team_id) }}">{{ (tA.score if tA else m.team_score)|int if (tA.score if tA else m.team_score) is not none else '—' }}</b><i>–</i><b class="{{ tcls(tB.id if tB else none) }}">{{ (tB.score if tB else m.enemy_score)|int if (tB.score if tB else m.enemy_score) is not none else '—' }}</b></div>
+    <div class="sc"><b class="{{ tcls(team_id) }}" data-v="{{ (tA.score if tA else m.team_score)|int if (tA.score if tA else m.team_score) is not none else '—' }}">{{ (tA.score if tA else m.team_score)|int if (tA.score if tA else m.team_score) is not none else '—' }}</b><i>–</i><b class="{{ tcls(tB.id if tB else none) }}" data-v="{{ (tB.score if tB else m.enemy_score)|int if (tB.score if tB else m.enemy_score) is not none else '—' }}">{{ (tB.score if tB else m.enemy_score)|int if (tB.score if tB else m.enemy_score) is not none else '—' }}</b></div>
     {% set edge = tracked_rows[0].mmr_edge %}{% if edge is not none %}<small>Lobby MMR {{ '{:+}'.format(edge) }} {{ '(favoured)' if edge > 25 else '(underdog)' if edge < -25 else '(even)' }}</small>{% endif %}</div>
   <div class="mh-who">{% for r in tracked_rows %}<a class="mh-p" href="/p/{{ r.slug }}"><b>{{ r.gamertag }}</b><span>{{ r.kills }}/{{ r.deaths }}/{{ r.assists }} · {{ r.kda|kda }} KDA</span>
     <span>{% if r.dmg_pm %}{{ r.dmg_pm }}/min{% endif %}{% if r.sc_pct is not none %} · {{ r.sc_pct }}% score{% endif %}{% if r.csr_d is not none %} · <em class="{{ 'pos' if r.csr_d > 0 else 'neg' if r.csr_d < 0 }}">{{ '{:+}'.format(r.csr_d) }} CSR</em>{% endif %}{% if r.xk is not none %} · {{ '{:+g}'.format(r.xk) }} xK{% endif %}</span></a>{% endfor %}</div>
@@ -49,4 +49,4 @@
 </div>
 <script nonce="{{ csp_nonce }}">window.CT_MATCH={{ {'mid': m.match_id, 'dur': m.duration_s or 0, 'roster': roster, 'team': team_id}|tojson }};</script>
 {% endblock %}
-{% block scripts %}<script nonce="{{ csp_nonce }}" src="/static/match.js?v=1" defer></script><script nonce="{{ csp_nonce }}" src="/static/match_timeline.js?v=3" defer></script>{% endblock %}
+{% block scripts %}<script nonce="{{ csp_nonce }}" src="/static/match.js?v=1" defer></script><script nonce="{{ csp_nonce }}" src="/static/match_timeline.js?v=8" defer></script>{% endblock %}
