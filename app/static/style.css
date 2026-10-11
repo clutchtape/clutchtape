@@ -1609,3 +1609,13 @@ html.dragging-cols iframe{pointer-events:none}   /* the chat iframe would swallo
 .vodvs{padding:8px 10px}.vodvs table.ptable{margin:0}.vodvs table.ptable th:first-child{color:var(--acc2);font-size:11.5px;text-transform:none;font-weight:800}
 /* phones/tablets (one column): video, then the session table, the watch guide, then clips */
 @media(max-width:1199px){.cols #vodvs{order:2!important}.cols #watchguide{order:3!important}.cols .clipsec{order:4!important}.cols .twclips{order:5!important}}
+/* first-visit tips strip (_hub_head.html + heat.js) */
+.firsttip{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:6px 0 10px;padding:8px 10px 8px 14px;border-radius:12px;border:1px solid rgba(255,150,60,.4);background:linear-gradient(90deg,rgba(255,140,50,.12),rgba(255,140,50,.03));font-size:13px;color:var(--ink)}
+.firsttip[hidden]{display:none}
+.firsttip>b{color:var(--acc2)}
+.firsttip>span{color:var(--mute)}.firsttip i{font-style:normal;color:var(--ink);font-weight:700;cursor:help;border-bottom:1px dashed rgba(255,255,255,.25)}
+.firsttip-x{margin-left:auto;min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--acc2);background:rgba(255,138,61,.12);color:var(--ink);font-weight:800;font-size:12.5px;cursor:pointer}
+.tipglow{box-shadow:0 0 0 2px var(--acc2),0 0 18px rgba(255,150,60,.55)!important;border-radius:999px;transition:box-shadow .3s}
+@media (prefers-reduced-motion:no-preference){.firsttip:not([hidden]){animation:tipIn .35s ease-out}@keyframes tipIn{from{opacity:0;transform:translateY(-4px)}}}
+@media(max-width:700px){.firsttip{font-size:12.5px}.firsttip>span{flex-basis:100%}}
+.elog .etl .et-picks{height:40px;min-height:40px}.elog .etl:has(.et-picks){margin-bottom:52px!important}   /* 40px touch target (2026-10-11 scan) */

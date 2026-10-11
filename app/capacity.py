@@ -37,7 +37,27 @@ class Cache:
             if hit:
                 return deepcopy(hit[1])
             raise Busy('View temporarily unavailable')
+        if stale and hit:
+            # 2026-10-11: stale-while-revalidate — the first request after expiry no longer waits on the slow source
+            # (a Twitch call took a cold player page from ~0.2 s to ~1.1 s); it gets the last value and the refresh
+            # runs in the background (one flight per key, as before).
+            def refresh():
+                try:
+                    self._load(key,loader)
+                except Exception:
+                    pass
+                finally:
+                    with self.lock:
+                        self.flights.pop(key,None); event.set()
+            threading.Thread(target=refresh,daemon=True).start()
+            return deepcopy(hit[1])
         try:
+            return self._load(key,loader)
+        finally:
+            with self.lock:
+                self.flights.pop(key,None); event.set()
+
+    def _load(self,key,loader):
             value=loader()
             size=len(repr(value))*2  # conservative string estimate + entry cap; data only
             if size<=self.budget//2:
@@ -48,9 +68,6 @@ class Cache:
                     while len(self.items)>self.entries or self.bytes>self.budget:
                         _,old=self.items.popitem(last=False);self.bytes-=old[2]
             return value
-        finally:
-            with self.lock:
-                self.flights.pop(key,None); event.set()
 
     def clear(self):
         with self.lock:self.items.clear();self.bytes=0

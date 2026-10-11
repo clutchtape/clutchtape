@@ -114,8 +114,6 @@ def init():
         conn().execute("UPDATE players SET last_synced=NULL, matches_done=0, matches_total=0 WHERE sync_state='ready'")
         conn().execute("INSERT INTO kv(k,v) VALUES('migr_team_pscore','1')")
 
-    import rooms
-    rooms.init()
     import player_colors
     player_colors.init()
     import data_rights

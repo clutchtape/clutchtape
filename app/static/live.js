@@ -89,7 +89,8 @@
     if (!fresh && !rolled && old.innerHTML !== neu.innerHTML) { neu.classList.add('sec-new'); setTimeout(function () { neu.classList.remove('sec-new'); }, 1600); }
   }
   function refresh() {
-    fetch(location.href, { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : Promise.reject(); }).then(function (html) {
+    var lu = new URL(location.href); if (document.querySelector('#raw:not([data-lazy])')) lu.searchParams.set('raw', '1');   /* keep a loaded raw table */
+    fetch(lu, { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : Promise.reject(); }).then(function (html) {
       var doc = new DOMParser().parseFromString(html, 'text/html');
       SWAP.forEach(function (sel) {
         var olds = document.querySelectorAll(sel), news = doc.querySelectorAll(sel);

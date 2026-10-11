@@ -175,7 +175,15 @@ def security_context():
 def traffic_guard():
     if len(request.query_string)>2048 or len(request.path)>400:abort(414)
     if request.path.startswith('/static/') or request.path in ('/healthz','/readyz'):return
-    if not capacity.limiter.allow('web:'+client_ip(),240):return busy_response(429)
+    # 2026-10-11: separate budgets so background traffic can't lock a real visitor out. Hover preloads (speculation
+    # rules, Sec-Purpose: prefetch) get their own small bucket — over it only the preload is refused; live polling
+    # (/api/live, every 15 s per open live page) gets a larger one, since a room of viewers can share one IP.
+    ip=client_ip()
+    if 'prefetch' in (request.headers.get('Sec-Purpose') or request.headers.get('Purpose') or '').lower():
+        if not capacity.limiter.allow('prefetch:'+ip,60):return busy_response(429)
+    elif request.path.startswith('/api/live/'):
+        if not capacity.limiter.allow('live:'+ip,600):return busy_response(429)
+    elif not capacity.limiter.allow('web:'+ip,240):return busy_response(429)
     if not capacity.requests.acquire(blocking=False):return busy_response(503)
     g.capacity_slot=True
 
@@ -666,7 +674,7 @@ def squad(slugs, short=False, code=None, game=None):
         onair["streams"] = [{"channel": chans.get(sl), "gamertag": gt_slug.get(sl), "title": st.get("title"),
                              "viewers": st.get("viewers")} for sl, st in lives]
         _onair_links(onair, lambda slug: vods.get(slug), lambda slug: (users.get(slug) or {}).get("id"))
-    return render_template("squad.html", sb=_live_board(night if data.get("s_idx") == 0 and _is_current(night) else [], ps, *_squad_usuals(night, data["members"])) if tab == "latest" and night else None, sess_current=bool(night) and data.get("s_idx") == 0 and _is_current(night), pt=_squad_table(night, ps) if tab == "latest" else None, raw=raw_view.build(night, squad=[(p["id"], p["gamertag"]) for p in ps]) if tab == "latest" else None, session_picks=session_watch.for_sessions(data["nights"], [p["id"] for p in ps], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(night, [p["id"] for p in ps]) if tab == "latest" else {}, tab=tab, kpis=kp, adv=adv, periods=periods, pidgt=gt, onair=onair, **extra, comparison=comparison, recap_matches=session_review.recap_matches(data.get('night') or []), recap_names=[p['gamertag'] for p in ps], gtmap={p["slug"]: p["gamertag"] for p in ps}, pcfg=pcfg, vm=vm, og=og, share_url=share_url, d=data, ps=ps, chans=chans, tw=first, psrc=psrc, plabel=plabel, host=request.host.split(":")[0],
+    return render_template("squad.html", sb=_live_board(night if data.get("s_idx") == 0 and _is_current(night) else [], ps, *_squad_usuals(night, data["members"])) if tab == "latest" and night else None, sess_current=bool(night) and data.get("s_idx") == 0 and _is_current(night), pt=_squad_table(night, ps) if tab == "latest" else None, raw=raw_view.build(night, squad=[(p["id"], p["gamertag"]) for p in ps]) if tab == "latest" and request.args.get("raw") == "1" else None, raw_lazy=tab == "latest" and bool(night), session_picks=session_watch.for_sessions(data["nights"], [p["id"] for p in ps], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(night, [p["id"] for p in ps]) if tab == "latest" else {}, tab=tab, kpis=kp, adv=adv, periods=periods, pidgt=gt, onair=onair, **extra, comparison=comparison, recap_matches=session_review.recap_matches(data.get('night') or []), recap_names=[p['gamertag'] for p in ps], gtmap={p["slug"]: p["gamertag"] for p in ps}, pcfg=pcfg, vm=vm, og=og, share_url=share_url, d=data, ps=ps, chans=chans, tw=first, psrc=psrc, plabel=plabel, host=request.host.split(":")[0],
                            slugs=",".join(names), vods=vods, sq_base=("/sq/" + code) if code else None, open_game=game)
 
 
@@ -1416,7 +1424,7 @@ def profile(slug):
     if _tab() == "latest" and tw and not onair and s:
         guide_usual = _usual_of(s["matches"], data["rows"])
         guide = watch_guide.build(s["matches"], {r["match_id"]: r for r in data["rows"]}, guide_usual, data["moments"])
-    return render_template("profile.html", guide=guide, guide_usual=guide_usual, session_picks=session_watch.for_sessions(data["sessions"], [p["id"] for p in [p] + alts], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(s["matches"] if s else [], [p["id"]] + [a["id"] for a in alts]) if tab == "latest" else {}, tab=tab, onair=onair, alts=alts, kpis=_kpis(s["matches"]) if s else [], adv=_adv_kpis({p["gamertag"]: s["matches"]}) if s else [], sess_agg=analytics._agg(s["matches"]) if s else None, brk=_breakdown(s["matches"], data["rows"]) if s and tab == "latest" else None, pt=_solo_table(s["matches"], data["rows"], "This session" if data["s_idx"] == 0 and _is_current(s["matches"]) else fmt_dt(s["start"], "%a %b %-d")) if s and tab == "latest" else None, sess_current=bool(s) and data["s_idx"] == 0 and _is_current(s["matches"]), sb=_live_board(s["matches"] if s and data["s_idx"] == 0 and _is_current(s["matches"]) else [], usual=_usual_of(s["matches"], data["rows"]) if s else None) if tab == "latest" else None, raw=raw_view.build(s["matches"]) if s and tab == "latest" else None, periods=_periods({p["gamertag"]: data["rows"]}, solo=True) if tab == "records" else None, **extra, comparison=comparison, recap_matches=session_review.recap_matches(s['matches'] if s else []), recap_names=[p['gamertag']], pcfg=pcfg, vm=vm, og=og, p=p, d=data, clips=clips, vods=vods, tw=tw, psrc=psrc, plabel=plabel,
+    return render_template("profile.html", guide=guide, guide_usual=guide_usual, session_picks=session_watch.for_sessions(data["sessions"], [p["id"] for p in [p] + alts], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(s["matches"] if s else [], [p["id"]] + [a["id"] for a in alts]) if tab == "latest" else {}, tab=tab, onair=onair, alts=alts, kpis=_kpis(s["matches"]) if s else [], adv=_adv_kpis({p["gamertag"]: s["matches"]}) if s else [], sess_agg=analytics._agg(s["matches"]) if s else None, brk=_breakdown(s["matches"], data["rows"]) if s and tab == "latest" else None, pt=_solo_table(s["matches"], data["rows"], "This session" if data["s_idx"] == 0 and _is_current(s["matches"]) else fmt_dt(s["start"], "%a %b %-d")) if s and tab == "latest" else None, sess_current=bool(s) and data["s_idx"] == 0 and _is_current(s["matches"]), sb=_live_board(s["matches"] if s and data["s_idx"] == 0 and _is_current(s["matches"]) else [], usual=_usual_of(s["matches"], data["rows"]) if s else None) if tab == "latest" else None, raw=raw_view.build(s["matches"]) if s and tab == "latest" and request.args.get("raw") == "1" else None, raw_lazy=bool(s) and tab == "latest", periods=_periods({p["gamertag"]: data["rows"]}, solo=True) if tab == "records" else None, **extra, comparison=comparison, recap_matches=session_review.recap_matches(s['matches'] if s else []), recap_names=[p['gamertag']], pcfg=pcfg, vm=vm, og=og, p=p, d=data, clips=clips, vods=vods, tw=tw, psrc=psrc, plabel=plabel,
                            host=request.host.split(":")[0])
 
 
@@ -2001,8 +2009,8 @@ def close_page():
 
 import growth
 app.register_blueprint(growth.bp)
-import rooms
-rooms.install(app, check_csrf, client_ip)
+# (private review rooms + accounts removed 2026-10-11: switched off since 10-10, unreachable. Their tables, if an old
+#  database has them, are left as they are.)
 import player_colors
 player_colors.install(app, check_csrf, client_ip)
 import data_rights
@@ -2028,7 +2036,14 @@ def readyz():
         db.q1('SELECT 1');state=maintenance.status()
         heartbeat=db.kv_get('ops:heartbeat',{}).get('at',0)
         degraded=bool(state['alerts']) or time.time()-heartbeat>180
-        return jsonify(status='degraded' if degraded else 'ready'),503 if degraded else 200
+        # the alert texts only for the in-network monitor (no Cloudflare header = not from the internet)
+        try:
+            import ipaddress
+            private=not request.headers.get('CF-Connecting-IP') and ipaddress.ip_address(request.remote_addr or '0.0.0.0').is_private
+        except ValueError:private=False
+        body=dict(status='degraded' if degraded else 'ready')
+        if private and degraded:body['alerts']=state['alerts'] or ['Maintenance heartbeat is late']
+        return jsonify(body),503 if degraded else 200
     except Exception:return jsonify(status='unavailable'),503
 
 

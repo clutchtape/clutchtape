@@ -3,3 +3,28 @@
 .personal-home[data-empty=true] #home-picks-section,.personal-home[data-empty=true][data-has-alerts=false] #home-alert-section,.personal-home[data-empty=true] #home-groups-section h2{display:none}
 
 #home-more{margin-top:12px}
+
+/* 2026-10-11 compact home: one row of chips, one-line picks, no duplicate Saved list, alerts only when there are some */
+.personal-home{margin:12px 0 18px;padding:14px 16px}
+.personal-home h2{font-size:15px;margin:0}
+.personal-heading{gap:10px;flex-wrap:wrap}.personal-heading h2{margin-right:auto}
+.personal-home button,.personal-home select{min-height:40px;padding:6px 12px;font-size:13px}
+#home-status{font-size:12px;color:#a8988a}
+.personal-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.personal-chipwrap{position:relative;display:inline-flex}
+.personal-chip{display:inline-flex;flex-direction:column;justify-content:center;min-height:44px;padding:5px 14px;border:1px solid #584433;border-radius:12px;background:#1c1815;color:#f7e7d8;text-decoration:none;max-width:260px}
+.personal-chip:hover{background:#33271e}.personal-chip strong{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.personal-chip small{font-size:11.5px;color:#cdb8a5;white-space:nowrap}
+.personal-chip.live{border-color:#e05252;background:linear-gradient(135deg,#3a1d1d,#1c1815)}.personal-chip.live strong{color:#ff8a8a}
+.personal-x{display:none;position:absolute;top:-8px;right:-8px;width:28px!important;height:28px;min-height:0!important;padding:0!important;border-radius:999px!important;font-size:12px!important;line-height:1}
+.personal-home.editing .personal-x{display:grid;place-items:center}.personal-x::after{content:"";position:absolute;inset:-6px}
+#home-picks-section,#home-alert-section{margin-top:14px}
+.personal-picks{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.personal-pick{display:flex;align-items:baseline;gap:10px;min-height:40px;padding:8px 12px;border:1px solid #584433;border-radius:10px;background:#1c1815;color:#f7e7d8;text-decoration:none;min-width:0}
+.personal-pick:hover{background:#33271e}.personal-pick strong{flex:none;font-size:14px}.personal-pick span{flex:none;font-size:12px;color:#cdb8a5}
+.personal-pick em{font-style:normal;font-size:12.5px;color:#e8c9a5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.personal-pick[data-heat=high]{border-color:#b97a3e}.personal-pick.unread{border-left:3px solid #ffb66b}
+.personal-more{margin-top:8px}
+.personal-home[data-has-alerts=false] #home-alert-section{display:none}
+.home-page #saved-profiles{display:none!important}   /* the chips above are the saved list now (Edit removes) */
+@media(max-width:600px){.personal-pick{flex-wrap:wrap;gap:2px 8px}.personal-pick em{flex-basis:100%}.personal-chip{max-width:calc(50vw - 30px)}}
+.personal-home[data-empty=true][data-has-alerts=false]{display:none}   /* first-time visitors: no empty box */

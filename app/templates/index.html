@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {% block robots %}{% endblock %}
-{% block head %}<link rel="stylesheet" href="/static/dense.css?v=4"><link rel="stylesheet" href="/static/personal-home.css?v=2">{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/dense.css?v=4"><link rel="stylesheet" href="/static/personal-home.css?v=4">{% endblock %}
 {% block content %}
 <div class="home-page">
-<section class="personal-home" aria-labelledby="personal-title" data-empty="true">
- <div class="personal-heading"><div><h2 id="personal-title">Your players &amp; squads</h2></div><button type="button" data-open-alerts>Manage follows</button></div>
- <p id="home-status" role="status">Loading your home…</p><button id="home-retry" type="button" hidden>Try again</button>
- <section id="home-live-section" hidden><h2>Live from your follows</h2><div id="home-live" class="personal-grid"></div></section>
- <section id="home-groups-section"><div id="home-cards" class="personal-grid"></div></section>
- <section id="home-picks-section"><div class="personal-heading"><h2>Worth watching</h2><label>Sort <select id="home-sort"><option value="best">Strongest signals</option><option value="recent">Newest first</option></select></label></div><p class="muted">Based on the latest eight ranked sessions per saved or followed group: close finishes, detected clips, standout games, and streaks. Video availability is checked when you open a session.</p><div id="home-picks" class="personal-grid"></div><button type="button" id="home-more" hidden>Show more sessions</button></section>
- <section id="home-alert-section"><div class="personal-heading"><h2>Recent alerts <span id="home-unread"></span></h2><button type="button" data-open-alerts>Open inbox</button></div><div id="home-inbox"></div></section>
+<section class="personal-home" aria-labelledby="personal-title" data-empty="true" data-has-alerts="false">
+ {# 2026-10-11 compact home for returning visitors (personal-home.js): chips, one-line picks, alerts only when there are some #}
+ <div class="personal-heading"><h2 id="personal-title">Your players &amp; squads</h2><span id="home-status" role="status"></span><button id="home-retry" type="button" hidden>Try again</button><button id="home-edit" type="button" hidden>Edit</button><button type="button" data-open-alerts>Follows</button></div>
+ <section id="home-live-section" hidden><div id="home-live" class="personal-chips"></div></section>
+ <section id="home-groups-section"><div id="home-cards" class="personal-chips"></div></section>
+ <section id="home-picks-section" hidden><div class="personal-heading"><h2 title="From the latest eight ranked sessions per saved or followed group: close finishes, detected clips, standout games and streaks">Worth watching</h2><select id="home-sort" aria-label="Sort"><option value="best">Strongest</option><option value="recent">Newest</option></select></div><div id="home-picks" class="personal-picks"></div><button id="home-more" type="button" class="personal-more" hidden>More sessions</button></section>
+ <section id="home-alert-section"><div class="personal-heading"><h2>Recent alerts <span id="home-unread"></span></h2><button type="button" data-open-alerts>Inbox</button></div><div id="home-inbox" class="personal-picks"></div></section>
 </section>
 
 {% if live_now %}<section class="livenow" aria-label="Live now"><div class="ln-head"><span class="oa-live"><i></i>LIVE NOW</span><span class="muted">Tracked streamers playing right now · tonight's results update as each game ends</span></div>
@@ -74,4 +74,4 @@
 </div>
 {% endblock %}
 
-{% block scripts %}<script nonce="{{ csp_nonce }}" src="/static/personal-home.js?v=3" defer></script>{% endblock %}
+{% block scripts %}<script nonce="{{ csp_nonce }}" src="/static/personal-home.js?v=4" defer></script>{% endblock %}

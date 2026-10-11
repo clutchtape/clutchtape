@@ -1,4 +1,4 @@
-"""Bounded public-stat cache retention; private rooms are not deleted by cache expiry."""
+"""Bounded public-stat cache retention."""
 import os,time
 import db,capacity
 
@@ -15,7 +15,6 @@ def sweep(now=None):
         for prefix in ('matchraw:','matchdetail:','matchload:'):
             c.execute('DELETE FROM kv WHERE k LIKE ? AND substr(k,?) NOT IN(SELECT match_id FROM matches)',(prefix+'%',len(prefix)+1))
         c.execute('DELETE FROM removal_requests WHERE created<?',(now-30*86400,))
-        c.execute('DELETE FROM review_sessions WHERE expires<?',(now,))
         c.execute('UPDATE players SET matches_done=(SELECT COUNT(*) FROM matches m WHERE m.player_id=players.id)')
     capacity.stats.clear();capacity.external.clear()
     result={'at':now,'profiles':len(expired),'matches':deleted};db.kv_set('ops:retention',result);return result

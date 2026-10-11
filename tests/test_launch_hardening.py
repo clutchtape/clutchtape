@@ -1,7 +1,7 @@
 import sqlite3,tempfile,time,unittest,re
 from pathlib import Path
 from unittest.mock import patch
-import db,web,privacy,data_rights,retention,rooms,capacity
+import db,web,privacy,data_rights,retention,capacity
 
 class LaunchHardeningTests(unittest.TestCase):
     def setUp(self):
@@ -50,14 +50,13 @@ class LaunchHardeningTests(unittest.TestCase):
                 self.assertFalse(privacy.blocked('Example Player'));self.assertFalse(privacy.blocked('999'));self.assertFalse(privacy.blocked('example-player'))
                 self.assertIn('"hashes": []',(Path(folder)/'privacy_exclusions.json').read_text())
                 self.assertEqual(self.client.post('/admin/privacy',data={'csrf':'csrf','action':'unblock','gamertag':'Nobody'}).status_code,400)
-    def test_retention_preserves_active_profiles_and_private_rooms(self):
+    def test_retention_preserves_active_profiles(self):
         now=time.time()
         for i,(name,view) in enumerate([('Active',now),('Inactive',now-91*86400),('CyKul',now-91*86400)],1):
             db.run('INSERT INTO players(id,xuid,gamertag,slug,created_at,last_view) VALUES(?,?,?,?,?,?)',i,str(i),name,name.lower(),view,view)
         db.run("INSERT INTO matches(player_id,match_id,started_at) VALUES(1,'expired',?)",now-181*86400)
         db.run("INSERT INTO matches(player_id,match_id,started_at) VALUES(1,'keep',?)",now)
         db.run("INSERT INTO events VALUES('expired','1','Active',1,'kill',NULL)");db.kv_set('matchdetail:expired',{})
-        db.run("INSERT INTO review_rooms(id,name,owner,created) VALUES('r','Room','u',0)")
         result=retention.sweep(now)
         self.assertEqual(result['profiles'],1);self.assertIsNotNone(db.q1("SELECT 1 FROM players WHERE slug='active'"));self.assertIsNotNone(db.q1("SELECT 1 FROM players WHERE slug='cykul'"))
-        self.assertEqual(db.q1('SELECT COUNT(*) n FROM events')['n'],0);self.assertIsNone(db.kv_get('matchdetail:expired'));self.assertIsNotNone(db.q1("SELECT 1 FROM review_rooms WHERE id='r'"))
+        self.assertEqual(db.q1('SELECT COUNT(*) n FROM events')['n'],0);self.assertIsNone(db.kv_get('matchdetail:expired'))

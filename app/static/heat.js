@@ -163,9 +163,22 @@
     var b = e.target.closest('[data-view]'); if (!b) return;
     var raw = b.dataset.view === 'raw'; document.documentElement.classList.toggle('rawview', raw);
     try { localStorage.setItem('ct-view', raw ? 'raw' : 'summary'); } catch (x) {}
-    sync(); if (window.ctPage) window.ctPage();
+    sync(); load(); if (window.ctPage) window.ctPage();
   });
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', sync); else sync();
+  /* the raw table isn't in the page until it's wanted (2026-10-11): fetch this page with ?raw=1 and take its #raw */
+  var loading = false;
+  function load() {
+    var ph = document.querySelector('#raw[data-lazy]'); if (!ph || loading || !document.documentElement.classList.contains('rawview')) return;
+    loading = true; var u = new URL(location.href); u.searchParams.set('raw', '1');
+    fetch(u, { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : Promise.reject(); }).then(function (h) {
+      var n = new DOMParser().parseFromString(h, 'text/html').getElementById('raw'), cur = document.querySelector('#raw[data-lazy]');
+      if (n && cur) { cur.replaceWith(document.importNode(n, true)); if (window.ctHeat) window.ctHeat(); if (window.ctPage) window.ctPage(); }
+    }).catch(function () { var c = document.querySelector('#raw[data-lazy] p'); if (c) c.textContent = 'Could not load the raw data. Try again in a moment.'; })
+      .then(function () { loading = false; });
+  }
+  window.ctRawLoad = load;
+  function start() { sync(); load(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
 
 /* ⋯ header menu: on desktop it's always open and shown as plain buttons (Save · Share · Color); on phones it's a ⋯
@@ -520,3 +533,22 @@ document.addEventListener('click', function (e) {
   [].forEach.call(document.querySelectorAll('#watchguide .wg-g.on'), function (x) { x.classList.remove('on'); });
   var row = id && document.querySelector('#watchguide .wg-g[data-g="' + id + '"]'); if (row) row.classList.add('on');
 });
+
+/* first-visit tips (2026-10-11): show the strip once per device for this kind of page; the controls it names glow for a
+   moment; "Got it" (or using any of them) hides it for good */
+(function () {
+  var t = document.querySelector('.firsttip[data-tip]'); if (!t) return;
+  var key = 'ct-tip-' + t.dataset.tip;
+  try { if (localStorage.getItem(key)) return; } catch (e) { return; }
+  t.hidden = false;
+  var glowed = [];
+  [].forEach.call(t.querySelectorAll('[data-tipfor]'), function (i) {
+    var el = document.querySelector(i.dataset.tipfor); if (!el || !el.getClientRects().length) { i.removeAttribute('data-tipfor'); return; }
+    i.addEventListener('mouseenter', function () { el.classList.add('tipglow'); }); i.addEventListener('mouseleave', function () { el.classList.remove('tipglow'); });
+    glowed.push(el);
+  });
+  glowed.forEach(function (el, n) { setTimeout(function () { el.classList.add('tipglow'); setTimeout(function () { el.classList.remove('tipglow'); }, 1400); }, 600 + n * 500); });
+  function done() { t.hidden = true; try { localStorage.setItem(key, '1'); } catch (e) {} if (window.ctSideFit) window.ctSideFit(); window.dispatchEvent(new Event('resize')); }
+  t.querySelector('[data-tipclose]').addEventListener('click', done);
+  glowed.forEach(function (el) { el.addEventListener('click', done, { once: true }); });
+})();

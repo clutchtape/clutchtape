@@ -1,13 +1,13 @@
 """Security regressions, isolated from production data and upstream services."""
 import sqlite3,time,unittest
 from unittest.mock import patch
-import db,web,capacity,rooms,match_detail
+import db,web,capacity,match_detail
 from test_match_detail import stored,MID
 
 class SecurityTests(unittest.TestCase):
     def setUp(self):
         self.conn=sqlite3.connect(':memory:',isolation_level=None);self.conn.row_factory=sqlite3.Row
-        self.dbpatch=patch.object(db,'conn',return_value=self.conn);self.dbpatch.start();db.init();rooms.init()
+        self.dbpatch=patch.object(db,'conn',return_value=self.conn);self.dbpatch.start();db.init()
         self.addCleanup(self.conn.close);self.addCleanup(self.dbpatch.stop)
         self.client=web.app.test_client();web.app.config.update(TESTING=True,SECRET_KEY='security-test-only')
         self.xbox=patch('xbox.status',return_value={'connected':True});self.xbox.start();self.addCleanup(self.xbox.stop)
@@ -55,9 +55,7 @@ class SecurityTests(unittest.TestCase):
             self.assertEqual(self.client.get(path).status_code,403)
         with patch.object(web.log,'info') as log:
             self.assertEqual(self.client.post('/api/clientlog',data='private-name\nforged log').status_code,204);log.assert_not_called()
-    def test_security_headers_and_malformed_room_links(self):
+    def test_security_headers(self):
         r=self.client.get('/admin',base_url='https://clutchtape.com')
         self.assertEqual(r.headers['Cache-Control'],'no-store')
         self.assertIn("form-action 'self'",r.headers['Content-Security-Policy']);self.assertIn('max-age=',r.headers['Strict-Transport-Security'])
-        with web.app.test_request_context('/'):
-            self.assertIsNone(rooms.moment_url('http://[invalid/'))

@@ -48,6 +48,16 @@ def status():
     if error.get('at',0)>backup.get('at',0):alerts.append('Last backup attempt failed')
     if metrics['running'] and now-metrics['job_started_at']>300:alerts.append('Halo worker has not yielded for over five minutes')
     if metrics['pending']>=worker.MAX_PENDING:alerts.append('Halo queue is full; new lookups are being limited')
+    # 2026-10-11: the site can be up while Halo syncing has quietly stopped (expired Xbox login, API change) — visitors
+    # would just see "no new games". Alert when people are viewing pages but nobody has synced for 3 hours, or when
+    # several players fail with an authorization error.
+    try:
+        viewed=db.q1('SELECT COUNT(*) n FROM players WHERE last_view>?',now-3*3600)['n']
+        synced=db.q1("SELECT MAX(last_synced) t FROM players WHERE sync_state IN ('ready','syncing','queued')")['t'] or 0
+        if viewed and now-synced>3*3600:alerts.append('Halo sync stalled: pages viewed but no player synced in 3 hours')
+        auth=db.q1("SELECT COUNT(*) n FROM players WHERE sync_state='error' AND (sync_error LIKE '%401%' OR lower(sync_error) LIKE '%auth%' OR lower(sync_error) LIKE '%token%' OR lower(sync_error) LIKE '%unauthor%')")['n']
+        if auth>=2:alerts.append(f'Halo login problem: {auth} players failing with an authorization error')
+    except Exception:alerts.append('Sync health check failed')
     root=Path(os.getenv('BACKUP_DIR','/backups'))
     try:
         stat=os.statvfs(Path(db.DB_PATH).parent)

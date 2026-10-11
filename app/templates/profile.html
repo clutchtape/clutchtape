@@ -112,7 +112,7 @@
   {% if onair %}<span class="oa-live"><i></i>LIVE</span> <b>Watch the stream</b>{% elif tw %}<b>Stream &amp; clips</b>{% else %}<b>Clips</b>{% endif %}
   <span class="muted">{% set nclip = (clips|length if clips else 0) + (d.moments|length if d.moments else 0) %}{% if tw %}{{ 'live now' if onair else 'latest broadcast' }} · {% endif %}{{ nclip }} clip{{ '' if nclip == 1 else 's' }}</span></summary>
 {{ media_block }}</details>{% endif %}
-<div class="sumview">{% include "_hub_kpis.html" %}{{ gamelog_block }}</div>{% if raw %}{% include "_raw.html" %}{% endif %}
+<div class="sumview">{% include "_hub_kpis.html" %}{{ gamelog_block }}</div>{% if raw %}{% include "_raw.html" %}{% elif raw_lazy %}{# 2026-10-11: the raw table is ~2/3 of the page; heat.js fetches it (?raw=1) when Raw is chosen #}<section class="panel rawlog" id="raw" data-lazy><p class="muted">Loading every stat for this session…</p></section>{% endif %}
 {% else %}
 <div class="cols {{ 'stats-layout' if not tw else 'video-layout' }}"><div class="colmain">
 {{ player_block|safe }}
