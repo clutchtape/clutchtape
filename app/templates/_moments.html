@@ -1,8 +1,8 @@
 {# Auto clips: timestamps only. With a Twitch link each one jumps the embedded player to that second. #}
 {% if d.moments %}
 <section class="panel clipsec" id="clips">
-  <div class="ph"><h2>Auto clips</h2>
-    <span class="muted">Best plays from the match films, on the stream. Click ▶ to watch.</span></div>
+  <div class="ph"><h2>{{ 'Clips from this session' if tab == 'latest' else 'Auto clips' }}</h2>
+    <span class="muted">{% if tab == 'latest' %}Best plays from this session's games, on the stream. Click ▶ to watch.{% else %}Best plays from the match films, on the stream. Click ▶ to watch.{% endif %}</span>{% if tab == 'latest' and d.moments_all is defined and d.moments_all > d.moments|length %}<a class="allclips" href="{{ tab_url('clips') }}">All clips →</a>{% endif %}</div>
   <div class="moments">{% for m in d.moments %}
     <div class="mo">
       <span class="sc" title="Highlight score">{{ m.score }}</span>
@@ -15,6 +15,7 @@
     </div>{% endfor %}</div>
   {% if d.moments|length > 6 %}<button type="button" class="clipmore" data-showall=".clipsec">Show all {{ d.moments|length }} clips</button>{% endif %}
 </section>
+{% elif tab == 'latest' and tw and d.moments_all is defined and d.moments_all %}<section class="panel clipsec clipsec-empty" id="clips"><div class="ph"><h2>Clips from this session</h2><span class="muted">No auto clips from this session's games yet.</span><a class="allclips" href="{{ tab_url('clips') }}">All clips →</a></div></section>
 {% elif d.clips_pending and tw %}
 <section class="panel"><div class="ph"><h2>Auto clips</h2><span class="muted">Finding the best plays in your newest games… refresh in a minute.</span></div></section>
 {% endif %}

@@ -107,7 +107,7 @@
 {% endif %}
 {% if not d.together and not pending %}<div class="alert">No games found where these players were on the same team yet.</div>{% endif %}
 </div><aside class="colside">{% if onair and tw %}{% include "_onair.html" %}{% endif %}{% include "_chat.html" %}
-{% set d2 = {'moments': d.moments, 'clips_pending': d.clips_pending, 'squad': true} %}
+{% set d2 = {'moments': d.moments, 'clips_pending': d.clips_pending, 'squad': true, 'moments_all': d.moments_all if d.moments_all is defined else 0} %}
 {% with d = d2 %}{% include "_moments.html" %}{% endwith %}
 </aside></div>
 {% endset %}
@@ -153,7 +153,7 @@
 {% endif %}
 {% if not d.together and not pending %}<div class="alert">No games found where these players were on the same team yet.</div>{% endif %}
 </div><aside class="colside">{% if onair and tw %}{% include "_onair.html" %}{% endif %}{% include "_chat.html" %}
-{% set d2 = {'moments': d.moments, 'clips_pending': d.clips_pending, 'squad': true} %}
+{% set d2 = {'moments': d.moments, 'clips_pending': d.clips_pending, 'squad': true, 'moments_all': d.moments_all if d.moments_all is defined else 0} %}
 {% with d = d2 %}{% include "_moments.html" %}{% endwith %}
 </aside></div>
 {% endif %}

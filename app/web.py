@@ -8,6 +8,7 @@ import hashlib
 import os
 import re
 import secrets
+import calendar
 import json
 import time
 from datetime import datetime, timezone
@@ -587,12 +588,16 @@ def squad(slugs, short=False, code=None, game=None):
                 worker.enqueue_film(m["p"]["id"], need)
             else:
                 _queue_vod_films(m["p"], v)
+    if _tab() == "latest" and data.get("night"):          # Latest: this session's clips only (all of them: Clips tab)
+        night_ids = {g["match_id"] for g in data["night"]}
+        data["moments_all"] = len(data["moments"])
+        data["moments"] = [mo for mo in data["moments"] if mo["match_id"] in night_ids]
     for mo in data["moments"]:
         v = vods.get(slug_of.get(mo["player_id"]))
         mo["vod"] = twitch.vod_link(v, mo["at"], mo["dur_s"], lead=0) if v else None
         if mo["vod"]:
             _tag_source(mo, v, users.get(slug_of.get(mo["player_id"])))
-    data["moments"] = [mo for mo in data["moments"] if mo["vod"]][:14]
+    data["moments"] = [mo for mo in data["moments"] if mo["vod"]][:24 if _tab() == "latest" else 60]
     gt_of = {p["id"]: p["gamertag"] for p in ps}
     for c in data["teamwork"]["good"] + data["teamwork"]["bad"]:
         c["key"] = f"{c['match_id'][:8]}-{c['t_ms']}"
@@ -932,6 +937,23 @@ def _is_current(matches):
         return False
     last = matches[0]
     return time.time() - (last["started_at"] + (last.get("duration_s") or 0)) < analytics.SESSION_GAP_S
+
+
+def _clips_during(clips, matches):
+    """Twitch clips made during a session (from 15 min before its first game to an hour after its last)."""
+    if not clips or not matches:
+        return []
+    lo = min(m["started_at"] for m in matches) - 900
+    hi = max(m["started_at"] + (m["duration_s"] or 0) for m in matches) + 3600
+    out = []
+    for c in clips:
+        try:
+            t = calendar.timegm(time.strptime(str(c.get("created"))[:19], "%Y-%m-%dT%H:%M:%S"))
+        except (TypeError, ValueError):
+            continue
+        if lo <= t <= hi:
+            out.append(c)
+    return out
 
 
 def _usual_base(matches, rows):
@@ -1362,11 +1384,20 @@ def profile(slug):
         data["clips_pending"] = data["clips_pending"] or len(need)
     elif vods:
         _queue_vod_films(p, vods)       # nothing new on the page: work through older covered games (archived nights)
+    # 2026-10-10: the Latest tab shows only this session's clips (auto clips from its games, Twitch clips made during it);
+    # every clip lives in the Clips tab
+    sel = data.get("latest_session")      # the session on show (s is set further down)
+    on_latest = _tab() == "latest" and bool(sel)
+    if on_latest:
+        sess_ids = {m["match_id"] for m in sel["matches"]}
+        data["moments_all"] = len(data["moments"])
+        data["moments"] = [mo for mo in data["moments"] if mo["match_id"] in sess_ids]
+        clips = _clips_during(clips, sel["matches"])
     for mo in data["moments"]:            # clips already carry their own lead-in: no extra offset
         mo["vod"] = twitch.vod_link(vods, mo["at"], mo["dur_s"], lead=0) if vods else None
         if mo["vod"]:
             _tag_source(mo, vods, u if tw else None)
-    data["moments"] = [mo for mo in data["moments"] if mo["vod"]][:12]     # only clips you can actually watch
+    data["moments"] = [mo for mo in data["moments"] if mo["vod"]][:24 if on_latest else 60]     # only clips you can actually watch
     psrc, plabel, pcfg = _player_src(tw, u if tw else None, vods, p["id"])
     s = data["latest_session"]
     og = {"image": request.host_url + f"og/p/{p['slug']}.png", "title": f"{p['gamertag']} — Clutchtape",

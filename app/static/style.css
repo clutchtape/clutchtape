@@ -1544,3 +1544,4 @@ html.dragging-cols iframe{pointer-events:none}   /* the chat iframe would swallo
 .memchip .ct-player-tag,.pill.ct-player-tag{background:rgba(var(--tag-rgb),.13)!important}   /* name chips keep a faint tint of the color */
 .ct-player-tag:is(td,th){border-color:var(--line)!important}
 .memchip .ct-player-tag,.pill.ct-player-tag{border-radius:999px}
+.clipsec .ph .allclips{margin-left:auto;display:inline-flex;align-items:center;min-height:40px;color:var(--acc2);font-weight:700;font-size:13px;white-space:nowrap}

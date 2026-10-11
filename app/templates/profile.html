@@ -85,7 +85,7 @@
 {% include "_moments.html" %}
 {% if not tw and tab == 'clips' %}<section class="panel"><p class="muted">Clips come from the player's Twitch stream. Look them up again with their Twitch link (home page → "+ Add Twitch") to get auto clips here.</p></section>{% endif %}
 {% if tw and clips %}
-<section class="panel twclips"><div class="ph"><h2>Clips</h2><span class="muted">Click to play in the player above.</span></div>
+<section class="panel twclips"><div class="ph"><h2>{{ 'Twitch clips from this session' if tab == 'latest' else 'Clips' }}</h2><span class="muted">Click to play in the player above.</span></div>
   <div class="clipgrid">{% for c in clips %}
     <a class="clip" href="{{ c.url }}" data-clip="{{ c.id }}" target="_blank" rel="noopener"><img loading="lazy" src="{{ c.thumb }}" alt=""><span>{{ c.title }}</span><small>{{ c.views }} views</small></a>
   {% endfor %}</div>
@@ -96,7 +96,7 @@
 {% if tab == 'latest' %}
 {% include "_moments.html" %}
 {% if tw and clips %}
-<section class="panel twclips"><div class="ph"><h2>Clips</h2><span class="muted">Click to play in the player above.</span></div>
+<section class="panel twclips"><div class="ph"><h2>{{ 'Twitch clips from this session' if tab == 'latest' else 'Clips' }}</h2><span class="muted">Click to play in the player above.</span></div>
   <div class="clipgrid">{% for c in clips %}
     <a class="clip" href="{{ c.url }}" data-clip="{{ c.id }}" target="_blank" rel="noopener"><img loading="lazy" src="{{ c.thumb }}" alt=""><span>{{ c.title }}</span><small>{{ c.views }} views</small></a>
   {% endfor %}</div>
@@ -120,7 +120,7 @@
 {% include "_moments.html" %}
 {% if not tw and tab == 'clips' %}<section class="panel"><p class="muted">Clips come from the player's Twitch stream. Look them up again with their Twitch link (home page → "+ Add Twitch") to get auto clips here.</p></section>{% endif %}
 {% if tw and clips %}
-<section class="panel twclips"><div class="ph"><h2>Clips</h2><span class="muted">Click to play in the player above.</span></div>
+<section class="panel twclips"><div class="ph"><h2>{{ 'Twitch clips from this session' if tab == 'latest' else 'Clips' }}</h2><span class="muted">Click to play in the player above.</span></div>
   <div class="clipgrid">{% for c in clips %}
     <a class="clip" href="{{ c.url }}" data-clip="{{ c.id }}" target="_blank" rel="noopener"><img loading="lazy" src="{{ c.thumb }}" alt=""><span>{{ c.title }}</span><small>{{ c.views }} views</small></a>
   {% endfor %}</div>
@@ -131,7 +131,7 @@
 {% if tab == 'latest' %}
 {% include "_moments.html" %}
 {% if tw and clips %}
-<section class="panel twclips"><div class="ph"><h2>Clips</h2><span class="muted">Click to play in the player above.</span></div>
+<section class="panel twclips"><div class="ph"><h2>{{ 'Twitch clips from this session' if tab == 'latest' else 'Clips' }}</h2><span class="muted">Click to play in the player above.</span></div>
   <div class="clipgrid">{% for c in clips %}
     <a class="clip" href="{{ c.url }}" data-clip="{{ c.id }}" target="_blank" rel="noopener"><img loading="lazy" src="{{ c.thumb }}" alt=""><span>{{ c.title }}</span><small>{{ c.views }} views</small></a>
   {% endfor %}</div>
