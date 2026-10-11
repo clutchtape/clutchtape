@@ -1533,3 +1533,14 @@ html.dragging-cols iframe{pointer-events:none}   /* the chat iframe would swallo
 .sqtop{margin-bottom:14px}.sqtop .ph{margin-bottom:8px}
 .playnow .pn-vs{margin:6px 0 12px}
 .swipehint.short{position:relative;top:0}
+
+/* 2026-10-10: a picked gamertag color is subtle — the name's text only. No page glow, no header band, no tinted
+   backgrounds/borders/bars on every mention, and the site's own accent stays (player-colors.js no longer sets --acc). */
+.player-themed{background:var(--bg)}
+.player-themed .hub-head{border-left:0;padding-left:0;background:none}
+.player-themed .hub-tabs .on{color:var(--acc2);border-color:var(--acc2)}
+.ct-player-tag{background:none!important;border-color:inherit!important;box-shadow:none!important;text-decoration-color:currentColor}
+.ct-player-tag:is(td,th){box-shadow:none!important}
+.memchip .ct-player-tag,.pill.ct-player-tag{background:rgba(var(--tag-rgb),.13)!important}   /* name chips keep a faint tint of the color */
+.ct-player-tag:is(td,th){border-color:var(--line)!important}
+.memchip .ct-player-tag,.pill.ct-player-tag{border-radius:999px}
