@@ -440,3 +440,49 @@ document.addEventListener('click', function (e) {
   if (window.ResizeObserver) { var ro = new ResizeObserver(soon); ro.observe(side); ro.observe(chat); }
   setTimeout(apply, 300); apply();
 })();
+
+/* the edge between the video (or the Stats-only board) and the right side: drag it to make the video bigger or
+   smaller (or, in Stats only, the board vs chat + live stats). Live: ctMainW = the video column's width, read by
+   watchframe.js. Stats only: --sow = the right side's width. Double-click: back to the automatic fit. Remembered per
+   device (localStorage ct-mainw / ct-sow). */
+(function () {
+  var cols = document.querySelector('.cols.video-layout'), side = cols && cols.querySelector('.colside'), player = document.getElementById('player');
+  if (!cols || !side || !player || !player.classList.contains('is-live')) return;
+  var html = document.documentElement;
+  function get(k) { try { return +localStorage.getItem(k) || 0; } catch (e) { return 0; } }
+  function put(k, v) { try { if (v) localStorage.setItem(k, String(Math.round(v))); else localStorage.removeItem(k); } catch (e) {} }
+  window.ctMainW = get('ct-mainw');
+  function sow(v) { if (v) { html.style.setProperty('--sow', Math.round(v) + 'px'); html.classList.add('has-sow'); } else { html.style.removeProperty('--sow'); html.classList.remove('has-sow'); } }
+  sow(get('ct-sow'));
+  var h = document.createElement('div'); h.className = 'mainsplit'; h.setAttribute('role', 'separator'); h.setAttribute('aria-orientation', 'vertical'); h.tabIndex = 0;
+  h.title = 'Drag to make the video bigger or smaller · double-click for the automatic size'; h.innerHTML = '<i></i>'; h.hidden = true; cols.appendChild(h);
+  function so() { return html.classList.contains('statsonly'); }
+  function active() { return innerWidth >= 1200 && side.getClientRects().length && (so() || player.getClientRects().length); }
+  function place() {
+    if (!active()) { h.hidden = true; return; }
+    var cr = cols.getBoundingClientRect(), sr = side.getBoundingClientRect(), gap = parseFloat(getComputedStyle(cols).columnGap) || 16;
+    h.hidden = false; h.style.left = (sr.left - cr.left - gap / 2 - 6) + 'px'; h.style.top = '0px'; h.style.height = Math.max(sr.height, player.offsetHeight || 0, cols.offsetHeight) + 'px';
+    h.title = so() ? 'Drag to resize the stats board and the side · double-click to reset' : 'Drag to make the video bigger or smaller · double-click for the automatic size';
+  }
+  function setAt(x) {   /* x = the boundary's position inside .cols */
+    var cr = cols.getBoundingClientRect(), gap = parseFloat(getComputedStyle(cols).columnGap) || 16;
+    if (so()) { var w = Math.max(320, Math.min(cr.width - 420, cr.width - x - gap / 2)); sow(w); }
+    else { window.ctMainW = Math.max(480, Math.min(cr.width - 300 - gap, x - gap / 2)); }
+    window.dispatchEvent(new Event('resize')); if (window.ctSideFit) window.ctSideFit();
+  }
+  var drag = false;
+  h.addEventListener('pointerdown', function (e) { drag = true; h.setPointerCapture(e.pointerId); html.classList.add('dragging-cols'); e.preventDefault(); });
+  h.addEventListener('pointermove', function (e) { if (!drag) return; setAt(e.clientX - cols.getBoundingClientRect().left); place(); });
+  function end() { if (!drag) return; drag = false; html.classList.remove('dragging-cols');
+    if (so()) put('ct-sow', parseFloat(getComputedStyle(html).getPropertyValue('--sow'))); else put('ct-mainw', window.ctMainW); }
+  h.addEventListener('pointerup', end); h.addEventListener('pointercancel', end);
+  h.addEventListener('dblclick', function () { if (so()) { sow(0); put('ct-sow', 0); } else { window.ctMainW = 0; put('ct-mainw', 0); }
+    window.dispatchEvent(new Event('resize')); if (window.ctSideFit) window.ctSideFit(); setTimeout(place, 50); });
+  h.addEventListener('keydown', function (e) { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault();
+    var x = side.getBoundingClientRect().left - cols.getBoundingClientRect().left + (e.key === 'ArrowRight' ? 40 : -40);
+    setAt(x); place(); end.call(null, drag = true); });
+  var q = false; function soon() { if (!q) { q = true; requestAnimationFrame(function () { q = false; place(); }); } }
+  addEventListener('resize', soon); new MutationObserver(soon).observe(html, { attributes: true, attributeFilter: ['class'] });
+  if (window.ResizeObserver) { var ro = new ResizeObserver(soon); ro.observe(side); ro.observe(player); ro.observe(cols); }
+  window.dispatchEvent(new Event('resize')); setTimeout(place, 300);
+})();

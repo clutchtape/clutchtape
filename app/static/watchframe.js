@@ -24,6 +24,13 @@ const vs=live&&innerWidth>=1200?document.getElementById('livevs'):null,below=vs&
 const docTop=player.getBoundingClientRect().top+scrollY,fromTop=viewport-docTop-10-below,fromAnchor=viewport-anchor-10-below;
 let avail=live&&fromTop>=want*0.5?fromTop:fromAnchor;   /* not live: the section opens on demand and the page scrolls to it */
 /* the table always stays in frame with the video (2026-10-10): the video gives way instead */
+/* 2026-10-10: the viewer dragged the video's edge (heat.js .mainsplit, ctMainW = the video column's width): that width
+   wins, the height follows at 16:9 even if the table then sits below the screen; the right side keeps >= 300px
+   (>= 580 with chat beside the stats). Double-click on the handle gives the automatic fit back. */
+let mw=0;if(two&&+window.ctMainW>0){const sideMin=document.documentElement.classList.contains('lay-chat-beside')||document.querySelector('.colside.side2')?580:300;
+  mw=Math.round(Math.max(480,Math.min(+window.ctMainW,cols.clientWidth-sideMin-gap)));}
+if(mw){player.style.setProperty('--watch-height',Math.round((mw-padX)*ar)+26+lmH+'px');player.style.setProperty('--timeline-height',tl+'px');
+  cols.style.setProperty('grid-template-columns',mw+'px minmax(300px,1fr)','important');player.style.scrollMarginTop=anchor+'px';return;}
 player.style.setProperty('--watch-height',Math.min(want,Math.max(260,avail))+'px');
 player.style.setProperty('--timeline-height',tl+'px');
 /* live, two columns: the left column is exactly as wide as the 16:9 video at that height (no black bars beside it);

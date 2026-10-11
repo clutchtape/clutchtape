@@ -1523,3 +1523,10 @@ html.statsonly.lay-sochat:not(.lay-chat-hidden) #twchat{display:flex!important}
 .colsplit:hover i,.colsplit:focus-visible i,html.dragging-cols .colsplit i{background:var(--acc2);height:72px}
 html.dragging-cols,html.dragging-cols *{cursor:col-resize!important;user-select:none}
 html.dragging-cols iframe{pointer-events:none}   /* the chat iframe would swallow the drag */
+/* video | right side handle (heat.js .mainsplit) */
+.cols.video-layout{position:relative}
+.mainsplit{position:absolute;z-index:6;width:12px;display:flex;align-items:flex-start;justify-content:center;padding-top:120px;cursor:col-resize;touch-action:none;user-select:none}
+.mainsplit[hidden]{display:none}
+.mainsplit i{width:4px;height:60px;border-radius:999px;background:rgba(255,255,255,.16);transition:background .15s,height .15s;position:sticky;top:45vh}
+.mainsplit:hover i,.mainsplit:focus-visible i,html.dragging-cols .mainsplit i{background:var(--acc2);height:90px}
+@media(min-width:1200px){html.statsonly.has-sow:not(.x1):not(.x2):not(.x3) .cols.video-layout{grid-template-columns:minmax(0,1fr) var(--sow)!important}}   /* beats the Keep-chat layout rule */
