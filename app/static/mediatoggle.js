@@ -12,7 +12,8 @@
     if (hh && getComputedStyle(hh).position === 'sticky') h += hh.getBoundingClientRect().height;
     document.documentElement.style.setProperty('--hdr', h + 'px'); return h; }
   hdr(); window.addEventListener('resize', hdr);
-  d.open = d.classList.contains('live');
+  /* live channels start open, and so does a link to a moment in a broadcast (?vod=…, 2026-10-11) */
+  d.open = d.classList.contains('live') || new URLSearchParams(location.search).has('vod');
   function opened() {
     if(d.getBoundingClientRect().top<hdr()-1)d.scrollIntoView({block:'start',behavior:'instant'});
     if(window.CTInitSide)window.CTInitSide();

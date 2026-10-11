@@ -512,3 +512,11 @@ document.addEventListener('click', function (e) {
   new MutationObserver(soon).observe(m, { childList: true, subtree: true });
   document.addEventListener('toggle', soon, true);
 })();
+
+/* watch guide: mark the game you started from the guide (2026-10-11) */
+document.addEventListener('click', function (e) {
+  var a = e.target.closest('#watchguide a.vod'); if (!a) return;
+  var id = a.dataset.g || (a.closest('[data-g]') || {}).dataset && a.closest('[data-g]').dataset.g;
+  [].forEach.call(document.querySelectorAll('#watchguide .wg-g.on'), function (x) { x.classList.remove('on'); });
+  var row = id && document.querySelector('#watchguide .wg-g[data-g="' + id + '"]'); if (row) row.classList.add('on');
+});

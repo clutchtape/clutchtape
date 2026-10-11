@@ -18,6 +18,7 @@ from flask import Response, g, Flask, abort, jsonify, redirect, render_template,
 from werkzeug.exceptions import HTTPException
 import analytics
 import raw_view
+import watch_guide
 import player_table
 import capacity
 import privacy
@@ -1409,7 +1410,13 @@ def profile(slug):
     comparison = session_review.comparison(data['sessions'], data['s_idx'], 'recent' if request.args.get('compare') == 'recent' else 'previous')
     tab = _tab()
     extra = _hub_board(p["slug"]) if tab == "analysis" else {}
-    return render_template("profile.html", session_picks=session_watch.for_sessions(data["sessions"], [p["id"] for p in [p] + alts], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(s["matches"] if s else [], [p["id"]] + [a["id"] for a in alts]) if tab == "latest" else {}, tab=tab, onair=onair, alts=alts, kpis=_kpis(s["matches"]) if s else [], adv=_adv_kpis({p["gamertag"]: s["matches"]}) if s else [], sess_agg=analytics._agg(s["matches"]) if s else None, brk=_breakdown(s["matches"], data["rows"]) if s and tab == "latest" else None, pt=_solo_table(s["matches"], data["rows"], "This session" if data["s_idx"] == 0 and _is_current(s["matches"]) else fmt_dt(s["start"], "%a %b %-d")) if s and tab == "latest" else None, sess_current=bool(s) and data["s_idx"] == 0 and _is_current(s["matches"]), sb=_live_board(s["matches"] if s and data["s_idx"] == 0 and _is_current(s["matches"]) else [], usual=_usual_of(s["matches"], data["rows"]) if s else None) if tab == "latest" else None, raw=raw_view.build(s["matches"]) if s and tab == "latest" else None, periods=_periods({p["gamertag"]: data["rows"]}, solo=True) if tab == "records" else None, **extra, comparison=comparison, recap_matches=session_review.recap_matches(s['matches'] if s else []), recap_names=[p['gamertag']], pcfg=pcfg, vm=vm, og=og, p=p, d=data, clips=clips, vods=vods, tw=tw, psrc=psrc, plabel=plabel,
+    # 2026-10-11: watching a past broadcast (Latest, stream linked, not live): the side column is a watch guide for the
+    # session (games with ▶, which are worth watching) instead of clips; clips and the session table go under the video
+    guide = guide_usual = None
+    if _tab() == "latest" and tw and not onair and s:
+        guide_usual = _usual_of(s["matches"], data["rows"])
+        guide = watch_guide.build(s["matches"], {r["match_id"]: r for r in data["rows"]}, guide_usual, data["moments"])
+    return render_template("profile.html", guide=guide, guide_usual=guide_usual, session_picks=session_watch.for_sessions(data["sessions"], [p["id"] for p in [p] + alts], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(s["matches"] if s else [], [p["id"]] + [a["id"] for a in alts]) if tab == "latest" else {}, tab=tab, onair=onair, alts=alts, kpis=_kpis(s["matches"]) if s else [], adv=_adv_kpis({p["gamertag"]: s["matches"]}) if s else [], sess_agg=analytics._agg(s["matches"]) if s else None, brk=_breakdown(s["matches"], data["rows"]) if s and tab == "latest" else None, pt=_solo_table(s["matches"], data["rows"], "This session" if data["s_idx"] == 0 and _is_current(s["matches"]) else fmt_dt(s["start"], "%a %b %-d")) if s and tab == "latest" else None, sess_current=bool(s) and data["s_idx"] == 0 and _is_current(s["matches"]), sb=_live_board(s["matches"] if s and data["s_idx"] == 0 and _is_current(s["matches"]) else [], usual=_usual_of(s["matches"], data["rows"]) if s else None) if tab == "latest" else None, raw=raw_view.build(s["matches"]) if s and tab == "latest" else None, periods=_periods({p["gamertag"]: data["rows"]}, solo=True) if tab == "records" else None, **extra, comparison=comparison, recap_matches=session_review.recap_matches(s['matches'] if s else []), recap_names=[p['gamertag']], pcfg=pcfg, vm=vm, og=og, p=p, d=data, clips=clips, vods=vods, tw=tw, psrc=psrc, plabel=plabel,
                            host=request.host.split(":")[0])
 
 

@@ -148,3 +148,26 @@ class VsUsualBarTests(unittest.TestCase):
         import time,analytics
         self.assertTrue(analytics._fresh(time.time()-3*86400))
         self.assertFalse(analytics._fresh(time.time()-9*86400))
+
+
+class WatchGuideTests(unittest.TestCase):
+    """2026-10-11: the watch guide tags the games worth watching (best clip, close finish, well above usual)."""
+    def test_picks_and_reasons(self):
+        import watch_guide, analytics
+        from test_companion import row
+        g1=dict(row('g1',1000,kills=10,deaths=10),outcome='Win',team_score=50,enemy_score=20,map='Recharge',mode='Slayer')
+        g2=dict(row('g2',2000,kills=30,deaths=6),outcome='Win',team_score=50,enemy_score=48,map='Streets',mode='Slayer')
+        g3=dict(row('g3',3000,kills=8,deaths=12),outcome='Loss',team_score=30,enemy_score=50,map='Live Fire',mode='Slayer')
+        usual=analytics._agg([row(f'u{i}',i,kills=12,deaths=11) for i in range(6)])
+        mo=[{'match_id':'g3','label':'Triple Kill · No Scope · 4-kill run','score':90,'vod':'https://www.twitch.tv/videos/1?t=0h1m0s'}]
+        vod={'g1':{'vod':'https://www.twitch.tv/videos/1?t=0h0m10s'},'g2':{'vod':'https://www.twitch.tv/videos/1?t=0h0m30s'},'g3':{'vod':None}}
+        g=watch_guide.build([g3,g1,g2],vod,usual,mo)
+        self.assertEqual([x['n'] for x in g['games']],[1,2,3]); self.assertEqual(g['record'],'2-1')
+        by={x['match_id']:x for x in g['games']}
+        self.assertTrue(by['g2']['pick']); self.assertTrue(any('usual' in w or 'Close' in w for w in by['g2']['why']))
+        self.assertTrue(by['g3']['pick']); self.assertIn('Triple Kill',by['g3']['why'][0])
+        self.assertEqual(by['g1']['pick'],0)
+        import web
+        with web.app.test_request_context('/p/x'):
+            html=web.render_template('_watch_guide.html',guide=g,guide_usual=usual)
+        self.assertIn('Worth watching',html); self.assertIn('wg-play',html); self.assertIn('Best play',html)

@@ -30,6 +30,7 @@
   <div class="elog inplayer" id="elog"></div>
 </section>
 {% with squad_view = False %}{% include "_live_vs.html" %}{% endwith %}
+{% if guide and pt %}<section class="panel vodvs" id="vodvs">{% with pt_head = ('This session vs usual' if sess_current else 'Session vs usual'), pt_tip = 'green = better than usual, red = worse' %}{% include "_player_table.html" %}{% endwith %}</section>{% endif %}
 {% endif %}
 {% endset %}
 {% if tab == 'analysis' %}
@@ -81,6 +82,7 @@
 {{ player_block|safe }}
 {% if tab == 'latest' %}
 {% if tw %}<div class="tracker-quiet">{% include "_live.html" %}</div>{% endif %}
+{% if guide %}{% include "_moments.html" %}{% include "_twclips.html" %}{% endif %}
 {% else %}{# Clips tab with a Twitch link: the clip lists sit to the right of the video (colside), like Latest #}
 {% if not (tw and tab == 'clips') %}{% include "_moments.html" %}{% endif %}
 {% if not tw and tab == 'clips' %}<section class="panel"><p class="muted">Clips come from the player's Twitch stream. Look them up again with their Twitch link (home page → "+ Add Twitch") to get auto clips here.</p></section>{% endif %}
@@ -93,7 +95,7 @@
 {% endif %}
 {% endif %}
 </div><aside class="colside">{% if onair and tw %}{% include "_onair.html" %}{% endif %}{% include "_chat.html" %}
-{% if tab == 'latest' or (tw and tab == 'clips') %}
+{% if guide %}{% include "_watch_guide.html" %}{% elif tab == 'latest' or (tw and tab == 'clips') %}
 {% include "_moments.html" %}
 {% if tw and clips %}
 <section class="panel twclips"><div class="ph"><h2>{{ 'Twitch clips from this session' if tab == 'latest' else 'Clips' }}</h2><span class="muted">Click to play in the player above.</span></div>
@@ -116,6 +118,7 @@
 {{ player_block|safe }}
 {% if tab == 'latest' %}
 {% if tw %}<div class="tracker-quiet">{% include "_live.html" %}</div>{% endif %}
+{% if guide %}{% include "_moments.html" %}{% include "_twclips.html" %}{% endif %}
 {% else %}{# Clips tab with a Twitch link: the clip lists sit to the right of the video (colside), like Latest #}
 {% if not (tw and tab == 'clips') %}{% include "_moments.html" %}{% endif %}
 {% if not tw and tab == 'clips' %}<section class="panel"><p class="muted">Clips come from the player's Twitch stream. Look them up again with their Twitch link (home page → "+ Add Twitch") to get auto clips here.</p></section>{% endif %}
@@ -128,7 +131,7 @@
 {% endif %}
 {% endif %}
 </div><aside class="colside">{% if onair and tw %}{% include "_onair.html" %}{% endif %}{% include "_chat.html" %}
-{% if tab == 'latest' or (tw and tab == 'clips') %}
+{% if guide %}{% include "_watch_guide.html" %}{% elif tab == 'latest' or (tw and tab == 'clips') %}
 {% include "_moments.html" %}
 {% if tw and clips %}
 <section class="panel twclips"><div class="ph"><h2>{{ 'Twitch clips from this session' if tab == 'latest' else 'Clips' }}</h2><span class="muted">Click to play in the player above.</span></div>

@@ -1,0 +1,17 @@
+{# Watch guide (2026-10-11, watch_guide.build): beside a past broadcast, the session's games with a ▶ each (plays in the
+   player above via the page's a.vod handler) and which ones are worth watching. Numbers tinted vs the player's usual
+   like the live box. Needs guide, d.usual_u (usual _agg) or none. #}
+{% macro hv(v, u, lo=False) %}{% if v is not none and u is not none and u != 0 %}{% set dd = (v - u) / (u|abs) %}{% if lo %}{% set dd = -dd %}{% endif %}{{ 'h-ex' if dd > 0.15 else 'h-good' if dd > 0.03 else 'h-poor' if dd < -0.15 else 'h-below' if dd < -0.03 else '' }}{% endif %}{% endmacro %}
+{% set u = guide_usual %}
+<section class="panel wg" id="watchguide" aria-label="Watch guide">
+  <div class="ph"><h2>Watch guide</h2><span class="muted">{{ guide.games|length }} game{{ '' if guide.games|length == 1 else 's' }} · {{ guide.record }}</span></div>
+  {% if guide.picks %}<div class="wg-picks"><span class="lab">Worth watching</span>
+    {% for g in guide.picks %}<a class="wg-pick vod" href="{{ g.best.vod if g.best else g.vod }}" data-g="{{ g.match_id }}" title="{{ g.why|join(' · ') }}"><b>🔥 {{ g.map or 'Game ' ~ g.n }}</b><small>{{ g.why[0] }}</small></a>{% endfor %}</div>{% endif %}
+  <ol class="wg-list">{% for g in guide.games|reverse %}
+    <li class="wg-g {{ g.outcome|lower }}{{ ' pick' if g.pick }}" data-g="{{ g.match_id }}">
+      <div class="wg-top"><span class="wg-n">{{ g.n }}</span><b class="res {{ g.outcome|lower }}">{{ g.outcome }}</b><span class="wg-map">{{ g.map or '?' }}</span><span class="wg-mode">{{ g.mode or '' }}</span>{% if g.score %}<span class="wg-score">{{ g.score }}</span>{% endif %}
+        {% if g.vod %}<a class="vod wg-play" href="{{ g.vod }}" title="Watch this game from the start">▶</a>{% else %}<span class="wg-play off" title="No recording covers this game">–</span>{% endif %}</div>
+      <div class="wg-nums"><b class="wg-kda3">{{ g.k }}/{{ g.d }}/{{ g.a }}</b><span class="{{ hv(g.kda, u.kda if u else none) }}"><b>{{ g.kda|kda if g.kda is not none else '—' }}</b> KDA</span>{% if g.dmg_pm is not none %}<span class="{{ hv(g.dmg_pm, u.dmg_pm if u else none) }}"><b>{{ g.dmg_pm }}</b> /min</span>{% endif %}{% if g.sc_pct is not none %}<span class="{{ hv(g.sc_pct, u.sc_pct if u else none) }}"><b>{{ g.sc_pct }}%</b> SC</span>{% endif %}{% if g.csr_d is not none %}<span class="{{ 'pos' if g.csr_d > 0 else 'neg' if g.csr_d < 0 }}"><b>{{ '{:+}'.format(g.csr_d) }}</b> CSR</span>{% endif %}</div>
+      {% if g.why or g.best %}<div class="wg-why">{% if g.pick %}<span class="wg-tag">🔥 Worth watching</span>{% endif %}{% for w in g.why %}<span>{{ w }}</span>{% endfor %}{% if g.best %}<a class="vod wg-clip" href="{{ g.best.vod }}" title="Jump to the best play">▶ Best play</a>{% endif %}</div>{% endif %}
+    </li>{% endfor %}</ol>
+</section>

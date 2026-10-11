@@ -1580,3 +1580,32 @@ html.dragging-cols iframe{pointer-events:none}   /* the chat iframe would swallo
    timeline on phones); the bar keeps room below for it */
 .elog .etl .et-picks{top:calc(100% + 6px);bottom:auto;left:auto;right:0;max-width:62%;height:28px;font-size:11.5px}
 .elog .etl:has(.et-picks:not([disabled])),.elog .etl:has(.et-picks){margin-bottom:40px!important}
+/* watch guide (_watch_guide.html): beside a past broadcast, the session's games with ▶ and which are worth watching */
+.wg .ph{margin-bottom:8px}
+.wg-picks{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.wg-picks .lab{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.wg-pick{display:flex;align-items:baseline;gap:8px;min-height:40px;padding:8px 12px;border-radius:12px;border:1px solid rgba(255,150,60,.45);background:linear-gradient(90deg,rgba(255,140,50,.16),rgba(255,140,50,.04));color:var(--ink);text-decoration:none;transition:transform .15s,border-color .15s}
+.wg-pick:hover{transform:translateX(2px);border-color:var(--acc2)}.wg-pick b{font-size:13.5px;white-space:nowrap}.wg-pick small{color:var(--mute);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wg-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.wg-g{padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);border-left:3px solid var(--line)}
+.wg-g.win{border-left-color:var(--win)}.wg-g.loss{border-left-color:var(--loss)}
+.wg-g.pick{border-color:rgba(255,150,60,.5);border-left-color:var(--acc2);background:linear-gradient(90deg,rgba(255,140,50,.10),var(--panel2) 60%)}
+.wg-g.on{outline:2px solid #9146ff;outline-offset:1px}
+.wg-top{display:flex;align-items:center;gap:6px;min-width:0}
+.wg-n{color:var(--mute);font-size:11px;width:16px;text-align:right;flex:none}.wg-top .res{font-size:11px;text-transform:uppercase;letter-spacing:.05em;flex:none}
+.wg-map{font-weight:800;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.wg-mode{color:var(--mute);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.wg-score{color:var(--mute);font-size:12px;font-variant-numeric:tabular-nums;margin-left:auto;flex:none}
+.wg-play{flex:none;display:inline-grid;place-items:center;width:40px;height:40px;border-radius:999px;border:1px solid #9146ff;background:rgba(145,70,255,.22);color:#fff;font-size:14px;text-decoration:none}
+.wg-play:hover{background:rgba(145,70,255,.45)}.wg-play.off{border-color:var(--line);background:none;color:var(--mute)}
+.wg-nums{display:flex;flex-wrap:wrap;gap:4px 10px;margin:2px 0 0 22px;font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums}
+.wg-nums b{color:var(--ink)}.wg-nums .wg-kda3{font-size:13.5px}
+.wg-nums .h-ex b,.wg-nums .h-good b{color:#8ee6a8}.wg-nums .h-poor b,.wg-nums .h-below b{color:#f0a3a3}
+.wg-nums .pos b{color:#7ee2a0}.wg-nums .neg b{color:#f0a3a3}
+.wg-why{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;margin:6px 0 0 22px}
+.wg-why span{padding:1px 8px;border-radius:999px;border:1px solid var(--line);font-size:11px;color:var(--ink)}
+.wg-why .wg-tag{border-color:var(--acc2);color:var(--acc2);font-weight:800}
+.wg-clip{display:inline-flex;align-items:center;min-height:32px;padding:0 10px;border-radius:999px;border:1px solid #9146ff;color:#d9c6ff;font-size:12px;font-weight:700;text-decoration:none}
+.vodvs{margin-top:12px}
+.vodvs{padding:8px 10px}.vodvs table.ptable{margin:0}.vodvs table.ptable th:first-child{color:var(--acc2);font-size:11.5px;text-transform:none;font-weight:800}
+/* phones/tablets (one column): video, then the session table, the watch guide, then clips */
+@media(max-width:1199px){.cols #vodvs{order:2!important}.cols #watchguide{order:3!important}.cols .clipsec{order:4!important}.cols .twclips{order:5!important}}
