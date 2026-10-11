@@ -1498,3 +1498,7 @@ body:has(.errpage)>.foot{flex:none;width:100%;box-sizing:border-box}
 /* Stats only: the clips row sits last on the page (heat.js), after the game log and medals */
 main>.liveclips.at-end{order:30;margin-top:18px}
 @media(max-width:1199px){html.statsonly .cols #statsboard{order:1}}   /* phones/tablets: the stats board takes the video's spot, above the live box */
+/* color picker: grouped palette (player_colors.GROUPS) */
+.color-group{margin:10px 0}.color-group h3{margin:0 0 6px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.color-group .color-presets{gap:6px}.color-group .color-presets button{width:40px;height:40px}
+.color-presets button:hover{transform:scale(1.12)}.color-presets button{transition:transform .12s}

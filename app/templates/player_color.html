@@ -10,7 +10,8 @@
   <form id="player-color-form" data-slug="{{ p.slug }}" data-name="{{ p.gamertag }}">
     <p id="color-status" role="status"></p><noscript>Color customization needs JavaScript and stays on this device.</noscript>
     <div class="color-fields"><label for="tag-color">Pick a color<input id="tag-color" type="color" value="{{ color }}"></label><label for="tag-color-hex">Hex color<input id="tag-color-hex" value="{{ color }}" pattern="#[0-9a-fA-F]{6}" maxlength="7" required spellcheck="false"></label></div>
-    <div class="color-presets" aria-label="Color presets">{% for c in presets %}<button type="button" data-color="{{ c }}" style="--swatch:{{ c }}" aria-label="Use color {{ c }}"></button>{% endfor %}</div>
+    <div class="color-group" id="recent-colors" hidden><h3>Recent</h3><div class="color-presets"></div></div>
+    {% for name, cs in groups %}<div class="color-group"><h3>{{ name }}</h3><div class="color-presets" aria-label="{{ name }} colors">{% for c, label in cs %}<button type="button" data-color="{{ c }}" style="--swatch:{{ c }}" title="{{ label ~ ' · ' if label }}{{ c }}" aria-label="Use {{ label or 'color' }} {{ c }}"></button>{% endfor %}</div></div>{% endfor %}
     <div class="color-preview"><span>Preview</span><h2>{{ p.gamertag }}</h2><p>Names and profile accents as you see them</p></div>
     <div class="color-actions"><button type="submit" name="action" value="save">Save on this browser</button><button type="submit" name="action" value="reset" class="secondary" formnovalidate>Restore default</button></div>
     <p class="fine">Dark colors are lightened for readable name text.</p>
