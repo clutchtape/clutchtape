@@ -1299,6 +1299,14 @@ def _onair(groups, stream, channel):
             ph = ",".join("?" * len(ids))
             r = db.q1(f"SELECT COUNT(*) AS n, SUM(playlist IS NULL) AS cu FROM matches WHERE player_id IN ({ph})", *ids)
             x["customs_hidden"] = bool(r and r["n"] >= 50 and not r["cu"])
+    # 2026-10-11: a member whose Xbox match history is private gets a card that says so (not "waiting for the first
+    # game", which would never come), listed after the members with stats.
+    for (main, ids), x in zip(groups, per):
+        try:
+            x["private"] = main["sync_state"] == "private" and not x["games"]
+        except (KeyError, IndexError):
+            x["private"] = False
+    per.sort(key=lambda x: x["private"])
     up = int(now - start)
     span = max([up] + [g["t"] + g["dur"] for x in per for g in x["strip"]] + [60])
     lo = min([0] + [g["t"] for x in per for g in x["strip"]])

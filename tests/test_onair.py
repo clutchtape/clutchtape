@@ -52,6 +52,18 @@ class OnAir(unittest.TestCase):
             self.assertIn('In custom games?',web.render_template('_onair.html',onair=o))
         self.conn.execute("UPDATE matches SET playlist=NULL WHERE match_id=(SELECT MIN(match_id) FROM matches)")   # one custom on record
         self.assertFalse(web._onair(self.g(),{'started':time.time()-40*60,'halo':True},'pro')['per'][0]['customs_hidden'])
+    def test_private_member_card_says_private_and_sorts_last(self):
+        # 2026-10-11: a squad member with private Xbox history gets a "private" card after members with stats
+        self.conn.execute("INSERT INTO players(id,xuid,gamertag,slug,created_at,sync_state) VALUES(3,'3','Hidden','hidden',0,'private')")
+        self.add(20*60)
+        hid=self.conn.execute("SELECT * FROM players WHERE id=3").fetchone()
+        o=web._onair([(hid,[3])]+self.g(),{'started':time.time()-30*60,'halo':True,'title':'t','game':'Halo Infinite','viewers':3},'pro')
+        self.assertEqual([x['p']['gamertag'] for x in o['per']],[self.player['gamertag'],'Hidden'])
+        self.assertEqual([x['private'] for x in o['per']],[False,True])
+        with web.app.test_request_context('/p/pro'):
+            h=web.render_template('_onair.html',onair=o)
+        self.assertIn('match history is private',h)
+        self.assertNotIn('waiting for the first game',h)
     def test_no_games_yet_shows_usual_and_last_session(self):
         # 2026-10-10: before the first game of a stream the card carries the usual numbers and the last session
         for d in range(4): self.add(2*86400+d*900, 'Win' if d else 'Loss')          # last session: 4 games, 3-1
