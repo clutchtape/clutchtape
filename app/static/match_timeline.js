@@ -16,7 +16,6 @@
   M.roster.forEach(function (p) { if (!(p.n in teamOf)) { teamOf[p.n] = p.t; info[p.n] = p; } });
   var lanes = M.roster.filter(function (p, i, a) { return a.findIndex(function (q) { return q.n === p.n; }) === i; });
   var my = M.team, events = [], durMs = Math.max(1, (M.dur || 0) * 1000);
-  var R = { t: 0, speed: 20, run: false, started: false }, phX = null, phLine = null;   /* replay (2026-10-11, below) */
 
   function el(tag, attrs, parent) { var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
   function clock(ms) { var s = Math.max(0, Math.round(ms / 1000)); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); }
@@ -116,7 +115,6 @@
     if (atS > 0) { var ax = x(atS * 1000); el('rect', { x: ax - 2, y: raceY, width: 26, height: H - AX - raceY, class: 'at-band' }, svg);
       var al = el('text', { x: Math.min(ax + 4, L + CW - 80), y: H - AX - 6, class: 'at-lab' }, svg); al.textContent = '▶ this play · ' + clock(atS * 1000); }
     var cross = el('line', { x1: 0, x2: 0, y1: raceY, y2: H - AX, class: 'cross', visibility: 'hidden' }, svg);
-    phX = x; phLine = el('line', { x1: 0, x2: 0, y1: raceY, y2: H - AX, class: 'playhead', visibility: R.started ? 'visible' : 'hidden' }, svg); if (R.started) head();
     var tip = document.createElement('div'); tip.className = 'mtl-tip'; tip.hidden = true; root.appendChild(tip);
     var hit = el('rect', { x: L, y: 0, width: CW, height: H - AX, fill: 'transparent', class: 'hit' }, svg);
     function at(evt) { var r = svg.getBoundingClientRect(), px = (evt.touches ? evt.touches[0].clientX : evt.clientX) - r.left; return Math.max(0, Math.min(durMs, (px - L) / CW * durMs)); }
@@ -134,82 +132,15 @@
     function hide() { cross.setAttribute('visibility', 'hidden'); tip.hidden = true; }
     hit.addEventListener('mousemove', show); hit.addEventListener('mouseleave', hide); hit.addEventListener('touchstart', show, { passive: true });
     hit.addEventListener('click', function (evt) {
-      if (R.started) seek(at(evt));          /* replaying: jump the replay there too */
       var t = document.getElementById('recap-time'); if (!t) return; t.value = Math.round(at(evt) / 1000); t.dispatchEvent(new Event('input'));
       var list = document.getElementById('recap-events'); if (list) list.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
   }
 
-  /* ---- Replay (2026-10-11): ▶ plays the game back fast. The header score counts up (kills — for Slayer-style games
-     that IS the score; other modes show a running kill count under the final score) and each big play pops up beside
-     it: left for your team, right for theirs. Click the timeline to jump; scrolled away, the score docks at the top. */
-  var hsc = document.querySelector('.mhero .mh-score'), nums = hsc ? hsc.querySelectorAll('.sc b') : [], orig = [].map.call(nums, function (b) { return b.dataset.v != null ? b.dataset.v : b.textContent; });   /* data-v: the real final (the count-up animation may be mid-way) */
-  var ctl, bug, kA = 0, kB = 0, done = 0, raf = 0, last = 0, docked = false, slayer = false, lastObj = {};
-  function mineKill(e) { return teamOf[e[2]] === my; }
-  function scoreTo(ms) { kA = 0; kB = 0; done = 0;
-    events.forEach(function (e, i) { if (e[1] <= ms) { done = i + 1; if (e[0] === 'k' && e[2] in teamOf && (teamOf[e[2]] === 0 || teamOf[e[2]] === 1)) { if (mineKill(e)) kA++; else kB++; } } }); }
-  function paint(bump) {
-    var txt = [String(kA), String(kB)];
-    if (slayer) [].forEach.call(nums, function (b, i) { if (b.textContent !== txt[i]) { b.textContent = txt[i]; if (bump) b.animate([{ transform: 'scale(1.35)' }, { transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.2,.9,.3,1.4)' }); } });
-    var run = hsc && hsc.querySelector('.mh-run'); if (run) run.textContent = clock(R.t) + (slayer ? '' : ' · kills ' + kA + '–' + kB);
-    if (bug) { bug.querySelector('.sb-a').textContent = kA; bug.querySelector('.sb-b').textContent = kB; bug.querySelector('.sb-t').textContent = clock(R.t) + (slayer ? '' : ' · kills'); }
-  }
-  function head() { if (!phLine || !phX) return; var px = phX(R.t); phLine.setAttribute('x1', px); phLine.setAttribute('x2', px); phLine.setAttribute('visibility', 'visible'); }
-  function pop(e) {
-    var mine = mineKill(e), host = docked && bug ? bug : hsc; if (!host) return;
-    var box = host.querySelector('.mh-pops.' + (mine ? 'l' : 'r')); if (!box) return;
-    var d = document.createElement('div'); d.className = 'mh-pop ' + tcls(teamOf[e[2]]) + (big(e[3] || '') >= 10 ? ' huge' : '');
-    d.innerHTML = '<b>' + esc(e[0] === 'o' ? 'Objective' : e[3]) + '</b><span>' + esc(e[2] || '') + '</span>';
-    box.prepend(d); while (box.children.length > 3) box.lastChild.remove();
-    setTimeout(function () { d.classList.add('out'); setTimeout(function () { d.remove(); }, 400); }, 2600);
-  }
-  function step(ts) {
-    if (!R.run) return; var dt = Math.min(250, ts - (last || ts)); last = ts; var to = Math.min(durMs, R.t + dt * R.speed), bump = false;
-    while (done < events.length && events[done][1] <= to) { var e = events[done++];
-      if (e[0] === 'k' && e[2] in teamOf && (teamOf[e[2]] === 0 || teamOf[e[2]] === 1)) { if (mineKill(e)) kA++; else kB++; bump = true; }
-      if (e[0] === 'm' && big(e[3])) pop(e);
-      else if (e[0] === 'o' && e[2] in teamOf && !(e[1] - (lastObj[e[2]] || -1e9) < 15000)) { lastObj[e[2]] = e[1]; pop(e); }   /* Oddball/KOTH log objective plays constantly: one per player per 15 s */
-      else if (e[0] === 'o') lastObj[e[2]] = e[1]; }
-    R.t = to; paint(bump); head();
-    if (R.t >= durMs) { finish(); return; } raf = requestAnimationFrame(step); }
-  function play() { if (R.t >= durMs) { R.t = 0; scoreTo(0); } R.run = true; R.started = true; last = 0; hsc && hsc.classList.add('replaying'); if (bug) bug.hidden = !docked; setCtl(); paint(false); head(); raf = requestAnimationFrame(step); }
-  function pause() { R.run = false; cancelAnimationFrame(raf); setCtl(); }
-  function seek(ms) { R.t = ms; scoreTo(ms); lastObj = {}; paint(false); head(); }
-  function finish() { R.run = false; [].forEach.call(nums, function (b, i) { b.textContent = orig[i]; b.animate([{ transform: 'scale(1.4)' }, { transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.2,.9,.3,1.4)' }); });
-    var run = hsc && hsc.querySelector('.mh-run'); if (run) run.textContent = 'Final';
-    if (bug && slayer) { bug.querySelector('.sb-a').textContent = orig[0]; bug.querySelector('.sb-b').textContent = orig[1]; bug.querySelector('.sb-t').textContent = 'Final'; } setCtl(); }
-  function stop() { pause(); R.started = false; R.t = 0; [].forEach.call(nums, function (b, i) { b.textContent = orig[i]; });
-    if (hsc) { hsc.classList.remove('replaying'); [].forEach.call(hsc.querySelectorAll('.mh-pop'), function (n) { n.remove(); }); }
-    if (phLine) phLine.setAttribute('visibility', 'hidden'); if (bug) bug.hidden = true; setCtl(); }
-  function setCtl() { if (!ctl) return; var b = ctl.querySelector('.rp-go'); b.textContent = R.run ? '❚❚ Pause' : R.started && R.t < durMs ? '▶ Resume' : R.started ? '↺ Replay again' : '▶ Replay the game';
-    ctl.querySelector('.rp-stop').hidden = !R.started; }
-  function setup() {
-    if (!hsc || !nums.length || !events.length) return;
-    var fa = parseInt(orig[0], 10), fb = parseInt(orig[1], 10), ka = 0, kb = 0;
-    events.forEach(function (e) { if (e[0] === 'k' && e[2] in teamOf && (teamOf[e[2]] === 0 || teamOf[e[2]] === 1)) { if (mineKill(e)) ka++; else kb++; } });
-    var eb = document.querySelector('.mhero .eyebrow');
-    /* the score is (about) the kill count: count it up in the header; betrayals/suicides can shift the official score a
-       little, so the real final always lands at the end */
-    slayer = (fa === ka && fb === kb) || (!!eb && /Slayer/i.test(eb.textContent) && Math.abs(fa - ka) <= 6 && Math.abs(fb - kb) <= 6);
-    ['l', 'r'].forEach(function (s) { var d = document.createElement('div'); d.className = 'mh-pops ' + s; d.setAttribute('aria-live', 'polite'); hsc.appendChild(d); });
-    var run = document.createElement('small'); run.className = 'mh-run'; hsc.appendChild(run);
-    ctl = document.createElement('div'); ctl.className = 'mtl-replay';
-    ctl.innerHTML = '<button type="button" class="rp-go"></button><label>Speed <select class="rp-speed"><option value="10">×10</option><option value="20" selected>×20</option><option value="40">×40</option></select></label><button type="button" class="rp-stop">✕ Stop</button>';
-    var ph = document.querySelector('#timeline .ph'); if (ph) ph.appendChild(ctl);
-    ctl.querySelector('.rp-go').onclick = function () { if (R.run) pause(); else play(); };
-    ctl.querySelector('.rp-stop').onclick = stop;
-    ctl.querySelector('.rp-speed').onchange = function () { R.speed = +this.value; };
-    bug = document.createElement('div'); bug.className = 'mh-bug'; bug.hidden = true;
-    bug.innerHTML = '<div class="mh-pops l"></div><b class="sb-a ' + tcls(my) + '"></b><span class="sb-t"></span><b class="sb-b ' + tcls(my === 1 ? 0 : 1) + '"></b><div class="mh-pops r"></div>';
-    document.body.appendChild(bug);
-    if (window.IntersectionObserver) new IntersectionObserver(function (es) { docked = !es[0].isIntersecting; bug.hidden = !(docked && R.started); }, { rootMargin: '-60px 0px 0px 0px' }).observe(hsc);
-    setCtl();
-  }
-
   fetch('/api/match/' + M.mid + '/events').then(function (r) { return r.ok ? r.json() : { e: [] }; }).then(function (d) {
     events = d.e || [];
     var last = events.reduce(function (m, e) { return Math.max(m, e[1]); }, 0); if (last > durMs) durMs = last;
-    render(); setup();
+    render();
     var rz; window.addEventListener('resize', function () { clearTimeout(rz); rz = setTimeout(render, 150); });
   }).catch(function () { root.innerHTML = '<p class="muted">Could not load the film timeline. Try again in a minute.</p>'; });
 })();
