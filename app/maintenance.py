@@ -13,6 +13,25 @@ INTERVAL=6*3600
 _lock=threading.Lock()
 
 
+def offsite(snapshot_path):
+    """2026-10-11: one gzip copy a day of a verified snapshot into OFFSITE_DIR (a folder your offsite job uploads),
+    e.g. an encrypted rclone/Google Drive sync. Keeps the newest 3 (~100 MB a day uploaded instead
+    of every 6-hourly 340 MB snapshot)."""
+    out=os.getenv('OFFSITE_DIR')
+    if not out:return None
+    root=Path(out);root.mkdir(parents=True,exist_ok=True,mode=0o700)
+    day=time.strftime('%Y%m%d',time.gmtime())
+    target=root/f'clutchtape-{day}.sqlite.gz'
+    if target.exists():return None
+    import gzip,shutil
+    temp=target.with_suffix('.partial')
+    with open(snapshot_path,'rb') as src,gzip.open(temp,'wb',compresslevel=6) as dst:shutil.copyfileobj(src,dst,1024*1024)
+    os.chmod(temp,0o600);os.replace(temp,target)
+    for old in sorted(root.glob('clutchtape-????????.sqlite.gz'),reverse=True)[3:]:old.unlink()
+    db.kv_set('ops:offsite',dict(at=time.time(),file=target.name,bytes=target.stat().st_size))
+    return target
+
+
 def snapshot(directory=None):
     """SQLite's backup API captures committed WAL content without stopping the app."""
     root=Path(directory or os.getenv('BACKUP_DIR','/backups'))
@@ -32,6 +51,8 @@ def snapshot(directory=None):
             db.kv_set('ops:backup',dict(at=time.time(),ok=True,bytes=target.stat().st_size))
             # Delete only our own verified snapshot names, and only after a successful replacement.
             for old in sorted(root.glob('clutchtape-????????-??????.sqlite'),reverse=True)[28:]:old.unlink()
+            try:offsite(target)
+            except Exception:log.exception('Offsite copy failed')   # never fails the local snapshot
             return target
         except Exception:
             temp.unlink(missing_ok=True)

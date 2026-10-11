@@ -1,7 +1,7 @@
 """One-time ownership migration for only Clutchtape data directories."""
 import os
 from pathlib import Path
-for root in map(Path,('/db','/data','/backups')):
+for root in map(Path,('/db','/data','/backups')+(('/offsite',) if os.path.isdir('/offsite') else ())):   # /offsite: daily gzip copy for Google Drive (2026-10-11)
     root.mkdir(parents=True,exist_ok=True)
     for base,dirs,files in os.walk(root,followlinks=False):
         for path in [Path(base)]+[Path(base)/n for n in dirs+files]:

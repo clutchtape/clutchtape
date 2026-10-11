@@ -58,3 +58,19 @@ class SyncAlerts(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class OffsiteCopy(unittest.TestCase):
+    """2026-10-11: one gzip copy a day of a verified snapshot for the Google Drive job; newest 3 kept."""
+    def test_daily_gzip_and_prune(self):
+        import gzip, os, tempfile, maintenance
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as d:
+            snap = Path(d) / 'snap.sqlite'; snap.write_bytes(b'SQLite format 3\x00' + b'x' * 5000)
+            out = Path(d) / 'off'
+            for n in range(4): out.mkdir(exist_ok=True); (out / f'clutchtape-2026010{n}.sqlite.gz').write_bytes(b'old')
+            with patch.dict(os.environ, {'OFFSITE_DIR': str(out)}), patch.object(maintenance.db, 'kv_set'):
+                first = maintenance.offsite(snap); again = maintenance.offsite(snap)
+            self.assertIsNotNone(first); self.assertIsNone(again)                 # once a day
+            self.assertEqual(gzip.decompress(first.read_bytes()), snap.read_bytes())
+            self.assertEqual(len(list(out.glob('clutchtape-*.sqlite.gz'))), 3)      # newest 3 kept
