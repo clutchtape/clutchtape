@@ -1576,3 +1576,7 @@ html.dragging-cols iframe{pointer-events:none}   /* the chat iframe would swallo
 @media(min-width:701px){
  body:has(.hub-id.squadid) .hub-head{position:sticky;top:var(--top-h,53px);z-index:35;background:rgba(10,9,8,.9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding-top:6px;padding-bottom:6px}
 }
+/* "Choose a moment" sits just under the timeline on the right instead of over its left part (it hid half the
+   timeline on phones); the bar keeps room below for it */
+.elog .etl .et-picks{top:calc(100% + 6px);bottom:auto;left:auto;right:0;max-width:62%;height:28px;font-size:11.5px}
+.elog .etl:has(.et-picks:not([disabled])),.elog .etl:has(.et-picks){margin-bottom:40px!important}

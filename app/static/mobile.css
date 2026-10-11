@@ -128,15 +128,16 @@ body:has(>.mobile-player-surface)>.multi.focus .mgrid,body:has(>.mobile-player-s
   .multi.focus[data-mobile-views='all']:not(.nolog) .mlog{min-height:160px}
 }
 
-/* phone "Stream & clips" player (2026-10-09): edge-to-edge, true 16:9 (was squashed to ~340×138) */
+/* phone player (2026-10-09): edge-to-edge, true 16:9 (was squashed to ~340×138). Any player, not only inside the
+   Stream & clips fold: the Clips tab's player sits outside it and was squashed to 2.4:1 (2026-10-11). */
 @media(max-width:700px){
-  #mediasec #player:not(:fullscreen){height:auto!important;min-height:0!important;display:block;margin:0 -12px;padding:6px 0 8px;border-radius:0;border-left:0;border-right:0;overflow:visible}
-  #mediasec #player:not(:fullscreen) .embed{width:100%!important;height:auto!important;aspect-ratio:16/9!important;max-height:none!important;min-height:0!important;flex:none!important;border-radius:0;border-left:0;border-right:0}
-  #mediasec #player .ph{padding:0 12px;margin-bottom:6px;min-height:36px;flex-wrap:nowrap}
-  #mediasec #player .ph h2{font-size:14px}#mediasec #player #playerlabel{font-size:11px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  #mediasec #player .ph button{min-height:36px;padding:0 10px;font-size:12px}
-  #mediasec #player .elog.inplayer{margin:8px 12px 0;height:auto!important;max-height:none!important}
-  #mediasec #player .mobile-playback-note{padding:4px 12px 0}
+  body #player:not(:fullscreen){height:auto!important;min-height:0!important;display:block;margin:0 -12px;padding:6px 0 8px;border-radius:0;border-left:0;border-right:0;overflow:visible}
+  body #player:not(:fullscreen) .embed{width:100%!important;height:auto!important;aspect-ratio:16/9!important;max-height:none!important;min-height:0!important;flex:none!important;border-radius:0;border-left:0;border-right:0}
+  body #player .ph{padding:0 12px;margin-bottom:6px;min-height:36px;flex-wrap:nowrap}
+  body #player .ph h2{font-size:14px}body #player #playerlabel{font-size:11px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  body #player .ph button{min-height:36px;padding:0 10px;font-size:12px}
+  body #player .elog.inplayer{margin:8px 12px 0;height:auto!important;max-height:none!important}
+  body #player .mobile-playback-note{padding:4px 12px 0}
 }
 
 /* ===== session totals on phones (2026-10-09, the owner): always shown, a swipeable table with the player column pinned ===== */
@@ -165,7 +166,7 @@ body:has(>.mobile-player-surface)>.multi.focus .mgrid,body:has(>.mobile-player-s
   .hub-id.squadid .memx{width:44px;height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center}
   .hub-id.squadid .addmem summary{min-height:44px}
   .hub-actions .pill,.hub-actions .share,.hub-actions button{min-height:44px!important}
-  main button:not(.multi button):not(.etl button),main select:not(.multi select),main summary:not(.multi summary){min-height:44px}
+  main button:not(.multi button):not(.etl button),main select:not(.multi select):not(.etl select),main summary:not(.multi summary){min-height:44px}
   main a.vod,main a.pill,.mobile-cards .mobile-identity .mobile-expand{min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center}
   .mobile-sort select{min-height:44px}
   .tr-chip,.tr-chip.ct-player-tag{min-height:44px!important}
