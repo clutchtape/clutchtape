@@ -128,7 +128,9 @@
       var near=evs.filter(function(e){return Math.abs(e[1]-ms)<=2500&&(!squadOnly||kind(e)!=='n')}).slice(0,4);
       var heading=clip?'▶ '+esc(clip.label):clock(ms)+' · '+(near.length?'What happened':'Match time');
       popup.innerHTML='<button type="button" class="et-dismiss" aria-label="Dismiss event popup">×</button><b>'+heading+'</b>'+(clip?'<small>'+esc(clip.player)+' · '+clock(clip.t)+'–'+clock(clip.t+clip.duration*1000)+'</small>':'')+(near.length?'<div>'+near.map(text).join('<br>')+'</div>':'')+'<button type="button" class="et-replay" data-ms="'+(clip?clip.t:Math.max(0,ms-LEAD))+'">▶ '+(automatic?'Replay clip':clip?'Play stretch / clip':'Play with 3s lead-in')+'</button>';
-      popup.hidden=false;clearTimeout(popupTimer);
+      /* 2026-10-12: watching every angle, the pop-up can share this exact moment (squad.html window.ctShareAt) */
+      if(window.ctShareAt&&bar.closest('#multi')){var sb=document.createElement('button');sb.type='button';sb.className='et-share';sb.dataset.ms=String(clip?clip.t:ms);sb.textContent='🔗 Share';sb.title='Copy a link to this moment, every angle';popup.appendChild(sb);}
+      popup.style.maxWidth='';popup.hidden=false;clearTimeout(popupTimer);
       var marker=clip?clipMarks.querySelector('[data-clip="'+clips.indexOf(clip)+'"]'):null;
       var br=bar.getBoundingClientRect(),mr=marker&&marker.getBoundingClientRect();
       var center=mr?mr.left+mr.width/2-br.left:Math.max(0,Math.min(1,ms/(+bar.dataset.dur||1)))*br.width;
@@ -140,9 +142,17 @@
          instead — but only where that covers no video (a covered Twitch player pauses) */
       popup.classList.remove('et-up');
       var pr=popup.getBoundingClientRect();
-      if(pr.bottom>innerHeight-6){popup.style.maxHeight='240px';var ph=Math.min(240,popup.scrollHeight),top=br.top-8-ph;
-        var hit=top<6||[].some.call(document.querySelectorAll('iframe'),function(f){var r=f.getBoundingClientRect();return r.width&&r.height&&r.left<pr.right&&r.right>pr.left&&r.top<br.top-8&&r.bottom>top;});
-        if(!hit)popup.classList.add('et-up');else popup.style.maxHeight=Math.max(60,room)+'px';}
+      if(pr.bottom>innerHeight-6){
+        /* the room above: down to the lowest video it would sit over (none: up to the top of the screen) */
+        var floor=6;[].forEach.call(document.querySelectorAll('iframe'),function(f){var r=f.getBoundingClientRect();if(r.width&&r.height&&r.left<pr.right&&r.right>pr.left&&r.bottom<=br.top)floor=Math.max(floor,r.bottom+6);});
+        var above=br.top-8-floor;
+        if(above>=56&&above>room){popup.classList.add('et-up');popup.style.maxHeight=Math.min(240,above)+'px';}
+        else{ /* videos right down to the timeline (small laptop, 4 angles): slide it sideways, past the videos, into the
+                 column beside them (the multistream stats panel) and open it above the timeline there */
+          var edge=0;[].forEach.call(document.querySelectorAll('iframe'),function(f){var r=f.getBoundingClientRect();if(r.width&&r.height&&r.bottom<=br.top&&r.bottom>br.top-260)edge=Math.max(edge,r.right);});
+          var w=Math.min(popup.offsetWidth,innerWidth-edge-14);
+          if(edge&&w>=240){popup.classList.add('et-up');popup.style.left=(edge+8-br.left)+'px';popup.style.maxWidth=w+'px';popup.style.maxHeight=Math.min(240,br.top-14)+'px';}
+          else popup.style.maxHeight=Math.max(60,room)+'px';}}
       popupTimer=setTimeout(function(){popup.hidden=true},5000);
     }
     picks.addEventListener('change',function(){if(this.value==='')return;var c=clips[+this.value];if(o.onClip)o.onClip(c.player);seekFilm(c.t+LEAD);this.value='';});
@@ -153,6 +163,7 @@
       var adjust=e.target.closest('[data-delay]');if(adjust){delay=adjust.dataset.delay==='reset'?DEFAULT_DELAY:Math.max(-30,Math.min(30,delay+Number(adjust.dataset.delay)));try{localStorage.setItem('ct-event-delay:'+currentVideo,String(delay))}catch(x){}timingLabel();if(cur)render((lastVideoTime-cur[1]-delay)*1000);e.stopPropagation();return;}
       if(e.target.closest('.et-sync-popup'))return;
       if(e.target.closest('.et-dismiss')){popup.hidden=true;e.stopPropagation();return;}
+      var share=e.target.closest('.et-share');if(share){window.ctShareAt(+share.dataset.ms/1000+delay);   /* same mapping as seekFilm: film time + the stream-delay setting */e.stopPropagation();return;}
       var replay=e.target.closest('.et-replay');if(replay){if(popupClip&&o.onClip)o.onClip(popupClip.player);seekFilm(+replay.dataset.ms+LEAD);popup.hidden=true;e.stopPropagation();return;}
       if(e.target.closest('.et-popup'))return;
       var clipButton=e.target.closest('[data-clip]');if(clipButton){var c=clips[+clipButton.dataset.clip];if(o.onClip)o.onClip(c.player);seekFilm(c.t+LEAD);popup.hidden=true;return;}

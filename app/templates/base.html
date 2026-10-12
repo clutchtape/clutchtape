@@ -17,7 +17,7 @@
   <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
   <link rel="manifest" href="/static/manifest.webmanifest">
   <meta property="og:image" content="{{ og.image if og and og.image else request.host_url ~ 'og/home.png?v=1' }}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:type" content="website"><meta name="twitter:card" content="summary_large_image">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=246">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=247">
   <script nonce="{{ csp_nonce }}">try{if(localStorage.getItem('ct-view')==='raw')document.documentElement.classList.add('rawview')}catch(e){}try{if(localStorage.getItem('ct-statsonly')==='1')document.documentElement.classList.add('statsonly')}catch(e){}try{if(localStorage.getItem('ct-lvall')==='1')document.documentElement.classList.add('lvall')}catch(e){}try{var L=JSON.parse(localStorage.getItem('ct-layout')||'{}'),H=document.documentElement.classList;if(L.chat&&L.chat!=='auto')H.add('lay-chat-'+L.chat);if(L.side==='right')H.add('lay-chat-right');if(L.vs===false)H.add('lay-novs');if(L.sochat)H.add('lay-sochat');if(L.stats===false)H.add('lay-stats-hidden')}catch(e){}try{var A=JSON.parse(localStorage.getItem('ct-sections')||'null');if(A&&A.order){H.add('lay-sec');A.order.forEach(function(k,i){document.documentElement.style.setProperty('--o-'+k,i+1)});(A.hidden||[]).forEach(function(k){H.add('hide-'+k)})}}catch(e){}</script>
   {# page transitions (2026-10-10, style.css "page transitions"): runs before the new page's first paint. Adds the
      transition types (page + the slide direction motion.js stored on click) and names the element that morphs:

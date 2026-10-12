@@ -171,7 +171,7 @@
 <script nonce="{{ csp_nonce }}" src="/static/archiveplayer.js?v=3"></script>
 <script nonce="{{ csp_nonce }}" src="/static/clipsaver.js?v=2"></script>
 <script nonce="{{ csp_nonce }}">if(!window.ClutchSave||!ClutchSave.supported)document.documentElement.classList.add("nosave")</script>
-<script nonce="{{ csp_nonce }}" src="/static/eventlog.js?v=28"></script><script nonce="{{ csp_nonce }}" src="/static/multistats.js?v=2"></script>
+<script nonce="{{ csp_nonce }}" src="/static/eventlog.js?v=31"></script><script nonce="{{ csp_nonce }}" src="/static/multistats.js?v=2"></script>
 <script nonce="{{ csp_nonce }}">window.CT_SQ={{ {'base': sq_base, 'game': open_game, 'tw': chans, 'order': ps|map(attribute='slug')|list}|tojson }};window.CT_VM={{ vm|tojson }};window.CT_NAMES={{ ps|map(attribute="gamertag")|list|tojson }};</script>
 <script nonce="{{ csp_nonce }}">window.addEventListener('load',function(){var sp=new URLSearchParams(location.search);if(sp.get('tab')==='bad'){var t0=document.querySelector('#teamwork .tab[data-tab="bad"]');if(t0)t0.click()}var k=sp.get('watch');if(!k)return;
  var b=document.querySelector('button.watch[data-key="'+k+'"]');var row=b&&b.closest('.mo')||document.querySelector('[data-link$="watch='+k+'"]');
@@ -519,8 +519,12 @@ multi.addEventListener('click',function(e){var b=e.target.closest('[data-skip]')
 q('mpause').onclick=function(){clearTimeout(mobileReplaceTimer);mobileLoadVersion++;playbackPaused=true;seekIntent=null;clearInterval(seekRetry);q('mstart').hidden=true;players.forEach(function(p,i){if(playerState[i])playerState[i].commandAt=Date.now();p.pause()})};
 q('msync').onclick=function(){if(!players.length)return;var i=referenceIdx;try{seekAllSeconds(players[i].getCurrentTime(),mlist[i].video)}catch(e){}};
 q('mclose').onclick=function(){close()};
-q('mlink').onclick=function(){var u=new URL(gameUrl(curRow)||location.pathname,location.origin),i=multi.classList.contains('focus')?focusIdx:bigIdx;
-  var at=0;try{at=Math.max(0,Math.floor(playerTime(i)-targets[i]))}catch(e){}u.searchParams.set('at',String(at));if(mlist[i])u.searchParams.set('angle',mlist[i].who);u.hash=twHash();
+/* a link to one moment of this game, every angle (Share moment = where the videos are; the timeline pop-up's 🔗 Share = that
+   point of the game, 3 s early for context) */
+window.ctShareAt=function(sec){shareMoment(Math.max(0,Math.floor(sec)-3))};
+q('mlink').onclick=function(){var i=multi.classList.contains('focus')?focusIdx:bigIdx,at=0;try{at=Math.max(0,Math.floor(playerTime(i)-targets[i]))}catch(e){}shareMoment(at)};
+function shareMoment(at){var u=new URL(gameUrl(curRow)||location.pathname,location.origin),i=multi.classList.contains('focus')?focusIdx:bigIdx;
+  u.searchParams.set('at',String(at));if(mlist[i])u.searchParams.set('angle',mlist[i].who);u.hash=twHash();
   
   if(navigator.share&&matchMedia('(pointer:coarse)').matches){navigator.share({title:'ClutchTape · '+(mlist[i]?.who||'Squad moment'),url:u.href}).catch(function(){});return}
   (navigator.clipboard?navigator.clipboard.writeText(u.href):Promise.reject()).then(function(){toast('Moment link copied')},function(){window.prompt('Copy this link',u.href)})};
