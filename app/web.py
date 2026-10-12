@@ -1013,7 +1013,29 @@ def _live_board(games, ps=None, usual=None, usual_by=None):
         cards.append({"match_id": g["match_id"], "outcome": (g.get("outcome") or ref.get("outcome") or ""), "map": analytics.clean_map(g.get("map") or ref.get("map")),
                       "mode": analytics.clean_mode(g.get("mode") or ref.get("mode")), "t": g["started_at"], "lines": lines,
                       "score": f"{round(ref['team_score'])}–{round(ref['enemy_score'])}" if ref.get("team_score") is not None and ref.get("enemy_score") is not None else None})
-    return {"a": a, "cards": cards, "u": usual}     # u: tiles and game numbers are tinted against it (player page)
+    # 2026-10-11: chart data, oldest game first — one series per player (squad) or one for the player page
+    order = sorted(games, key=lambda g: g["started_at"])
+    who = [(p["id"], p["gamertag"], dict(p).get("slug")) for p in ps] if ps else [(None, None, None)]
+    series = []
+    for pid, name, slug in who:
+        vals, run = {"csr": [], "kda": [], "dmg_pm": [], "sc_pct": []}, 0
+        for g in order:
+            r = g["members"].get(pid) if ps else g
+            if r and r.get("csr_d") is not None:
+                run += r["csr_d"]
+            vals["csr"].append(run if r else None)
+            for k in ("kda", "dmg_pm", "sc_pct"):
+                v = r.get(k) if r else None
+                vals[k].append(round(v, 2) if isinstance(v, float) else v)
+        series.append({"who": name, "slug": slug, "v": vals})
+    chart = {"games": [{"id": g["match_id"], "o": (g.get("outcome") or (next(iter(g["members"].values())) if ps else g).get("outcome") or ""),
+                        "map": analytics.clean_map(g.get("map") or (next(iter(g["members"].values())) if ps else g).get("map")),
+                        "mode": analytics.clean_mode(g.get("mode") or (next(iter(g["members"].values())) if ps else g).get("mode")),
+                        "t": g["started_at"]} for g in order], "series": series}
+    for c in cards:                                   # the game list: one line each, the best player of the game up front
+        best = max((l for l in c["lines"] if l.get("sc_pct") is not None), key=lambda l: l["sc_pct"], default=None)
+        c["best"] = best if ps else (c["lines"][0] if c["lines"] else None)
+    return {"a": a, "cards": cards, "u": usual, "chart": chart}     # u: tiles and game numbers are tinted against it (player page)
 
 
 def _solo_table(matches, rows, label="This session"):
