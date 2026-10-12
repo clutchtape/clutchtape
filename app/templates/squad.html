@@ -167,7 +167,7 @@
 <script nonce="{{ csp_nonce }}" src="https://player.twitch.tv/js/embed/v1.js"></script>
 <script nonce="{{ csp_nonce }}" src="/static/twitch-shim.js?v=2"></script>
 <script nonce="{{ csp_nonce }}" src="/static/mobile-embed.js?v=8"></script>
-<script nonce="{{ csp_nonce }}" src="/static/livemulti.js?v=4"></script>
+<script nonce="{{ csp_nonce }}" src="/static/livemulti.js?v=5"></script>
 <script nonce="{{ csp_nonce }}" src="/static/archiveplayer.js?v=3"></script>
 <script nonce="{{ csp_nonce }}" src="/static/clipsaver.js?v=2"></script>
 <script nonce="{{ csp_nonce }}">if(!window.ClutchSave||!ClutchSave.supported)document.documentElement.classList.add("nosave")</script>
@@ -272,6 +272,7 @@ function makePlayer(i,sec){var holder=q('mv'+i);if(!holder)return;var old=player
   var Plain=multi.classList.contains('focus')&&window.ClutchMobileEmbed&&ClutchMobileEmbed.Player;st.plain=!!Plain;
   var p=new (Plain||Twitch.Player)(id,{video:mlist[i].video,time:fmtT(sec),parent:[host],autoplay:!playbackPaused&&activeAngle(i),muted:true,width:'100%',height:'100%'});
   players[i]=p;window.__mp=players;
+  if(!Plain&&i===bigIdx&&window.ctAutoSound)window.ctAutoSound(p);   /* the main angle with sound, desktop (heat.js) */
   // Preserve the SDK call and return value; record only our commands, separately
   // from provider events, so a device-only stop can be attributed correctly.
   ['play','pause','seek','setMuted'].forEach(function(method){var original=p[method];p[method]=function(){st.commands.push({command:method,args:Array.from(arguments),after:Math.round((Date.now()-st.createdAt)/100)/10});if(st.commands.length>24)st.commands.shift();return original.apply(p,arguments)}});
@@ -563,6 +564,7 @@ function ensurePlayer(){
   if(window.CT_SIDE)window.CT_SIDE.player=player;
   function hush(){var fold=document.getElementById('mediasec');if(fold&&!fold.open){try{player.pause()}catch(e){}}}
   player.addEventListener(Twitch.Player.PLAYING,hush);player.addEventListener(Twitch.Player.READY,hush);
+  if(!document.getElementById('lmbar')&&window.ctAutoSound)window.ctAutoSound(player);   /* sound on, desktop (heat.js) */
   return player;
 }
 window.CTInitSide=function(){if(document.documentElement.classList.contains('statsonly'))return;return ensurePlayer()};   /* stats-only live mode: no player at all */

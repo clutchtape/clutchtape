@@ -173,6 +173,7 @@ function ensurePlayer(){
   if(window.CT_SIDE)window.CT_SIDE.player=player;
   function hush(){var fold=document.getElementById('mediasec');if(fold&&!fold.open){try{player.pause()}catch(e){}}}
   player.addEventListener(Twitch.Player.PLAYING,hush);player.addEventListener(Twitch.Player.READY,hush);
+  if(!document.getElementById('lmbar')&&window.ctAutoSound)window.ctAutoSound(player);   /* sound on, desktop (heat.js) */
   return player;
 }
 window.CTInitSide=function(){if(document.documentElement.classList.contains('statsonly'))return;return ensurePlayer()};   /* stats-only live mode: no player at all */

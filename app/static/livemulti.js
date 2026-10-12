@@ -47,6 +47,7 @@
   function make() {
     if (made || html.classList.contains('statsonly') || !window.__sp) return;
     made = true; players[0] = window.__sp;
+    setTimeout(function () { if (window.ctAutoSound && players[aud]) window.ctAutoSound(players[aud]); }, 0);   /* the Sound pick with sound, desktop */
     streams.forEach(function (s, i) {
       if (!i || !s.channel) return;
       players[i] = new Twitch.Player('lmp' + i, { parent: [location.hostname], channel: s.channel, autoplay: true, muted: true, width: '100%', height: '100%' });

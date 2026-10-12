@@ -596,3 +596,20 @@ document.addEventListener('click', function (e) {
   t.querySelector('[data-tipclose]').addEventListener('click', done);
   glowed.forEach(function (el) { el.addEventListener('click', done, { once: true }); });
 })();
+
+/* Sound on (2026-10-12, like MultiTwitch's sync page): every Twitch player starts muted (the only way browsers let it
+   autoplay); once the chosen one is actually playing, desktop unmutes it ~0.8 s later. If the browser answers by
+   pausing it (no recent click on the site), it goes back to muted and plays on. Phones keep muted autoplay: unmuting
+   there without a tap pauses the video, so the player's own unmute button is the way. */
+window.ctAutoSound = function (p) {
+  if (!p || p.__ctSound || window.innerWidth <= 700 || !window.Twitch || !Twitch.Player) return;
+  p.__ctSound = true;
+  /* wait until it has played steadily for ~1 s (multistream seeks/aligns its angles right after they start) */
+  var n = 0, steady = 0, iv = setInterval(function () {
+    n++; var ok = false; try { ok = !p.isPaused() && p.getCurrentTime() > 0; } catch (e) {}
+    steady = ok ? steady + 1 : 0;
+    if (steady >= 3 || n > 50) { clearInterval(iv); if (steady < 3) return;
+      try { p.setMuted(false); if (!(p.getVolume() >= .3)) p.setVolume(.6); } catch (e) {}
+      setTimeout(function () { try { if (p.isPaused()) { p.setMuted(true); p.play(); } } catch (e) {} }, 1500); }
+  }, 400);
+};
