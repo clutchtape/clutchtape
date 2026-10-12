@@ -1036,7 +1036,9 @@ def _live_board(games, ps=None, usual=None, usual_by=None):
     chart = {"games": [{"id": g["match_id"], "o": (g.get("outcome") or (next(iter(g["members"].values())) if ps else g).get("outcome") or ""),
                         "map": analytics.clean_map(g.get("map") or (next(iter(g["members"].values())) if ps else g).get("map")),
                         "mode": analytics.clean_mode(g.get("mode") or (next(iter(g["members"].values())) if ps else g).get("mode")),
-                        "t": g["started_at"]} for g in order], "series": series}
+                        "t": g["started_at"]} for g in order], "series": series,
+             # player page: the usual numbers as dashed reference lines (squads: one combined usual means nothing per line)
+             "usual": {k: usual.get(k) for k in ("kda", "dmg_pm", "sc_pct")} if usual and not ps else None}
     for c in cards:                                   # the game list: one line each, the best player of the game up front
         best = max((l for l in c["lines"] if l.get("sc_pct") is not None), key=lambda l: l["sc_pct"], default=None)
         c["best"] = best if ps else (c["lines"][0] if c["lines"] else None)

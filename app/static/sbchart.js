@@ -32,11 +32,13 @@
     var games = ctx.games, series = ctx.series, has = ctx.has, cols = ctx.cols, names = ctx.names;
     host.innerHTML = '';
     var W = host.clientWidth || 600, phone = W < 520, labels = !mini && ctx.many && !phone && ctx.shown <= 4;
-    var L = mini ? 40 : 44, R = labels ? 92 : mini ? 10 : 14, T = mini ? 8 : 12, PH = mini ? (phone ? 92 : 104) : (phone ? 150 : 190), STRIP = mini ? 8 : 22, H = T + PH + 6 + STRIP + 2;
+    var L = mini ? 40 : 44, R = labels ? 92 : mini ? 10 : 14, T = mini ? 8 : 12, PH = ctx.strip ? 58 : mini ? (phone ? 92 : 104) : (phone ? 150 : 190), STRIP = mini ? (ctx.strip ? 6 : 8) : 22, H = T + PH + 6 + STRIP + 2;
+    var uv = ctx.usual && ctx.usual[m] != null ? +ctx.usual[m] : null;   /* player page: the usual number, dashed */
     var vals = []; series.forEach(function (s, si) { if (has[si]) (s.v[m] || []).forEach(function (v) { if (v != null) vals.push(v); }); });
     if (!vals.length) { host.innerHTML = '<p class="muted sb-chnone">No ' + NAME[m] + ' numbers for these games' + (m === 'rating' ? ' (CSR comes from ranked games)' : '') + '.</p>'; return null; }
     var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
     if (m === 'csr') { lo = Math.min(lo, 0); hi = Math.max(hi, 0); }                 /* CSR ± reads from the zero line */
+    if (uv != null) { lo = Math.min(lo, uv); hi = Math.max(hi, uv); }
     if (lo === hi) { lo -= m === 'rating' ? 10 : 1; hi += m === 'rating' ? 10 : 1; }
     var ticks = nice(lo, hi, mini || phone ? 3 : 4); lo = ticks[0]; hi = ticks[ticks.length - 1];
     var n = games.length, CW = W - L - R, x = function (i) { return n === 1 ? L + CW / 2 : L + 10 + (CW - 20) * i / (n - 1); }, y = function (v) { return T + PH - (v - lo) / (hi - lo) * PH; };
@@ -44,6 +46,8 @@
     var g = el('g', { class: 'sb-grid' }, svg);
     ticks.forEach(function (v) { el('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), class: v === 0 && m === 'csr' ? 'zero' : '' }, g);
       var tx = el('text', { x: L - 8, y: y(v) + 4, class: 'sb-tick' }, g); tx.textContent = tickTxt(m, v); });
+    if (uv != null) { el('line', { x1: L, x2: W - R, y1: y(uv), y2: y(uv), class: 'sb-usual' }, svg);
+      var ut = el('text', { x: W - R - 2, y: y(uv) - 4, class: 'sb-utxt' }, svg); ut.textContent = 'usual ' + FMT[m](uv).replace(/^\+/, ''); }
     var lines = el('g', {}, svg);
     series.forEach(function (s, si) {
       if (!has[si]) return;
@@ -75,7 +79,7 @@
 
   function draw(box) {
     var data; try { data = JSON.parse(box.dataset.chart); } catch (e) { return; }
-    var games = data.games || [], series = data.series || [], v = view(), mine = own();
+    var games = data.games || [], series = data.series || [], strip = box.classList.contains('strip'), v = strip ? 'all' : view(), mine = own();
     if (!games.length || !series.length) { box.hidden = true; return; }
     if (v !== 'all' && !NAME[v]) v = 'all';
     [].forEach.call(box.querySelectorAll('[data-metric]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.metric === v)); });
@@ -84,7 +88,7 @@
     /* a squadmate with no games this session has no line: no legend entry or tooltip row either (colours were already
        given by squad position above, so nobody's colour moves) */
     var has = series.map(function (s) { return Object.keys(s.v).some(function (k) { return (s.v[k] || []).some(function (x) { return x != null; }); }); });
-    var shown = has.filter(Boolean).length, ctx = { games: games, series: series, has: has, cols: cols, names: names, shown: shown, many: shown > 1 };
+    var shown = has.filter(Boolean).length, ctx = { games: games, series: series, has: has, cols: cols, names: names, shown: shown, many: shown > 1, strip: strip, usual: data.usual };
     var lg = box.querySelector('.sb-legend'); lg.innerHTML = ctx.many ? series.map(function (s, i) { return has[i] ? '<span><i style="background:' + cols[i] + '"></i>' + esc(names[i]) + '</span>' : ''; }).join('') : '';
     var host = box.querySelector('.sb-chart'); host.innerHTML = '';
     var plots = [];
@@ -95,6 +99,9 @@
     } else { var p0 = plot(host, v, ctx, false); if (p0) plots.push(p0); }
     /* hover / tap: crosshair on every plot + everyone's numbers for that game; click opens its row */
     var tip = document.createElement('div'); tip.className = 'sb-tip'; tip.hidden = true; host.appendChild(tip);
+    /* strip (under the live video): no floating box — it would run off the panel or over the video (Twitch pauses a
+       covered player). The hovered game's numbers take over the legend row instead: one line, no height change. */
+    var sline = null; if (strip) { sline = box.querySelector('.sb-sline') || document.createElement('div'); sline.className = 'sb-sline'; box.insertBefore(sline, host); }
     var metrics = v === 'all' ? ALL : [v];
     function show(p, evt) { var i = p.at(evt), gm = games[i]; plots.forEach(function (q) { q.cross(i); });
       var when = new Date(gm.t * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
@@ -103,11 +110,14 @@
       var rows = series.map(function (s, si) { if (!has[si]) return '';
         return '<div><i style="background:' + cols[si] + '"></i><span>' + esc(names[si]) + '</span>' + metrics.map(function (m) { var val = (s.v[m] || [])[i];
           return '<b>' + (val == null ? '—' : FMT[m](val)) + '</b>'; }).join('') + '</div>'; }).join('');
+      if (sline) { sline.innerHTML = '<b>Game ' + (i + 1) + ' · ' + esc(gm.o || '—') + '</b><small>' + esc(gm.map || '') + '</small>' + series.map(function (s, si) { if (!has[si]) return '';
+          return '<span><i style="background:' + cols[si] + '"></i>' + (ctx.many ? esc(names[si]) + ' ' : '') + metrics.map(function (m) { var val = (s.v[m] || [])[i]; return '<em title="' + NAME[m] + '">' + (val == null ? '—' : FMT[m](val)) + '</em>'; }).join(' · ') + '</span>'; }).join('');
+        sline.classList.add('on'); return; }
       tip.innerHTML = head + hdr + rows; tip.classList.toggle('wide', metrics.length > 1); tip.hidden = false;
       var hr = host.getBoundingClientRect(), sr = p.svg.getBoundingClientRect(), cx = sr.left - hr.left + p.x(i) * (sr.width / p.W);
       var tw = tip.offsetWidth, left = cx + 14; if (left + tw > host.clientWidth) left = cx - tw - 14;
       tip.style.left = Math.max(0, left) + 'px'; tip.style.top = Math.max(0, sr.top - hr.top + 4) + 'px'; }
-    function hide() { plots.forEach(function (q) { q.cross(null); }); tip.hidden = true; }
+    function hide() { plots.forEach(function (q) { q.cross(null); }); tip.hidden = true; if (sline) sline.classList.remove('on'); }
     plots.forEach(function (p) {
       p.hit.addEventListener('mousemove', function (e) { show(p, e); }); p.hit.addEventListener('mouseleave', hide);
       p.hit.addEventListener('touchstart', function (e) { show(p, e); }, { passive: true });
@@ -128,4 +138,17 @@
   new MutationObserver(function () { var now = document.documentElement.classList.contains('statsonly'); if (now !== so) { so = now; requestAnimationFrame(all); } })
     .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', all); else all();
+})();
+
+/* Chart | Table under the live video (_live_vs.html .lv-toggle), remembered per device (ct-lvview) */
+(function () {
+  var html = document.documentElement;
+  function get() { try { return localStorage.getItem('ct-lvview') || 'chart'; } catch (e) { return 'chart'; } }
+  function apply() { var v = get(); html.classList.toggle('lvtable', v === 'table');
+    [].forEach.call(document.querySelectorAll('[data-lvview]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.lvview === v)); }); }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-lvview]'); if (!b) return;
+    try { localStorage.setItem('ct-lvview', b.dataset.lvview); } catch (x) {} apply(); window.dispatchEvent(new Event('resize')); });
+  new MutationObserver(function (ms) { if (ms.some(function (m) { return [].some.call(m.addedNodes, function (n) { return n.id === 'livevs'; }); })) apply(); })
+    .observe(document.body, { childList: true, subtree: true });
+  apply();
 })();

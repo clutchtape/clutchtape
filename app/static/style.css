@@ -1708,3 +1708,20 @@ html.vid-pin #player.is-live .embed{position:fixed!important;left:0;right:0;z-in
 /* phones (2026-10-12): the live video stays at the top while the live box and stats scroll under it — sticky, so it
    never moves on its own (switching it to fixed mid-scroll made Twitch drop the stream) */
 @media(max-width:700px){#mediasec.live[open] #player.is-live:not(:fullscreen){position:sticky;top:0;z-index:65;background:var(--bg)}}
+/* the session under the live video as charts (sbchart.js strip, 2026-10-12) */
+.lv-viz{margin:0 0 2px}
+.lv-vhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 2px 2px}
+.lv-vtitle{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--acc2)}.lv-vsub{font-size:12px;color:var(--mute)}
+.lv-toggle{margin-left:auto;display:inline-flex;gap:2px;padding:2px;border-radius:999px;border:1px solid var(--line)}
+.lv-toggle button{appearance:none;border:0;background:transparent;color:var(--mute);font:inherit;font-size:12px;font-weight:700;padding:3px 11px;border-radius:999px;cursor:pointer;box-shadow:none}
+.lv-toggle button[aria-pressed=true]{background:rgba(255,255,255,.1);color:var(--ink)}
+.sb-chartbox.strip{margin:0;padding:2px 0 0;border:0;background:none}
+.sb-chartbox.strip .sb-legend{margin:0 0 2px 40px}
+.sb-chartbox.strip .sb-multi{grid-template-columns:repeat(4,minmax(0,1fr));gap:2px 12px}
+.sb-usual{stroke:rgba(255,255,255,.45);stroke-width:1.2;stroke-dasharray:4 4}.sb-utxt{fill:var(--mute);font-size:10px;text-anchor:end}
+@media(min-width:701px){#livevs.has-viz>.tablewrap{display:none}html.lvtable #livevs.has-viz>.tablewrap{display:block}html.lvtable #livevs .lv-viz .sb-chartbox{display:none}}
+@media(max-width:700px){#livevs .lv-viz{display:none}}
+.sb-chartbox.strip{position:relative}
+.sb-sline{position:absolute;left:40px;right:0;top:2px;height:20px;display:none;align-items:center;gap:14px;overflow:hidden;white-space:nowrap;background:var(--panel,#151210);font-size:12px;z-index:2}
+.sb-sline.on{display:flex}.sb-sline small{color:var(--mute)}.sb-sline span{display:inline-flex;align-items:center;gap:5px;color:var(--ink)}
+.sb-sline i{width:10px;height:3px;border-radius:2px;display:inline-block}.sb-sline em{font-style:normal;font-variant-numeric:tabular-nums}

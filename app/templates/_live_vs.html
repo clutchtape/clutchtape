@@ -6,8 +6,13 @@
    (heat.js, html.lvall, remembered) shows the rest. #}
 {% from "_pt_macros.html" import ptval %}
 {% set LVKEY = ('csr', 'csr_net', 'win_pct', 'kd', 'kda', 'kills_pg', 'deaths_pg', 'assists_pg', 'dmg_pm', 'dmg_diff_pg', 'sc_pct', 'acc', 'games') %}
-{% if onair and pt %}<section class="panel livevs" id="livevs">
+{# 2026-10-12: with 2+ games this session, desktop shows the session as small line charts (sbchart.js strip) instead of
+   the number grid; "Table" brings the grid back (remembered: ct-lvview). Phones keep the stat tiles (.lvm). #}
+{% set lvc = sb.chart if (sb is defined and sb and sb.chart and sb.chart.games|length >= 2) else none %}
+{% if onair and pt %}<section class="panel livevs{{ ' has-viz' if lvc }}" id="livevs">
   {% set vs_title %}{% if squad_view %}{{ 'Playing together now' if sess_current else 'Last session together' }}{% else %}{{ 'This session vs usual' if sess_current else 'Last session vs usual' }}{% endif %}{% endset %}
+  {% if lvc %}<div class="lv-viz"><div class="lv-vhead"><b class="lv-vtitle">{{ vs_title }}</b><span class="lv-vsub">{{ lvc.games|length }} games{% if not squad_view %} · dashed = usual{% endif %}</span><span class="lv-toggle" role="group" aria-label="Show as"><button type="button" data-lvview="chart" aria-pressed="true">Chart</button><button type="button" data-lvview="table" aria-pressed="false">Table</button></span></div>
+    <div class="sb-chartbox strip" data-chart="{{ lvc|tojson|forceescape }}"{% if not squad_view and p is defined and p %} data-solo="{{ p.gamertag }}"{% endif %}><div class="sb-legend" aria-hidden="true"></div><div class="sb-chart" role="img" aria-label="This session, game by game"></div></div></div>{% endif %}
   {# compact (no title row, the video gets the room): the title is the table's first header cell, the key in its tooltip #}
   {% with pt_head = vs_title, pt_tip = ('green = best of the squad, red = worst' if squad_view else 'green = better than usual, red = worse') ~ ('' if sess_current else ' · updates with the first game this stream') %}{% include "_player_table.html" %}{% endwith %}
   <div class="lvm">
