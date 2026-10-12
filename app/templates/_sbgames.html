@@ -1,0 +1,16 @@
+{# Stats only (2026-10-11): this session's games as one-line rows, split out of _statsboard.html so they sit UNDER the
+   session table (#livevs) — tiles + chart, then the summary table, then the games. live.js swaps it (#sbgames). #}
+{% macro hv(v, u, lo=False) %}{% if v is not none and u is not none and u != 0 %}{% set d = (v - u) / (u|abs) %}{% if lo %}{% set d = -d %}{% endif %}{{ 'h-ex' if d > 0.15 else 'h-good' if d > 0.03 else 'h-poor' if d < -0.15 else 'h-below' if d < -0.03 else 'h-avg' }}{% endif %}{% endmacro %}
+{% if onair and sb and sb.cards %}{% set u = sb.u %}<section class="panel statsboard sbgames" id="sbgames" aria-label="Games this session">
+  <div class="sb-glist" aria-label="Games this session">{% for g in sb.cards %}
+    <details class="sb-row {{ g.outcome|lower }}" data-g="{{ g.match_id }}"><summary>
+      <b class="res {{ g.outcome|lower }}">{{ g.outcome[:1] if g.outcome in ('Win', 'Loss', 'Tie') else (g.outcome or '—') }}</b>
+      <span class="sb-rmap">{{ g.map or 'Unknown map' }}{% if g.mode %} <small>{{ g.mode }}</small>{% endif %}</span>
+      <small class="sb-rmeta">{{ g.t|dt('%-I:%M %p') }}{% if g.score %} · {{ g.score }}{% endif %}</small>
+      {% if g.best %}<span class="sb-rbest">{% if g.best.who %}<i>★</i> {{ g.best.who }} {% endif %}<b>{{ g.best.k }}/{{ g.best.d }}/{{ g.best.a }}</b>{% if g.best.sc_pct is not none %} <small>{{ g.best.sc_pct }}% SC</small>{% endif %}</span>{% endif %}
+      <span class="sb-rchev" aria-hidden="true">▾</span></summary>
+      <div class="sb-rbody">{% for l in g.lines %}{% set lu = l.u if l.u else u %}<div class="sb-line">{% if l.who %}<span class="sb-who">{{ l.who }}</span>{% endif %}<b class="sb-kda3">{{ l.k }}/{{ l.d }}/{{ l.a }}</b>
+        <span class="{{ hv(l.kda, lu.kda if lu else none) }}"><b>{{ l.kda|kda if l.kda is not none else '—' }}</b> KDA</span>{% if l.dmg_pm is not none %}<span class="{{ hv(l.dmg_pm, lu.dmg_pm if lu else none) }}"><b>{{ l.dmg_pm }}</b> /min</span>{% endif %}{% if l.sc_pct is not none %}<span class="{{ hv(l.sc_pct, lu.sc_pct if lu else none) }}"><b>{{ l.sc_pct }}%</b> SC</span>{% endif %}{% if l.csr is not none %}<span class="sb-csr"><b>{{ l.csr }}</b> CSR{% if l.csr_d is not none %} <small class="{{ 'pos' if l.csr_d > 0 else 'neg' if l.csr_d < 0 }}">{{ '{:+}'.format(l.csr_d) }}</small>{% endif %}</span>{% elif l.csr_d is not none %}<span class="{{ 'pos' if l.csr_d > 0 else 'neg' if l.csr_d < 0 }}"><b>{{ '{:+}'.format(l.csr_d) }}</b> CSR</span>{% endif %}</div>{% endfor %}
+        <a class="sb-rfull" href="/match/{{ g.match_id }}{% if p is defined and p and p.slug %}?player={{ p.slug }}{% endif %}">Full game stats →</a></div>
+    </details>{% endfor %}</div>
+</section>{% endif %}

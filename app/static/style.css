@@ -1689,3 +1689,7 @@ html.statsonly.lay-sochat.lay-stats-hidden .colside{grid-template-columns:minmax
 .sb-csr small{font-weight:700}.sb-csr small.pos{color:#5fd38d}.sb-csr small.neg{color:#f17b6b}
 .sb-metrics button{box-shadow:none;white-space:nowrap}
 @media(max-width:700px){.sb-ch-head{flex-wrap:wrap}.sb-metrics{max-width:100%;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}.sb-metrics::-webkit-scrollbar{display:none}.sb-metrics button{flex:none}}
+/* games list under the session table (_sbgames.html, 2026-10-11) */
+html.statsonly #sbgames{margin-top:0}
+html.statsonly #sbgames .sb-glist{margin-top:0}
+@media(max-width:1199px){html.statsonly .cols #sbgames{order:3}}

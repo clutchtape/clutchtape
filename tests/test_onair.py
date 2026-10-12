@@ -132,7 +132,8 @@ class OnAir(unittest.TestCase):
         self.assertIsNotNone(su); self.assertIsNotNone(by[1]); self.assertIsNotNone(by[2])
         sb=web._live_board(night,ps,su,by)
         with web.app.test_request_context('/sq/x'):
-            html=web.render_template('_statsboard.html',onair={'channel':'x'},sb=sb)
+            # 2026-10-11: the per-game rows moved to _sbgames.html (under the session table) — the board is both partials
+            html=web.render_template('_statsboard.html',onair={'channel':'x'},sb=sb)+web.render_template('_sbgames.html',onair={'channel':'x'},sb=sb)
         self.assertIn('class="h-ex"',html); self.assertIn('class="h-poor"',html)     # A well above usual, B well below
     def test_offline_is_none(self):
         self.assertIsNone(web._onair(self.g(),None,'pro'))

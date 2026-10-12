@@ -29,7 +29,7 @@
   <div class="embed"><div id="tplayer"></div></div>
   <div class="elog inplayer" id="elog"></div>
 </section>
-{% with squad_view = False %}{% include "_live_vs.html" %}{% endwith %}
+{% with squad_view = False %}{% include "_live_vs.html" %}{% endwith %}{% include "_sbgames.html" %}
 {% if guide and pt %}<section class="panel vodvs" id="vodvs">{% with pt_head = ('This session vs usual' if sess_current else 'Session vs usual'), pt_tip = 'green = better than usual, red = worse' %}{% include "_player_table.html" %}{% endwith %}</section>{% endif %}
 {% endif %}
 {% endset %}

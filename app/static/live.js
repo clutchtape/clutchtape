@@ -57,7 +57,7 @@
   }
   /* New game: re-fetch this page and swap the stat sections in place; the video (and its position) is never touched. */
   var follow = {};
-  var SWAP = ['#onair', '#playnow', '#sqtable', '#statsboard', '#livevs', '.hubkpis', '.advhelp', '.gamelog', '#raw', '.brk', '#periods', '.hub-sessions', '.clipsec', '.twclips', '#teamwork', '#vodvs', '#watchguide'];
+  var SWAP = ['#onair', '#playnow', '#sqtable', '#statsboard', '#livevs', '.hubkpis', '.advhelp', '.gamelog', '#raw', '.brk', '#periods', '.hub-sessions', '.clipsec', '.twclips', '#sbgames', '#teamwork', '#vodvs', '#watchguide'];
   /* what changed gets animated: numbers roll from the old value to the new one and glow, new game rows slide in */
   var NUM = /^([^\d\-+−]{0,3})([+\-−]?)(\d[\d,]*(?:\.\d+)?)(%|s|m)?$/;
   function leaves(root) { return [].slice.call(root.querySelectorAll('b,td,span,small,strong,div')).filter(function (e) { return !e.children.length && NUM.test(e.textContent.trim()); }); }
