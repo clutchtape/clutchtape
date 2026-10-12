@@ -1345,6 +1345,15 @@ def _onair(groups, stream, channel):
             ph = ",".join("?" * len(ids))
             r = db.q1(f"SELECT COUNT(*) AS n, SUM(playlist IS NULL) AS cu FROM matches WHERE player_id IN ({ph})", *ids)
             x["customs_hidden"] = bool(r and r["n"] >= 50 and not r["cu"])
+    # 2026-10-12: what each player is doing in Halo right now (Xbox presence: matchmaking / custom game / menus); only
+    # shown when Xbox shares it (their privacy, or a friend of the site's Xbox account) — presence.py
+    try:
+        import presence
+        pres = presence.get([main["xuid"] for main, ids in groups])
+        for (main, ids), x in zip(groups, per):
+            x["presence"] = pres.get(str(main["xuid"]))
+    except Exception:
+        log.exception("presence")
     # 2026-10-11: a member whose Xbox match history is private gets a card that says so (not "waiting for the first
     # game", which would never come), listed after the members with stats.
     for (main, ids), x in zip(groups, per):

@@ -15,7 +15,7 @@
     {% if onair.halo_s %}Played Halo Infinite for {{ hm(onair.halo_s) }} earlier this stream.{% elif onair.segs|selectattr('unknown')|list %}The first {{ hm((onair.segs|selectattr('unknown')|first).to) }} of this stream happened before we tracked its categories.{% else %}No Halo Infinite yet this stream; games appear here when they switch to it.{% endif %}</p>
   {% elif onair.switched %}<p class="oa-note">Back on Halo Infinite for {{ hm(onair.now_since) }} · {{ hm(onair.halo_s) }} of Halo this stream.</p>{% endif %}
   <div class="oa-grid">{% for x in onair.per %}{% set a = x.a %}
-    <div class="oa-card{{ ' none' if not x.games }}">{% if onair.per|length > 1 %}<b class="oa-name">{{ x.p.gamertag }}</b>{% endif %}
+    <div class="oa-card{{ ' none' if not x.games }}">{% if onair.per|length > 1 %}<b class="oa-name">{{ x.p.gamertag }}</b>{% endif %}{% if x.presence %}<span class="oa-pres k-{{ x.presence.kind }}" title="Right now in Halo, from Xbox Live">{{ x.presence.label }}{% if x.presence.detail and x.presence.kind != 'custom' and x.presence.detail != x.presence.label %} · {{ x.presence.detail }}{% endif %}</span>{% endif %}
       {% if x.games %}
       <div class="oa-rec"><span class="lab">This stream</span><b>{{ a.wins }}-{{ a.losses }}</b><small>{{ x.games }} game{{ '' if x.games == 1 else 's' }}</small></div>
       <div class="oa-nums">{{ lv(a, x.usual, "kda", "KDA", "kda", keep=True) }}{{ lv(a, x.usual, "dmg_pm", "Dmg/min", keep=True) }}{{ lv(a, x.usual, "sc_pct", "Score %", "pct", keep=True) }}{% if x.csr is not none %}<span data-k="csr"><b class="{{ 'pos' if x.csr > 0 else 'neg' if x.csr < 0 }}">{{ '{:+}'.format(x.csr) }}</b>CSR</span>{% endif %}</div>
@@ -52,7 +52,7 @@
       <div class="oa-rec oa-priv"><span class="lab">This stream</span><b>🔒</b><small>match history is private</small></div>
       <p class="muted oa-wait">{{ x.p.gamertag }}'s Xbox privacy settings hide their games, so no stats show here. Their stream still plays.</p>
       {% else %}
-      <div class="oa-rec"><span class="lab">This stream</span><b>0-0</b><small>{{ 'no matchmade games yet' if x.customs_hidden else 'waiting for the first game' }}</small></div>
+      <div class="oa-rec"><span class="lab">This stream</span><b>0-0</b><small>{{ 'in a custom game' if x.presence and x.presence.kind == 'custom' else 'no matchmade games yet' if x.customs_hidden else 'waiting for the first game' }}</small></div>
       {% if x.usual %}{% set u = x.usual %}<div class="oa-usual"><span class="lab">Usual · last 90 days</span><div class="oa-nums">{% for k, l, f in [('kda', 'KDA', 'kda'), ('kd', 'K/D', ''), ('dmg_pm', 'Dmg/min', ''), ('win_pct', 'Win', 'pct'), ('sc_pct', 'Score %', 'pct'), ('acc', 'Acc', 'pct')] %}{% if u[k] is not none %}<span class="lv"><b>{{ fv(u[k], f) }}</b>{{ l }}</span>{% endif %}{% endfor %}</div></div>{% endif %}
       {% if x.prev %}<a class="oa-last oa-prev" href="/p/{{ x.p.slug }}?session={{ x.prev.first[:8] }}#latest">Last session: <b>{{ x.prev.wins }}-{{ x.prev.losses }}</b> · {{ x.prev.games }} game{{ '' if x.prev.games == 1 else 's' }}{% if x.prev.kda is not none %} · KDA {{ x.prev.kda|kda }}{% endif %} · {{ x.prev.start|dt('%a %b %-d') }} →</a>{% endif %}
       {% if x.customs_hidden %}<p class="muted oa-wait oa-cust"><b>In custom games?</b> {{ x.p.gamertag }}'s customs (scrims) aren't shared by Halo, so only matchmade games show up here.</p>

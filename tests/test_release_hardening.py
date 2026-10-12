@@ -92,3 +92,21 @@ class FinishClip(unittest.TestCase):
         evs = [self.ev('me', 'mode', 917000)]
         self.assertFalse(clips.find_moments(evs, 'me', {'duration_s': 919, 'team_score': 2, 'enemy_score': 3, 'mode': 'CTF 3 Captures'}))
         self.assertFalse(clips.find_moments(evs, 'me', {'duration_s': 600, 'team_score': 50, 'enemy_score': 20, 'mode': 'Slayer'}))
+
+
+class PresenceKinds(unittest.TestCase):
+    """2026-10-12: Halo rich-presence lines sorted into what the live box shows."""
+    def test_classify(self):
+        import presence
+        c = presence.classify
+        self.assertEqual(c('Custom Game: Slayer on Live Fire')['kind'], 'custom')
+        self.assertEqual(c('Ranked Arena: CTF on Aquarius')['kind'], 'ranked')
+        self.assertEqual(c('Quick Play: Slayer')['kind'], 'matchmaking')
+        self.assertEqual(c('Main Menu')['kind'], 'menu')
+        self.assertEqual(c('Firefight: King of the Hill')['kind'], 'firefight')
+        self.assertIsNone(c(''))
+    def test_parse_needs_halo_active(self):
+        import presence
+        e = {'devices': [{'titles': [{'name': 'Home', 'state': 'Active'}, {'name': 'Halo Infinite', 'state': 'Active', 'activity': {'richPresence': 'Custom Game'}}]}]}
+        self.assertEqual(presence._parse(e)['kind'], 'custom')
+        self.assertIsNone(presence._parse({'devices': [{'titles': [{'name': 'Online', 'state': 'Active'}]}]}))
