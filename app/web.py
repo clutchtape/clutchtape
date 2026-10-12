@@ -599,6 +599,10 @@ def squad(slugs, short=False, code=None, game=None):
                 _queue_vod_films(m["p"], v)
     if _tab() == "latest" and data.get("night"):          # Latest: this session's clips only (all of them: Clips tab)
         night_ids = {g["match_id"] for g in data["night"]}
+        # 2026-10-11: team plays too — tonight's only, picked from tonight's games (not filtered out of the 50-game best
+        # list, where they'd lose to older ones); every session's: Clips tab
+        data["teamwork_all"] = len(data["teamwork"]["good"]) + len(data["teamwork"]["bad"])
+        data["teamwork"] = analytics.team_moments([p["id"] for p in ps], data["night"])
         data["moments_all"] = len(data["moments"])
         data["moments"] = [mo for mo in data["moments"] if mo["match_id"] in night_ids]
     for mo in data["moments"]:

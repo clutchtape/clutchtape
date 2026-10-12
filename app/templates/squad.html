@@ -86,11 +86,11 @@
 <div class="tracker-quiet">{% include "_live.html" %}</div>
 {% endif %}
 {% set tw2 = d.teamwork %}
-{% if tw2.good or tw2.bad %}
+{% if tw2.good or tw2.bad or (tab == 'latest' and d.teamwork_all is defined and d.teamwork_all) %}
 <section class="panel" id="teamwork">
   <div class="ph"><h2>Teamwork</h2>
     <div class="tabs" role="tablist"><button type="button" class="tab on" data-tab="good" role="tab">Best team plays <small>{{ tw2.good|length }}</small></button><button type="button" class="tab" data-tab="bad" role="tab">Worst moments <small>{{ tw2.bad|length }}</small></button></div></div>
-  <p class="muted tnote">Found from kill/death timing in the match films.{{ ' Click Watch together to see everyone at once.' if chans|length > 1 else '' }}{% if tw2.pending %} {{ tw2.pending }} recent game{{ '' if tw2.pending == 1 else 's' }} still being analyzed.{% endif %}</p>
+  <p class="muted tnote">{% if tab == 'latest' and d.teamwork_all is defined %}This session's games only · <a href="{{ tab_url('clips') }}#teamwork">every session's team plays →</a> · {% endif %}Found from kill/death timing in the match films.{{ ' Click Watch together to see everyone at once.' if chans|length > 1 else '' }}{% if tw2.pending %} {{ tw2.pending }} recent game{{ '' if tw2.pending == 1 else 's' }} still being analyzed.{% endif %}</p>
   {% for cls, lst in [('good', tw2.good), ('bad', tw2.bad)] %}
   <div class="twlist {{ cls }}" data-list="{{ cls }}" {% if cls == 'bad' %}hidden{% endif %}>
     {% for c in lst %}<div class="mo">
@@ -132,11 +132,11 @@
 <div class="tracker-quiet">{% include "_live.html" %}</div>
 {% endif %}
 {% set tw2 = d.teamwork %}
-{% if tw2.good or tw2.bad %}
+{% if tw2.good or tw2.bad or (tab == 'latest' and d.teamwork_all is defined and d.teamwork_all) %}
 <section class="panel" id="teamwork">
   <div class="ph"><h2>Teamwork</h2>
     <div class="tabs" role="tablist"><button type="button" class="tab on" data-tab="good" role="tab">Best team plays <small>{{ tw2.good|length }}</small></button><button type="button" class="tab" data-tab="bad" role="tab">Worst moments <small>{{ tw2.bad|length }}</small></button></div></div>
-  <p class="muted tnote">Found from kill/death timing in the match films.{{ ' Click Watch together to see everyone at once.' if chans|length > 1 else '' }}{% if tw2.pending %} {{ tw2.pending }} recent game{{ '' if tw2.pending == 1 else 's' }} still being analyzed.{% endif %}</p>
+  <p class="muted tnote">{% if tab == 'latest' and d.teamwork_all is defined %}This session's games only · <a href="{{ tab_url('clips') }}#teamwork">every session's team plays →</a> · {% endif %}Found from kill/death timing in the match films.{{ ' Click Watch together to see everyone at once.' if chans|length > 1 else '' }}{% if tw2.pending %} {{ tw2.pending }} recent game{{ '' if tw2.pending == 1 else 's' }} still being analyzed.{% endif %}</p>
   {% for cls, lst in [('good', tw2.good), ('bad', tw2.bad)] %}
   <div class="twlist {{ cls }}" data-list="{{ cls }}" {% if cls == 'bad' %}hidden{% endif %}>
     {% for c in lst %}<div class="mo">

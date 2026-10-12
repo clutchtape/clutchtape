@@ -53,3 +53,29 @@ class PrivateChannels(unittest.TestCase):
 
 if __name__=='__main__':
     unittest.main()
+
+
+class SessionTeamPlays(unittest.TestCase):
+    """2026-10-11: on Latest the Teamwork plays come from the selected session's games only; Clips has every session's."""
+    def test_latest_uses_session_games(self):
+        import analytics
+        calls = []
+        real = analytics.team_moments
+        def spy(ids, games, *a, **k):
+            calls.append([g["match_id"] for g in games]); return {"good": [], "bad": [], "pending": 0}
+        self.assertTrue(callable(real))
+        conn = sqlite3.connect(':memory:', isolation_level=None, check_same_thread=False); conn.row_factory = sqlite3.Row
+        with patch.object(db, 'conn', return_value=conn):
+            db.init()
+            import time
+            for i, s in enumerate(('aa', 'bb')):
+                conn.execute("INSERT INTO players(id,xuid,gamertag,slug,created_at,sync_state) VALUES(?,?,?,?,0,'ready')", (i + 1, str(i), s.upper(), s))
+            for gi, ago in enumerate((3600, 4000, 40 * 86400)):      # two games tonight, one old one
+                for pid in (1, 2):
+                    conn.execute("INSERT INTO matches(player_id,match_id,started_at,duration_s,mode,playlist,outcome,kills,deaths,assists,team_score,enemy_score) VALUES(?,?,?,600,'Ranked:Slayer','Ranked Arena','Win',10,5,2,50,40)",
+                                 (pid, f'g{gi}', time.time() - ago))
+            with web.app.test_request_context('/'): code = web.squad_code('aa,bb')
+            with patch.object(analytics, 'team_moments', spy):
+                web.app.test_client().get(f'/sq/{code}')
+        self.assertTrue(calls, 'team plays were computed')
+        self.assertEqual(sorted(calls[-1]), ['g0', 'g1'])                 # Latest: tonight's two games, not the old one
