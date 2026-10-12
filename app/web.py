@@ -1245,6 +1245,9 @@ def _tonight(main, ids, since, stream_start):
     last = rows[0]
     x["ended_ago"] = int(time.time() - last["started_at"] - (last["duration_s"] or 0))
     x["csr"] = x["a"].get("csr_net")
+    # 2026-10-12: the rating itself, game by game this stream (sparkline in the live box), and where it stands now
+    x["rspark"] = [r.get("post_csr") for r in reversed(rows)]
+    x["rating"] = next((r["post_csr"] for r in rows if r.get("post_csr") is not None), None)
     # lobby read: how tonight's lobbies have gone (Halo only publishes MMR after a game ends, so this is never "next game")
     edges = [r for r in rows if r.get("mmr_edge") is not None and r["outcome"] in ("Win", "Loss")]
     if edges:
