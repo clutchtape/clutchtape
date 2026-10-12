@@ -136,6 +136,13 @@
       /* 2026-10-11: the pop-up opens below the timeline (never over the video): fit it to the room left on screen, and if
          there's hardly any it scrolls inside itself */
       var room=innerHeight-br.bottom-16;popup.style.maxHeight=Math.max(96,Math.min(240,room))+'px';   /* no page scroll: moving the page would slide the video under the sticky bar and pause it */
+      /* 2026-10-12: no room below (the multistream drawers sit at the bottom of the screen): open it above the timeline
+         instead — but only where that covers no video (a covered Twitch player pauses) */
+      popup.classList.remove('et-up');
+      var pr=popup.getBoundingClientRect();
+      if(pr.bottom>innerHeight-6){popup.style.maxHeight='240px';var ph=Math.min(240,popup.scrollHeight),top=br.top-8-ph;
+        var hit=top<6||[].some.call(document.querySelectorAll('iframe'),function(f){var r=f.getBoundingClientRect();return r.width&&r.height&&r.left<pr.right&&r.right>pr.left&&r.top<br.top-8&&r.bottom>top;});
+        if(!hit)popup.classList.add('et-up');else popup.style.maxHeight=Math.max(60,room)+'px';}
       popupTimer=setTimeout(function(){popup.hidden=true},5000);
     }
     picks.addEventListener('change',function(){if(this.value==='')return;var c=clips[+this.value];if(o.onClip)o.onClip(c.player);seekFilm(c.t+LEAD);this.value='';});

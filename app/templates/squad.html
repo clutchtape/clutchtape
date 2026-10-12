@@ -171,8 +171,8 @@
 <script nonce="{{ csp_nonce }}" src="/static/archiveplayer.js?v=3"></script>
 <script nonce="{{ csp_nonce }}" src="/static/clipsaver.js?v=2"></script>
 <script nonce="{{ csp_nonce }}">if(!window.ClutchSave||!ClutchSave.supported)document.documentElement.classList.add("nosave")</script>
-<script nonce="{{ csp_nonce }}" src="/static/eventlog.js?v=27"></script><script nonce="{{ csp_nonce }}" src="/static/multistats.js?v=2"></script>
-<script nonce="{{ csp_nonce }}">window.CT_SQ={{ {'base': sq_base, 'game': open_game}|tojson }};window.CT_VM={{ vm|tojson }};window.CT_NAMES={{ ps|map(attribute="gamertag")|list|tojson }};</script>
+<script nonce="{{ csp_nonce }}" src="/static/eventlog.js?v=28"></script><script nonce="{{ csp_nonce }}" src="/static/multistats.js?v=2"></script>
+<script nonce="{{ csp_nonce }}">window.CT_SQ={{ {'base': sq_base, 'game': open_game, 'tw': chans, 'order': ps|map(attribute='slug')|list}|tojson }};window.CT_VM={{ vm|tojson }};window.CT_NAMES={{ ps|map(attribute="gamertag")|list|tojson }};</script>
 <script nonce="{{ csp_nonce }}">window.addEventListener('load',function(){var sp=new URLSearchParams(location.search);if(sp.get('tab')==='bad'){var t0=document.querySelector('#teamwork .tab[data-tab="bad"]');if(t0)t0.click()}var k=sp.get('watch');if(!k)return;
  var b=document.querySelector('button.watch[data-key="'+k+'"]');var row=b&&b.closest('.mo')||document.querySelector('[data-link$="watch='+k+'"]');
  if(!row)return;var bad=row.closest('.twlist.bad');if(bad){var tb=document.querySelector('#teamwork .tab[data-tab="bad"]');if(tb)tb.click()}
@@ -441,9 +441,25 @@ function sgn(v){return v==null?'':(v>0?'+':'')+v}
 /* every game has its own address: /sq/<code>/g/<first 8 of the match id> */
 var SQ=window.CT_SQ||{},homeUrl=null;
 function gameUrl(tr){return SQ.base&&tr&&tr.dataset.mid?SQ.base+'/g/'+tr.dataset.mid:null}
-function setGameUrl(tr,push){var u=gameUrl(tr);q('mlink').hidden=!u;if(!u||location.pathname===u)return;
+/* 2026-10-12: a game link carries the squad's Twitch channels after the # (#tw=slug:channel,…) so whoever opens it gets
+   every angle. The part after # is never sent to the server: channels still stay out of its logs and database. */
+/* short form: the channels in the squad's own order (the squad code fixes it), blank = none: #w=chan1..chan3.chan4 */
+function twHash(){var t=SQ.tw||{},o=SQ.order||[],l=o.map(function(s){return t[s]||''});return l.some(Boolean)?'#w='+l.join('.').replace(/\.+$/,''):''}
+(function(){var m=location.hash.match(/^#tw=([a-z0-9:,_-]+)$/i),s=location.hash.match(/^#w=([a-z0-9_.]+)$/i),pairs=[];
+  if(m)pairs=m[1].split(',').map(function(p){return p.split(':')});
+  else if(s)s[1].split('.').forEach(function(c,i){if(c&&(SQ.order||[])[i])pairs.push([SQ.order[i],c])});
+  if(!pairs.length)return;var have=SQ.tw||{},need=[];
+  pairs.forEach(function(a){if(a.length===2&&/^[a-z0-9-]+$/.test(a[0])&&/^[a-z0-9_]{2,25}$/i.test(a[1])&&(have[a[0]]||'').toLowerCase()!==a[1].toLowerCase())need.push(a)});
+  if(!need.length)return;
+  var tok=document.querySelector('input[name=csrf]'),csrf=tok?tok.value:'';if(!csrf){try{csrf=JSON.parse(document.getElementById('app-csrf').textContent)}catch(e){}}if(!csrf)return;
+  var f=document.createElement('form');f.method='post';f.action='/twitch-links';f.hidden=true;
+  function add(n,v){var i=document.createElement('input');i.type='hidden';i.name=n;i.value=v;f.appendChild(i)}
+  add('csrf',csrf);add('next',location.pathname+location.search);need.forEach(function(a){add('slug',a[0]);add('twitch',a[1])});
+  document.body.appendChild(f);f.submit()})();
+function setGameUrl(tr,push){var u=gameUrl(tr);q('mlink').hidden=!u;if(!u)return;
+  if(location.pathname===u){var h=twHash();if(h&&location.hash!==h)try{history.replaceState(history.state,'',u+location.search+h)}catch(e){}return}
   if(homeUrl==null&&!/\/g\//.test(location.pathname))homeUrl=location.pathname+location.search;
-  try{history[push?'pushState':'replaceState']({g:tr.dataset.mid},'',u)}catch(e){}}
+  try{history[push?'pushState':'replaceState']({g:tr.dataset.mid},'',u+twHash())}catch(e){}}
 function showGame(tr,push){var box=q('mgame'),changed=curRow&&tr&&curRow!==tr,oldCols={};box.querySelectorAll('.mgmatrix thead th[data-owner]').forEach(function(c){oldCols[c.dataset.owner]=c.getBoundingClientRect().left});curRow=tr||null;if(tr)setGameUrl(tr,push);if(!tr){box.hidden=true;box.innerHTML='';q('mobile-game-nav').innerHTML='';q('mlink').hidden=true;return}
   var g=JSON.parse(tr.dataset.gstats),prev=adjGame(tr,-1),next=adjGame(tr,1),bigWho=bigMode&&mlist[bigIdx]?mlist[bigIdx].who:null;
   g.p.sort(function(a,b){return (b.sc==null?-Infinity:b.sc)-(a.sc==null?-Infinity:a.sc)||a.who.localeCompare(b.who)});
@@ -504,7 +520,7 @@ q('mpause').onclick=function(){clearTimeout(mobileReplaceTimer);mobileLoadVersio
 q('msync').onclick=function(){if(!players.length)return;var i=referenceIdx;try{seekAllSeconds(players[i].getCurrentTime(),mlist[i].video)}catch(e){}};
 q('mclose').onclick=function(){close()};
 q('mlink').onclick=function(){var u=new URL(gameUrl(curRow)||location.pathname,location.origin),i=multi.classList.contains('focus')?focusIdx:bigIdx;
-  var at=0;try{at=Math.max(0,Math.floor(playerTime(i)-targets[i]))}catch(e){}u.searchParams.set('at',String(at));if(mlist[i])u.searchParams.set('angle',mlist[i].who);
+  var at=0;try{at=Math.max(0,Math.floor(playerTime(i)-targets[i]))}catch(e){}u.searchParams.set('at',String(at));if(mlist[i])u.searchParams.set('angle',mlist[i].who);u.hash=twHash();
   
   if(navigator.share&&matchMedia('(pointer:coarse)').matches){navigator.share({title:'ClutchTape · '+(mlist[i]?.who||'Squad moment'),url:u.href}).catch(function(){});return}
   (navigator.clipboard?navigator.clipboard.writeText(u.href):Promise.reject()).then(function(){toast('Moment link copied')},function(){window.prompt('Copy this link',u.href)})};

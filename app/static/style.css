@@ -1693,3 +1693,4 @@ html.statsonly.lay-sochat.lay-stats-hidden .colside{grid-template-columns:minmax
 html.statsonly #sbgames{margin-top:0}
 html.statsonly #sbgames .sb-glist{margin-top:0}
 @media(max-width:1199px){html.statsonly .cols #sbgames{order:3}}
+.et-popup.et-up,.etl .et-popup.et-up{top:auto!important;bottom:calc(100% + 8px)!important}   /* eventlog.js: no room below, nothing to cover above */

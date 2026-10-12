@@ -838,7 +838,7 @@ def twitch_links():
     never in the URL or database. A blank box forgets that player's channel."""
     check_csrf()
     back = request.form.get("next") or "/"
-    if not re.fullmatch(r"/(p|sq|squad)/[A-Za-z0-9,_-]+", back.split("?")[0]):
+    if not re.fullmatch(r"/(p|sq|squad)/[A-Za-z0-9,_-]+(/g/[0-9a-f]{8})?", back.split("?")[0]):   # /g/: a shared game (2026-10-12)
         back = "/"
     pairs = []
     for slug, raw in zip(request.form.getlist("slug")[:MAX_SQUAD], request.form.getlist("twitch")):
