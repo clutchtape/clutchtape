@@ -45,13 +45,18 @@
         seen[p.slug] = L.match_id;
       });
       if (any && box.hidden) { box.hidden = false; box.classList.add('on'); }
-      if (fresh.length) { fresh.forEach(function (g, i) { setTimeout(function () { banner(g); }, i * 2600); }); refresh(fresh); }
+      if (fresh.length) { fresh.forEach(function (g, i) { setTimeout(function () { banner(g); }, i * 2600); }); refresh(fresh);
+        /* the rest of a game lands after its first row: squadmates' copies (often 2-3 min later), then the film read
+           (advanced stats, clips) — none of which shows up as a new game, so check again a few times (2026-10-11) */
+        clearTimeout(follow.a); clearTimeout(follow.b); clearTimeout(follow.c);
+        follow.a = setTimeout(function () { refresh(fresh); }, 45000); follow.b = setTimeout(function () { refresh(fresh); }, 120000); follow.c = setTimeout(function () { refresh(fresh); }, 240000); }
       beat();
       first = false;
       if (status) status.textContent = j.players.some(function (p) { return p.syncing; }) ? 'Updating match history…' : 'Checked just now · new results may take a few minutes.';
     }).catch(function () { if (status) status.textContent = 'Could not check for new results. Retrying automatically; your stats are still here.'; }).finally(function () { clearTimeout(timeout);busy = false; });
   }
   /* New game: re-fetch this page and swap the stat sections in place; the video (and its position) is never touched. */
+  var follow = {};
   var SWAP = ['#onair', '#playnow', '#sqtable', '#statsboard', '#livevs', '.hubkpis', '.advhelp', '.gamelog', '#raw', '.brk', '#periods', '.hub-sessions', '.clipsec', '.twclips', '#teamwork', '#vodvs', '#watchguide'];
   /* what changed gets animated: numbers roll from the old value to the new one and glow, new game rows slide in */
   var NUM = /^([^\d\-+−]{0,3})([+\-−]?)(\d[\d,]*(?:\.\d+)?)(%|s|m)?$/;
