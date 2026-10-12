@@ -613,3 +613,46 @@ window.ctAutoSound = function (p) {
       setTimeout(function () { try { if (p.isPaused()) { p.setMuted(true); p.play(); } } catch (e) {} }, 1500); }
   }, 400);
 };
+
+/* Live video never gets covered while you scroll (2026-10-12): Twitch pauses a player the moment anything overlaps it,
+   and scrolling slid the video under the sticky header / Stream & clips bar → it stopped. Now, when the video would
+   go under that sticky stack: desktop floats it as a mini player (bottom right, "▲ Back to the stream" above it);
+   phones pin it right under the header while the page scrolls beneath. Same iframe throughout (position only — no
+   reload), a placeholder keeps the page from jumping, and no animation on it (animating it also pauses Twitch). */
+(function () {
+  var pl = document.getElementById('player'); if (!pl || !pl.classList.contains('is-live')) return;
+  var emb = pl.querySelector('.embed'); if (!emb) return;
+  var html = document.documentElement, on = false, hold = document.createElement('div'), back = document.createElement('button');
+  hold.className = 'pip-hold'; hold.hidden = true; emb.parentNode.insertBefore(hold, emb);
+  back.type = 'button'; back.className = 'pip-back'; back.hidden = true; back.textContent = '▲ Back to the stream'; document.body.appendChild(back);
+  function stack() {                     /* bottom of whatever is stuck to the top of the screen */
+    var b = 0;
+    [].forEach.call(document.querySelectorAll('.top, .hub-head, .mediasec[open] > .mediabar'), function (e) {
+      var cs = getComputedStyle(e); if (cs.position !== 'sticky' && cs.position !== 'fixed') return;
+      var r = e.getBoundingClientRect(); if (r.height && r.top <= (parseFloat(cs.top) || 0) + 1) b = Math.max(b, r.bottom); });
+    return b;
+  }
+  function set(v) {
+    if (v === on) return; on = v;
+    var ratio = emb.offsetHeight / Math.max(1, emb.offsetWidth) || 9 / 16;
+    if (v) { hold.style.height = emb.offsetHeight + 'px'; hold.style.width = emb.offsetWidth + 'px'; hold.hidden = false; }
+    else { hold.hidden = true; emb.style.removeProperty('height'); }
+    html.classList.toggle('vid-pip', v && window.innerWidth > 700); html.classList.toggle('vid-pin', v && window.innerWidth <= 700);
+    if (v) { var w = emb.getBoundingClientRect().width; emb.style.setProperty('height', Math.round(w * ratio) + 'px', 'important'); back.style.bottom = Math.round(16 + w * ratio + 8) + 'px'; }
+    back.hidden = !(v && window.innerWidth > 700);
+    if (v && window.innerWidth <= 700) emb.style.top = stack() + 'px'; else emb.style.top = '';
+    window.dispatchEvent(new Event('ct-pip'));
+  }
+  function check() {
+    if (window.innerWidth <= 700) { set(false); return; }   /* phones: the video is sticky at the top instead (style.css) */
+    if (html.classList.contains('statsonly') || document.fullscreenElement || !pl.getClientRects().length || (document.getElementById('mediasec') && !document.getElementById('mediasec').open)) { set(false); return; }
+    var ref = (on ? hold : emb).getBoundingClientRect();
+    var m = window.innerWidth <= 700 ? 40 : 10;   /* switch before it reaches the header, not after (phones: a play() needs a tap, so never let it get covered) */
+    set(ref.top < stack() + m && ref.bottom > 0 || (on && ref.bottom <= 0));
+  }
+  back.onclick = function () { var r = hold.getBoundingClientRect(); window.scrollBy({ top: r.top - stack() - 8 }); };
+  var q = false; function soon() { if (!q) { q = true; requestAnimationFrame(function () { q = false; check(); }); } }
+  addEventListener('scroll', soon, { passive: true }); addEventListener('resize', function () { if (on) { set(false); } soon(); });
+  new MutationObserver(soon).observe(html, { attributes: true, attributeFilter: ['class'] });
+  check();
+})();

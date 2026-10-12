@@ -74,3 +74,21 @@ class OffsiteCopy(unittest.TestCase):
             self.assertIsNotNone(first); self.assertIsNone(again)                 # once a day
             self.assertEqual(gzip.decompress(first.read_bytes()), snap.read_bytes())
             self.assertEqual(len(list(out.glob('clutchtape-*.sqlite.gz'))), 3)      # newest 3 kept
+
+
+class FinishClip(unittest.TestCase):
+    """2026-10-12: a won close/overtime game's final objective play is a clip (medal fights never saw it)."""
+    def ev(self, x, k, t, m=None):
+        import types
+        return types.SimpleNamespace(xuid=x, gamertag=x, event_type=k, time_ms=t, medal_name=m)
+    def test_overtime_capture_is_a_clip(self):
+        import clips
+        evs = [self.ev('me', 'kill', 900000), self.ev('me', 'kill', 908000), self.ev('me', 'mode', 917000)]
+        ms = clips.find_moments(evs, 'me', {'duration_s': 919, 'team_score': 3, 'enemy_score': 2, 'mode': 'CTF 3 Captures'})
+        self.assertTrue(ms and ms[0].get('finish'))
+        self.assertIn('Game-winning capture in overtime', ms[0]['label'])
+    def test_lost_or_blowout_games_get_none(self):
+        import clips
+        evs = [self.ev('me', 'mode', 917000)]
+        self.assertFalse(clips.find_moments(evs, 'me', {'duration_s': 919, 'team_score': 2, 'enemy_score': 3, 'mode': 'CTF 3 Captures'}))
+        self.assertFalse(clips.find_moments(evs, 'me', {'duration_s': 600, 'team_score': 50, 'enemy_score': 20, 'mode': 'Slayer'}))

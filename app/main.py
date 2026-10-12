@@ -24,9 +24,9 @@ if __name__ == "__main__":
     seed_featured()
     # clip rubric v2 (ported from the Halo site): re-score stored film timelines once
     import threading, db as _db, ingest as _ing
-    if _db.kv_get('clip_rubric') != 'halo-v6':      # v6 (2026-10-07): + rarity, exceptional lives, late-close/overtime context
+    if _db.kv_get('clip_rubric') != 'halo-v7':      # v7 (2026-10-12): + game-winning finish (objective play at the end of a won close/OT game)
         def _rs():
-            _ing.rescore_all(); _db.kv_set('clip_rubric', 'halo-v6')
+            _ing.rescore_all(); _db.kv_set('clip_rubric', 'halo-v7')
         threading.Thread(target=_rs, name='rescore', daemon=True).start()
     else:                                            # rubric current: still load medal rarity for new films
         threading.Thread(target=_ing.refresh_rarity, name='rarity', daemon=True).start()

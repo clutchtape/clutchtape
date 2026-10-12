@@ -1695,3 +1695,16 @@ html.statsonly #sbgames .sb-glist{margin-top:0}
 @media(max-width:1199px){html.statsonly .cols #sbgames{order:3}}
 .et-popup.et-up,.etl .et-popup.et-up{top:auto!important;bottom:calc(100% + 8px)!important}   /* eventlog.js: no room below, nothing to cover above */
 .et-popup .et-share{margin:0 0 0 6px;min-height:28px;padding:0 10px;border-radius:999px;font-size:12px;box-shadow:none;background:rgba(255,255,255,.08);border:1px solid var(--line);color:var(--ink);cursor:pointer}
+/* live video out of the way of the sticky header while scrolling (heat.js, 2026-10-12) — never animated */
+html.vid-pip #player.is-live .embed{position:fixed!important;right:16px;bottom:16px;left:auto;top:auto;z-index:85!important;width:min(440px,34vw)!important;height:auto!important;max-height:none!important;aspect-ratio:16/9;margin:0!important;border-radius:12px;box-shadow:0 0 0 1px rgba(255,255,255,.12)}
+html.vid-pip #player.is-live .embed:has(.lm-grid,.lm-cell){width:min(720px,52vw)!important}
+.pip-back{position:fixed;right:16px;bottom:calc(16px + min(440px,34vw) * 9 / 16 + 8px);z-index:86;appearance:none;border:1px solid var(--line);background:rgba(14,12,10,.95);color:var(--ink);font:inherit;font-size:12.5px;font-weight:800;padding:6px 12px;border-radius:999px;cursor:pointer;box-shadow:none}
+.pip-back[hidden]{display:none}
+html.vid-pin #player.is-live .embed{position:fixed!important;left:0;right:0;z-index:65!important;width:100%!important;margin:0!important}
+.pip-hold{flex:none}
+
+/* the header's buttons drew a glow ~26px below the header — over the top of a live video, which made Twitch pause it */
+.top button,.top .btn,.top input{box-shadow:none!important}
+/* phones (2026-10-12): the live video stays at the top while the live box and stats scroll under it — sticky, so it
+   never moves on its own (switching it to fixed mid-scroll made Twitch drop the stream) */
+@media(max-width:700px){#mediasec.live[open] #player.is-live:not(:fullscreen){position:sticky;top:0;z-index:65;background:var(--bg)}}

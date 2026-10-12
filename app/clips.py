@@ -36,7 +36,8 @@ R = {'double': 8, 'triple': 28, 'overkill': 44, 'killtacular': 62, 'mk_step': 8,
      'fight_gap_ms': 20000, 'snipe_support_kills': 2,
      'rarity_max': 18, 'context_min_merit': 20, 'late_close': 8, 'overtime': 16,
      'life_long_s': 210, 'life_long_kills': 6, 'life_long_score': 10,
-     'life_mid_s': 150, 'life_mid_kills': 6, 'life_mid_score': 7}
+     'life_mid_s': 150, 'life_mid_kills': 6, 'life_mid_score': 7,
+     'finish_window_ms': 15000, 'finish_base': 34, 'finish_lead_ms': 25000}
 GAMEPLAY_CLOCK_OFFSET_MS = 29000        # Theater film time runs ~29s ahead of the in-game clock (Halo site constant)
 CTF_REGULATION_MS = 12 * 60 * 1000
 RARITY = {}                             # medal -> factor 0..1, set by set_rarity() from the stored films
@@ -172,5 +173,35 @@ def find_moments(events, xuid, game=None):
         end = max(f[-1][0], run[-1] if run else f[-1][0]) + TAIL_MS
         out.append({"t_ms": max(0, start), "dur_s": max(8, round((end - max(0, start)) / 1000)), "label": label,
                     "kills": len(run), "score": min(100, score), "raw": score})
+    fin = _finish(events, xuid, kills, deaths, game, dur_ms, is_close, is_ctf)
+    if fin and not any(m["t_ms"] <= fin["t_ms"] + fin["dur_s"] * 1000 and fin["t_ms"] <= m["t_ms"] + m["dur_s"] * 1000
+                       and m["raw"] >= fin["raw"] for m in out):
+        out = [m for m in out if not (m["t_ms"] <= fin["t_ms"] + fin["dur_s"] * 1000 and fin["t_ms"] <= m["t_ms"] + m["dur_s"] * 1000)] + [fin]
     out.sort(key=lambda m: (-m["score"], -m["raw"]))
     return out[:MAX_PER_MATCH]
+
+
+def _finish(events, xuid, kills, deaths, game, dur_ms, is_close, is_ctf):
+    """2026-10-12: the game-winning finish. Medal fights never see it — a capture isn't a medal — so an overtime flag
+    with spread-out kills before it went unclipped. A WON close or overtime game where this player made an objective
+    play (film 'mode' event) in its last FINISH_WINDOW seconds gets one moment: the run-in (their kills in the 25 s
+    before) through the final play."""
+    ts, es = game.get("team_score"), game.get("enemy_score")
+    if ts is None or es is None or ts <= es:
+        return None
+    end = dur_ms or max([int(e.time_ms) for e in events] or [0])
+    overtime = is_ctf and end - GAMEPLAY_CLOCK_OFFSET_MS >= CTF_REGULATION_MS
+    if not (overtime or is_close):
+        return None
+    plays = sorted(int(e.time_ms) for e in events if str(e.xuid) == xuid and e.event_type == "mode" and int(e.time_ms) >= end - R['finish_window_ms'])
+    if not plays:
+        return None
+    last = plays[-1]
+    run = [k for k in kills if last - R['finish_lead_ms'] <= k <= last]
+    died = any(run[0] < d < last for d in deaths) if run else False
+    score = R['finish_base'] + (R['overtime'] if overtime else 0) + R['late_close'] + min(len(run), 4) * R['run_kill'] - (6 if died else 0)
+    start = max(0, min(run[0] if run else last, last - 12000) - LEAD_MS)
+    what = "Game-winning capture" if is_ctf else "Game-winning objective play"
+    label = what + (" in overtime" if overtime else "") + (f" · {len(run)} kills before it" if len(run) >= 2 else "")
+    return {"t_ms": start, "dur_s": max(8, round((last + TAIL_MS - start) / 1000)), "label": label, "kills": len(run),
+            "score": min(100, score), "raw": score, "finish": True}
