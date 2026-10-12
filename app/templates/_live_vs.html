@@ -5,7 +5,7 @@
    session value big, usual under it) or stats-as-rows (squad: one column per player). Key stats first; "All stats"
    (heat.js, html.lvall, remembered) shows the rest. #}
 {% from "_pt_macros.html" import ptval %}
-{% set LVKEY = ('csr_net', 'win_pct', 'kd', 'kda', 'kills_pg', 'deaths_pg', 'assists_pg', 'dmg_pm', 'dmg_diff_pg', 'sc_pct', 'acc', 'games') %}
+{% set LVKEY = ('csr', 'csr_net', 'win_pct', 'kd', 'kda', 'kills_pg', 'deaths_pg', 'assists_pg', 'dmg_pm', 'dmg_diff_pg', 'sc_pct', 'acc', 'games') %}
 {% if onair and pt %}<section class="panel livevs" id="livevs">
   {% set vs_title %}{% if squad_view %}{{ 'Playing together now' if sess_current else 'Last session together' }}{% else %}{{ 'This session vs usual' if sess_current else 'Last session vs usual' }}{% endif %}{% endset %}
   {# compact (no title row, the video gets the room): the title is the table's first header cell, the key in its tooltip #}

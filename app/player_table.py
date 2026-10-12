@@ -8,6 +8,7 @@ import analytics
 # (key, label, help, better) — better: "hi", "lo" or None (no colour)
 COLS = [
     ("games", "Gms", "Games played", None),
+    ("csr", "CSR", "CSR after the last ranked game", None),   # 2026-10-11: the rating itself up front, next to its change
     ("csr_net", "CSR Δ", "Ranked CSR change", "hi"),
     ("win_pct", "Win%", None, "hi"),
     ("sc_pct", "SC%", "Share of the team's personal score", "hi"),
@@ -33,7 +34,6 @@ COLS = [
     ("callouts_pg", "Call", "Callout assists per game", "hi"),
     ("xk_pg", "xK±", "Kills above what Halo expected, per game", "hi"),
     ("spree", "Spree", "Best killing spree", "hi"),
-    ("csr", "CSR", "CSR after the last ranked game", None),
     ("mmr_edge", "Lobby", "Team MMR minus enemy MMR (negative = underdog)", None),
 ]
 SIGNED = {"dmg_diff_pg", "xk_pg", "csr_net", "mmr_edge"}

@@ -1008,7 +1008,7 @@ def _live_board(games, ps=None, usual=None, usual_by=None):
             if r:
                 lines.append({"who": next((p["gamertag"] for p in ps if p["id"] == pid), None) if ps else None,
                               "k": r["kills"], "d": r["deaths"], "a": r["assists"], "kda": r.get("kda"), "dmg_pm": r.get("dmg_pm"),
-                              "sc_pct": r.get("sc_pct"), "csr_d": r.get("csr_d"), "u": (usual_by or {}).get(pid)})
+                              "sc_pct": r.get("sc_pct"), "csr_d": r.get("csr_d"), "csr": r.get("post_csr"), "u": (usual_by or {}).get(pid)})
         ref = g if not ps else next(iter(g["members"].values()))
         cards.append({"match_id": g["match_id"], "outcome": (g.get("outcome") or ref.get("outcome") or ""), "map": analytics.clean_map(g.get("map") or ref.get("map")),
                       "mode": analytics.clean_mode(g.get("mode") or ref.get("mode")), "t": g["started_at"], "lines": lines,
@@ -1018,12 +1018,13 @@ def _live_board(games, ps=None, usual=None, usual_by=None):
     who = [(p["id"], p["gamertag"], dict(p).get("slug")) for p in ps] if ps else [(None, None, None)]
     series = []
     for pid, name, slug in who:
-        vals, run = {"csr": [], "kda": [], "dmg_pm": [], "sc_pct": []}, 0
+        vals, run = {"rating": [], "csr": [], "kda": [], "dmg_pm": [], "sc_pct": []}, 0
         for g in order:
             r = g["members"].get(pid) if ps else g
             if r and r.get("csr_d") is not None:
                 run += r["csr_d"]
             vals["csr"].append(run if r else None)
+            vals["rating"].append(r.get("post_csr") if r else None)     # the CSR itself after each ranked game
             for k in ("kda", "dmg_pm", "sc_pct"):
                 v = r.get(k) if r else None
                 vals[k].append(round(v, 2) if isinstance(v, float) else v)
