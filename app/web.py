@@ -679,7 +679,8 @@ def squad(slugs, short=False, code=None, game=None):
                              "viewers": st.get("viewers")} for sl, st in lives]
         _onair_links(onair, lambda slug: vods.get(slug), lambda slug: (users.get(slug) or {}).get("id"))
     return render_template("squad.html", sb=_live_board(night if data.get("s_idx") == 0 and _is_current(night) else [], ps, *_squad_usuals(night, data["members"])) if tab == "latest" and night else None, sess_current=bool(night) and data.get("s_idx") == 0 and _is_current(night), pt=_squad_table(night, ps) if tab == "latest" else None, pt_apart=_apart_table(data["members"], ps) if tab == "latest" and not data["nights"] else None, raw=raw_view.build(night, squad=[(p["id"], p["gamertag"]) for p in ps]) if tab == "latest" and request.args.get("raw") == "1" else None, raw_lazy=tab == "latest" and bool(night), session_picks=session_watch.for_sessions(data["nights"], [p["id"] for p in ps], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(night, [p["id"] for p in ps]) if tab == "latest" else {}, tab=tab, kpis=kp, adv=adv, periods=periods, pidgt=gt, onair=onair, **extra, comparison=comparison, recap_matches=session_review.recap_matches(data.get('night') or []), recap_names=[p['gamertag'] for p in ps], gtmap={p["slug"]: p["gamertag"] for p in ps}, pcfg=pcfg, vm=vm, og=og, share_url=share_url, d=data, ps=ps, chans=chans, tw=first, psrc=psrc, plabel=plabel, host=request.host.split(":")[0],
-                           slugs=",".join(names), vods=vods, sq_base=("/sq/" + code) if code else None, open_game=game)
+                           slugs=",".join(names), vods=vods, sq_base=("/sq/" + code) if code else None, open_game=game,
+                           recap_url=(f"/og/sq/{code}/recap.png?session={_short_id(data['night'][0]['match_id'])}" if code and data.get("night") else None))
 
 
 def _sess_idx(sessions):
@@ -1487,7 +1488,7 @@ def profile(slug):
     if _tab() == "latest" and tw and not onair and s:
         guide_usual = _usual_of(s["matches"], data["rows"])
         guide = watch_guide.build(s["matches"], {r["match_id"]: r for r in data["rows"]}, guide_usual, data["moments"])
-    return render_template("profile.html", guide=guide, guide_usual=guide_usual, session_picks=session_watch.for_sessions(data["sessions"], [p["id"] for p in [p] + alts], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(s["matches"] if s else [], [p["id"]] + [a["id"] for a in alts]) if tab == "latest" else {}, tab=tab, onair=onair, alts=alts, kpis=_kpis(s["matches"]) if s else [], adv=_adv_kpis({p["gamertag"]: s["matches"]}) if s else [], sess_agg=analytics._agg(s["matches"]) if s else None, brk=_breakdown(s["matches"], data["rows"]) if s and tab == "latest" else None, pt=_solo_table(s["matches"], data["rows"], "This session" if data["s_idx"] == 0 and _is_current(s["matches"]) else fmt_dt(s["start"], "%a %b %-d")) if s and tab == "latest" else None, sess_current=bool(s) and data["s_idx"] == 0 and _is_current(s["matches"]), sb=_live_board(s["matches"] if s and data["s_idx"] == 0 and _is_current(s["matches"]) else [], usual=_usual_of(s["matches"], data["rows"]) if s else None) if tab == "latest" else None, raw=raw_view.build(s["matches"]) if s and tab == "latest" and request.args.get("raw") == "1" else None, raw_lazy=bool(s) and tab == "latest", periods=_periods({p["gamertag"]: data["rows"]}, solo=True) if tab == "records" else None, **extra, comparison=comparison, recap_matches=session_review.recap_matches(s['matches'] if s else []), recap_names=[p['gamertag']], pcfg=pcfg, vm=vm, og=og, p=p, d=data, clips=clips, vods=vods, tw=tw, psrc=psrc, plabel=plabel,
+    return render_template("profile.html", recap_url=(f"/og/p/{p['slug']}/recap.png?session={_short_id(s['matches'][0]['match_id'])}" if s else None), guide=guide, guide_usual=guide_usual, session_picks=session_watch.for_sessions(data["sessions"], [p["id"] for p in [p] + alts], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(s["matches"] if s else [], [p["id"]] + [a["id"] for a in alts]) if tab == "latest" else {}, tab=tab, onair=onair, alts=alts, kpis=_kpis(s["matches"]) if s else [], adv=_adv_kpis({p["gamertag"]: s["matches"]}) if s else [], sess_agg=analytics._agg(s["matches"]) if s else None, brk=_breakdown(s["matches"], data["rows"]) if s and tab == "latest" else None, pt=_solo_table(s["matches"], data["rows"], "This session" if data["s_idx"] == 0 and _is_current(s["matches"]) else fmt_dt(s["start"], "%a %b %-d")) if s and tab == "latest" else None, sess_current=bool(s) and data["s_idx"] == 0 and _is_current(s["matches"]), sb=_live_board(s["matches"] if s and data["s_idx"] == 0 and _is_current(s["matches"]) else [], usual=_usual_of(s["matches"], data["rows"]) if s else None) if tab == "latest" else None, raw=raw_view.build(s["matches"]) if s and tab == "latest" and request.args.get("raw") == "1" else None, raw_lazy=bool(s) and tab == "latest", periods=_periods({p["gamertag"]: data["rows"]}, solo=True) if tab == "records" else None, **extra, comparison=comparison, recap_matches=session_review.recap_matches(s['matches'] if s else []), recap_names=[p['gamertag']], pcfg=pcfg, vm=vm, og=og, p=p, d=data, clips=clips, vods=vods, tw=tw, psrc=psrc, plabel=plabel,
                            host=request.host.split(":")[0])
 
 
@@ -1657,6 +1658,69 @@ def og_squad(slugs):
     resp = Response(png, mimetype="image/png")
     resp.headers["Cache-Control"] = "public, max-age=900"
     return resp
+
+
+def _recap_png(ps, games, title, url_text, key):
+    """Session recap image (2026-10-12): games = the session's games with members {player id: row}, any order."""
+    import ogcard
+
+    def build():
+        order = sorted(games, key=lambda g: g["started_at"])
+        outs = [((g.get("outcome") or next(iter(g["members"].values())).get("outcome") or "")).lower() for g in order]
+        players = []
+        for p in ps:
+            rows = [g["members"][p["id"]] for g in order if p["id"] in g["members"]]
+            if not rows:
+                continue
+            for r in rows:
+                analytics.derive(r)
+            a = analytics._agg(rows)
+            cd = [r.get("csr_d") for r in rows if r.get("csr_d") is not None]
+            players.append({"name": p["gamertag"], "csr": [(g["members"].get(p["id"]) or {}).get("post_csr") for g in order],
+                            "csr_d": sum(cd) if cd else None, "kda": a.get("kda")})
+        ids = {g["match_id"] for g in order}
+        mo = [m for m in analytics.moments([p["id"] for p in ps], 400, "all") if m["match_id"] in ids]
+        top = max(mo, key=lambda m: m["score"], default=None)
+        best = (top["label"], top["gamertag"] if len(ps) > 1 else None) if top else None
+        w, l = outs.count("win"), outs.count("loss")
+        return ogcard.recap_card(title, fmt_dt(order[0]["started_at"], "%a %b %-d") if order else "", f"{w}-{l}", outs, players, best, url_text)
+    png = _cached("og", key, 300, build)
+    if not png:
+        abort(404)
+    resp = Response(png, mimetype="image/png")
+    resp.headers["Cache-Control"] = "public, max-age=300"
+    return resp
+
+
+@app.route("/og/sq/<code>/recap.png")
+def og_squad_recap(code):
+    row = db.q1("SELECT slugs FROM squad_links WHERE code=?", code.lower())
+    if not row:
+        abort(404)
+    ps = [_player(s) for s in row["slugs"].split(",")]
+    kind = _kind()
+    data = analytics.squad([p["id"] for p in ps], kind)
+    if not data["games"] and "kind" not in request.args:
+        kind = "all"; data = analytics.squad([p["id"] for p in ps], kind)
+    if not data["nights"]:
+        abort(404)
+    i = _sess_idx(data["nights"])
+    return _recap_png(ps, data["nights"][i]["matches"], " + ".join(p["gamertag"] for p in ps),
+                      f"{request.host}/sq/{code.lower()}", f"recap:sq:{code}:{kind}:{i}:{request.args.get('session', '')}")
+
+
+@app.route("/og/p/<slug>/recap.png")
+def og_player_recap(slug):
+    p = _player(slug)
+    alts = _alts(p["id"])
+    kind = _kind()
+    data = analytics.profile(p["id"], kind, tuple(a["id"] for a in alts))
+    if not data["sessions"]:
+        abort(404)
+    i = _sess_idx(data["sessions"])
+    games = [{"match_id": r["match_id"], "started_at": r["started_at"], "outcome": r.get("outcome"), "members": {p["id"]: dict(r)}}
+             for r in data["sessions"][i]["matches"]]
+    return _recap_png([p], games, p["gamertag"], f"{request.host}/p/{p['slug']}", f"recap:p:{slug}:{kind}:{i}:{request.args.get('session', '')}")
 
 
 @app.route("/robots.txt")

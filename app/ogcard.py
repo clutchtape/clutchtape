@@ -146,3 +146,67 @@ def weekly_card(b,w):
     d.text((60,510),detail,font=_fit(d,detail,FR,27,W-120),fill=INK)
     d.text((60,575),'CLUTCHTAPE  /  Your week. No stream required.',font=_f(FR,25),fill=ACC)
     return _png(im)
+
+
+# ---- session recap (2026-10-12): one shareable image per session — record, CSR line per player, best play ------------
+SERIES = [(57, 135, 229), (217, 89, 38), (25, 158, 112), (201, 133, 0)]   # sbchart.js default order (validated on dark)
+
+
+def recap_card(title, when, record, outcomes, players, best, url_text):
+    """players: [{name, csr: [rating after each game or None], csr_d, kda}] in squad order; best: (label, who) or None."""
+    im, d = _base()
+    d.text((60, 118), title, font=_fit(d, title, FB, 58, W - 120), fill=INK)
+    d.text((62, 190), f"Session recap · {when} · {len(outcomes)} game{'s' if len(outcomes) != 1 else ''}", font=_f(FR, 26), fill=MUTE)
+    w, l = (int(x) for x in record.split("-"))
+    d.text((60, 236), record, font=_f(FB, 96), fill=WIN if w > l else LOSS if l > w else INK)
+    _pips(d, 64, 352, outcomes, size=20, gap=5)
+    # CSR lines (right): each player's rating after every ranked game, own scale, names + change at the line ends
+    x0, x1, y0, y1 = 470, 1000, 268, 440          # starts below the subtitle line
+    vals = [v for p in players for v in p["csr"] if v is not None]
+    if len(vals) >= 2:
+        lo, hi = min(vals), max(vals)
+        if hi - lo < 20:
+            lo, hi = lo - 10, hi + 10
+        n = max(len(p["csr"]) for p in players)
+        X = lambda i: x0 + (x1 - x0) * (i / max(1, n - 1))
+        Y = lambda v: y1 - (y1 - y0) * (v - lo) / (hi - lo)
+        for gy in (lo, (lo + hi) / 2, hi):
+            d.line((x0, Y(gy), x1, Y(gy)), fill=(38, 32, 28), width=1)
+            d.text((x0 - 10, Y(gy)), str(round(gy)), font=_f(FR, 18), fill=MUTE, anchor="rm")
+        ends = []
+        for i, p in enumerate(players):
+            pts = [(X(j), Y(v)) for j, v in enumerate(p["csr"]) if v is not None]
+            if len(pts) < 1:
+                continue
+            col = SERIES[i % len(SERIES)]
+            if len(pts) > 1:
+                d.line(pts, fill=col, width=4, joint="curve")
+            for (px, py) in pts:
+                d.ellipse((px - 5, py - 5, px + 5, py + 5), fill=col, outline=BG, width=2)
+            ends.append([pts[-1][1], i, pts[-1][0]])
+        ends.sort()
+        for k in range(1, len(ends)):                       # nudge labels apart
+            if ends[k][0] - ends[k - 1][0] < 26:
+                ends[k][0] = ends[k - 1][0] + 26
+        for y, i, x in ends:
+            p = players[i]
+            d.text((x + 14, y), p["name"][:14], font=_f(FB, 20), fill=INK, anchor="lm")
+        d.text((x0, y0 - 28), "CSR, game by game", font=_f(FB, 18), fill=MUTE)
+    # per-player line: name · CSR change · KDA
+    for i, p in enumerate(players[:4]):            # two per row under the record
+        yy = 462 + (i // 2) * 34
+        xx = 60 + (i % 2) * 560
+        d.rounded_rectangle((xx, yy + 6, xx + 14, yy + 10), radius=2, fill=SERIES[i % len(SERIES)])
+        d.text((xx + 24, yy), p["name"][:18], font=_f(FB, 24), fill=INK)
+        cd = p.get("csr_d")
+        tx = xx + 24 + d.textlength(p["name"][:18], font=_f(FB, 24)) + 16
+        if cd is not None:
+            s = f"{cd:+d} CSR"
+            d.text((tx, yy), s, font=_f(FB, 24), fill=WIN if cd > 0 else LOSS if cd < 0 else INK); tx += d.textlength(s, font=_f(FB, 24)) + 16
+        if p.get("kda") is not None:
+            d.text((tx, yy), f"{p['kda']:+.1f} KDA", font=_f(FR, 24), fill=MUTE)
+    if best:
+        s = "★ Best play: " + best[0] + (f" — {best[1]}" if best[1] else "")
+        d.text((60, 545), s, font=_fit(d, s, FB, 28, W - 120), fill=ACC)
+    d.text((60, H - 44), url_text, font=_f(FR, 22), fill=MUTE)
+    return _png(im)

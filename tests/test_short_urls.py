@@ -79,3 +79,24 @@ class SessionTeamPlays(unittest.TestCase):
                 web.app.test_client().get(f'/sq/{code}')
         self.assertTrue(calls, 'team plays were computed')
         self.assertEqual(sorted(calls[-1]), ['g0', 'g1'])                 # Latest: tonight's two games, not the old one
+
+
+class RecapImage(unittest.TestCase):
+    """2026-10-12: /og/sq/<code>/recap.png and /og/p/<slug>/recap.png draw the session as one PNG."""
+    def test_squad_and_player_recap(self):
+        import time
+        conn = sqlite3.connect(':memory:', isolation_level=None, check_same_thread=False); conn.row_factory = sqlite3.Row
+        with patch.object(db, 'conn', return_value=conn):
+            db.init()
+            for i, s in enumerate(('aa', 'bb')):
+                conn.execute("INSERT INTO players(id,xuid,gamertag,slug,created_at,sync_state) VALUES(?,?,?,?,0,'ready')", (i + 1, str(i), s.upper(), s))
+            for gi in range(3):
+                for pid in (1, 2):
+                    conn.execute("INSERT INTO matches(player_id,match_id,started_at,duration_s,mode,playlist,ranked,outcome,kills,deaths,assists,team_score,enemy_score,pre_csr,post_csr) VALUES(?,?,?,600,'Ranked:Slayer','Ranked Arena',1,?,12,8,3,50,40,?,?)",
+                                 (pid, f'g{gi}', time.time() - 3600 + gi * 700, 'Win' if gi != 1 else 'Loss', 1500 + gi * 8, 1508 + gi * 8))
+            with web.app.test_request_context('/'): code = web.squad_code('aa,bb')
+            c = web.app.test_client(); c.get(f'/sq/{code}')
+            for url in (f'/og/sq/{code}/recap.png', '/og/p/aa/recap.png'):
+                r = c.get(url)
+                self.assertEqual(r.status_code, 200, url); self.assertEqual(r.mimetype, 'image/png'); self.assertGreater(len(r.data), 5000)
+            self.assertEqual(c.get('/og/sq/zzzzzz/recap.png').status_code, 404)
