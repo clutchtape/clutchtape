@@ -52,7 +52,7 @@
     }).catch(function () { if (status) status.textContent = 'Could not check for new results. Retrying automatically; your stats are still here.'; }).finally(function () { clearTimeout(timeout);busy = false; });
   }
   /* New game: re-fetch this page and swap the stat sections in place; the video (and its position) is never touched. */
-  var SWAP = ['#onair', '#playnow', '#sqtable', '#statsboard', '#livevs', '.hubkpis', '.advhelp', '.gamelog', '#raw', '.brk', '#periods', '.hub-sessions', '.clipsec', '.twclips'];
+  var SWAP = ['#onair', '#playnow', '#sqtable', '#statsboard', '#livevs', '.hubkpis', '.advhelp', '.gamelog', '#raw', '.brk', '#periods', '.hub-sessions', '.clipsec', '.twclips', '#teamwork', '#vodvs', '#watchguide'];
   /* what changed gets animated: numbers roll from the old value to the new one and glow, new game rows slide in */
   var NUM = /^([^\d\-+−]{0,3})([+\-−]?)(\d[\d,]*(?:\.\d+)?)(%|s|m)?$/;
   function leaves(root) { return [].slice.call(root.querySelectorAll('b,td,span,small,strong,div')).filter(function (e) { return !e.children.length && NUM.test(e.textContent.trim()); }); }
@@ -88,21 +88,44 @@
       if (o != null && o !== n) { roll(el, o, n); rolled++; } });
     if (!fresh && !rolled && old.innerHTML !== neu.innerHTML) { neu.classList.add('sec-new'); setTimeout(function () { neu.classList.remove('sec-new'); }, 1600); }
   }
-  function refresh() {
+  /* where a new section goes: next to a neighbour (in the fetched page) that this page has too, found by id or SWAP selector */
+  function same(el) { if (el.id) return document.getElementById(el.id);
+    for (var i = 0; i < SWAP.length; i++) if (SWAP[i][0] === '.' && el.matches(SWAP[i])) { var all = document.querySelectorAll(SWAP[i]); return all.length === 1 ? all[0] : null; }
+    var c = el.classList && el.classList[0]; if (!c || !window.CSS) return null;                  /* else: a class only one element has */
+    var hit = document.querySelectorAll('.' + CSS.escape(c)); return hit.length === 1 && el.ownerDocument.querySelectorAll('.' + CSS.escape(c)).length === 1 ? hit[0] : null; }
+  function anchor(nw, doc) {
+    for (var s = nw.previousElementSibling; s; s = s.previousElementSibling) { var m = same(s); if (m) return { el: m, after: true }; }
+    for (s = nw.nextElementSibling; s; s = s.nextElementSibling) { m = same(s); if (m) return { el: m, after: false }; }
+    var par = nw.parentElement && same(nw.parentElement); if (!par) return null;
+    return par.firstElementChild ? { el: par.firstElementChild, after: false } : { el: par, inside: true }; }
+  function appear(n) { if (calm) return; n.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.2,.8,.2,1)' }); }
+  function vanish(o) { if (calm) { o.remove(); return; } o.animate([{ opacity: 1 }, { opacity: 0, transform: 'scale(.98)' }], { duration: 260, easing: 'ease-in' }).finished.then(function () { o.remove(); }, function () { o.remove(); }); }
+  function refresh(quiet) {   /* quiet: the periodic pass — only the live box (stream info), never sections someone may have opened */
     var lu = new URL(location.href); if (document.querySelector('#raw:not([data-lazy])')) lu.searchParams.set('raw', '1');   /* keep a loaded raw table */
+    lastFull = Date.now();
     fetch(lu, { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : Promise.reject(); }).then(function (html) {
       var doc = new DOMParser().parseFromString(html, 'text/html');
-      SWAP.forEach(function (sel) {
+      (quiet === true ? ['#onair', '#playnow'] : SWAP).forEach(function (sel) {
         var olds = document.querySelectorAll(sel), news = doc.querySelectorAll(sel);
         if (olds.length && olds.length === news.length) olds.forEach(function (o, i) { var n = document.importNode(news[i], true);
           if (o.hasAttribute('data-hold')) { o.__next = n; return; }   /* a clip is playing in the live box (livedetail.js): applied when it closes */
           o.replaceWith(n); try { diff(o, n); } catch (e) {} });
+        /* 2026-10-11: a section that only exists from the first game on (game log, tiles, vs table…) is added where the
+           page puts it — after the nearest earlier sibling that is already here — and one that's gone is removed */
+        else if (!olds.length && news.length) [].forEach.call(news, function (nw) { var spot = anchor(nw, doc); if (!spot) return;
+          var n = document.importNode(nw, true); if (spot.inside) spot.el.appendChild(n); else spot.el[spot.after ? 'after' : 'before'](n); appear(n); });
+        else if (olds.length && !news.length) [].forEach.call(olds, function (o) { if (!o.hasAttribute('data-hold')) vanish(o); });
       });
       if (window.ctHeat) window.ctHeat(); if (window.ctPage) window.ctPage();
       beat(); glow();
     }).catch(function () { document.getElementById('lvreload').hidden = false; });
   }
-  window.ctLiveRefresh = refresh; window.ctLiveBanner = banner;   /* also used by the browser test to replay an update */
+  window.ctLiveRefresh = refresh; window.ctLiveBanner = banner;
+  /* while someone is live, refresh quietly every 2 minutes too — stream title, viewers, the game they're on, and
+     anything that settled after a game (film reads, clips) — not only when a new game lands (2026-10-11) */
+  var lastFull = Date.now();
+  setInterval(function () { if (document.hidden || busy || !(document.getElementById('onair') || document.getElementById('playnow'))) return;
+    if (Date.now() - lastFull >= 115000) refresh(true); }, 15000);   /* also used by the browser test to replay an update */
   document.getElementById('lvreload').onclick = function () { this.hidden = true; refresh(); };
   /* keep the live uptime ticking */
   setInterval(function () { var oa = document.getElementById('onair'), b = oa && oa.querySelector('[data-uptime]'); if (!b || !oa.dataset.started) return;
