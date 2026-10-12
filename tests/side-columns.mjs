@@ -6,7 +6,7 @@ const b=await chromium.launch({executablePath:process.env.PLAYWRIGHT_CHROMIUM_EX
 let bad=0;const ok=(c,m,x='')=>{console.log((c?'PASS ':'FAIL ')+m,x);if(!c)bad++};
 for(const [name,w,h,lay,so] of [['stats only + chat',1853,950,{sochat:true},'1'],['live, chat beside',1853,950,{chat:'beside'},'0'],['stats only, chat right',1440,1000,{sochat:true,side:'right'},'1']]){
 const ctx=await b.newContext({viewport:{width:w,height:h}});const p=await ctx.newPage();
-await p.addInitScript(([l,s])=>{localStorage.setItem('ct-statsonly',s);localStorage.setItem('ct-layout',JSON.stringify(l));if(!sessionStorage.getItem('t')){sessionStorage.setItem('t','1');localStorage.removeItem('ct-sidecols')}},[lay,so]);
+await p.addInitScript(([l,s])=>{localStorage.setItem('ct-show',JSON.stringify({k:location.pathname.split('/').slice(0,3).join('/'),at:Date.now(),video:s!=='1'}));localStorage.setItem('ct-layout',JSON.stringify(l));if(!sessionStorage.getItem('t')){sessionStorage.setItem('t','1');localStorage.removeItem('ct-sidecols')}},[lay,so]);
 await p.goto(process.argv[2],{waitUntil:'load'});await p.waitForTimeout(3000);
 const W=()=>p.evaluate(()=>({chat:Math.round(document.getElementById('twchat').getBoundingClientRect().width),stats:Math.round(document.getElementById('onair').getBoundingClientRect().width),handle:!document.querySelector('.colsplit').hidden}));
 const a=await W();ok(a.handle,`${name}: handle shown`,JSON.stringify(a));

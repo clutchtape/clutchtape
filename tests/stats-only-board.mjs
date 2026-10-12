@@ -6,7 +6,7 @@ const b=await chromium.launch({executablePath:process.env.PLAYWRIGHT_CHROMIUM_EX
 let bad=0;const ok=(c,m,x='')=>{console.log((c?'PASS ':'FAIL ')+m,x);if(!c)bad++};
 for(const [w,h] of [[1440,1000],[390,844]]){const mob=w<700;const ctx=await b.newContext({viewport:{width:w,height:h},isMobile:mob,hasTouch:mob});const p=await ctx.newPage();
 const errs=[];p.on('pageerror',e=>{if(!/getLayoutMap/.test(e.message))errs.push(e.message)});
-await p.addInitScript(()=>{try{localStorage.setItem('ct-statsonly','1')}catch(e){}});
+await p.addInitScript(()=>{try{localStorage.setItem('ct-show',JSON.stringify({k:location.pathname.split('/').slice(0,3).join('/'),at:Date.now(),video:false}))}catch(e){}});
 await p.goto(process.argv[2],{waitUntil:'load'});await p.waitForTimeout(2500);
 const t=await p.evaluate(()=>[...document.querySelectorAll('.sb-tile')].map(x=>x.querySelector('span').textContent+':'+(x.className.match(/h-\w+/)||['-'])[0]+(x.querySelector('.sb-usual')?'('+x.querySelector('.sb-usual').textContent+')':'')).join(' '));
 ok(/h-(ex|good|avg|below|poor)/.test(t),`${w}: tiles tinted vs usual`,t);

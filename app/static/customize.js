@@ -15,11 +15,13 @@
   var s = load();
 
   function layout() {
+    var sh = window.ctShow ? window.ctShow.get() : {};
     ['auto', 'beside', 'below', 'hidden'].forEach(function (c) { html.classList.toggle('lay-chat-' + c, s.chat === c && c !== 'auto'); });
+    if (sh.chat === false) html.classList.add('lay-chat-hidden');      /* Show switch: chat off on this page */
     html.classList.toggle('lay-chat-right', s.side === 'right');
     html.classList.toggle('lay-novs', !s.vs);
     html.classList.toggle('lay-sochat', !!s.sochat);              /* chat stays in Stats only */
-    html.classList.toggle('lay-stats-hidden', s.stats === false);  /* Show switch: live stats off */
+    html.classList.toggle('lay-stats-hidden', sh.stats === false);  /* Show switch: live stats off on this page */
     document.dispatchEvent(new Event('ct-layout'));
     window.dispatchEvent(new Event('resize')); if (window.ctSideFit) window.ctSideFit();
   }
@@ -161,7 +163,7 @@
   'use strict';
   var html = document.documentElement, EL = { video: ['#player'], stats: ['#onair', '#statsboard'], chat: ['#twchat'] };
   function lay() { return window.ctLay ? window.ctLay.get() : {}; }
-  function st() { var L = lay(); return { video: !html.classList.contains('statsonly'), stats: L.stats !== false, chat: L.chat !== 'hidden' }; }
+  function st() { var L = lay(), sh = window.ctShow ? window.ctShow.get() : {}; return { video: !html.classList.contains('statsonly'), stats: sh.stats !== false, chat: L.chat !== 'hidden' && sh.chat !== false }; }
   function count(s) { return (s.video ? 1 : 0) + (s.stats ? 1 : 0) + (s.chat ? 1 : 0); }
   function vis(e) { return !!(e && e.getClientRects().length); }
   function q(s) { return document.querySelector(s); }
@@ -212,8 +214,9 @@
       if (s.video && s.chat) window.ctLay.set({ sochat: true });          /* video off, chat on: chat stays */
       if (window.ctStatsOnly) window.ctStatsOnly(s.video); setTimeout(sync, 60); return;
     }
-    if (k === 'chat') flip(function () { window.ctLay.set(s.chat ? { chat: 'hidden', chatWas: L.chat } : { chat: L.chatWas && L.chatWas !== 'hidden' ? L.chatWas : 'auto', sochat: true }); }, 'chat', !s.chat);
-    else flip(function () { window.ctLay.set({ stats: !s.stats }); }, 'stats', !s.stats);
+    /* this page only, for 12 h (base.html ctShow); bringing chat back also undoes a Customize "chat: hidden" */
+    if (k === 'chat') flip(function () { window.ctShow.set({ chat: !s.chat }); window.ctLay.set(s.chat ? {} : (L.chat === 'hidden' ? { chat: 'auto', sochat: true } : { sochat: true })); }, 'chat', !s.chat);
+    else flip(function () { window.ctShow.set({ stats: !s.stats }); window.ctLay.set({}); }, 'stats', !s.stats);
   });
   document.addEventListener('ct-layout', sync);
   new MutationObserver(sync).observe(html, { attributes: true, attributeFilter: ['class'] });

@@ -7,7 +7,7 @@ const st=async p=>{const fr=p.frames().find(f=>/player\.twitch/.test(f.url()));i
 let bad=0;
 for(const [name,w,h,start] of [['desk',1440,1000,'stream'],['desk-load-statsonly',1440,1000,'stats'],['phone',390,844,'stream'],['phone-load-statsonly',390,844,'stats']]){
 const mob=w<700;const ctx=await b.newContext({viewport:{width:w,height:h},isMobile:mob,hasTouch:mob});const p=await ctx.newPage();
-if(start==='stats')await p.addInitScript(()=>{try{localStorage.setItem('ct-statsonly','1')}catch(e){}});
+if(start==='stats')await p.addInitScript(()=>{try{localStorage.setItem('ct-show',JSON.stringify({k:location.pathname.split('/').slice(0,3).join('/'),at:Date.now(),video:false}))}catch(e){}});
 await p.goto(process.argv[2],{waitUntil:'load'});await p.waitForTimeout(start==='stats'?3000:11000);const a=await st(p);
 if(start==='stream'){await p.locator('[data-statsonly]:visible').first().click();await p.waitForTimeout(3000)}
 const mid=await st(p);

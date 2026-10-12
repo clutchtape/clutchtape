@@ -457,6 +457,9 @@ function twHash(){var t=SQ.tw||{},o=SQ.order||[],l=o.map(function(s){return t[s]
   function add(n,v){var i=document.createElement('input');i.type='hidden';i.name=n;i.value=v;f.appendChild(i)}
   add('csrf',csrf);add('next',location.pathname+location.search);need.forEach(function(a){add('slug',a[0]);add('twitch',a[1])});
   document.body.appendChild(f);f.submit()})();
+/* the squad page's own address carries them too, so 🔗 Share (it copies the address) and a copied URL open the
+   streams for whoever gets the link */
+if(SQ.base&&!location.hash&&twHash()&&!/\/g\//.test(location.pathname))try{history.replaceState(history.state,'',location.pathname+location.search+twHash())}catch(e){}
 function setGameUrl(tr,push){var u=gameUrl(tr);q('mlink').hidden=!u;if(!u)return;
   if(location.pathname===u){var h=twHash();if(h&&location.hash!==h)try{history.replaceState(history.state,'',u+location.search+h)}catch(e){}return}
   if(homeUrl==null&&!/\/g\//.test(location.pathname))homeUrl=location.pathname+location.search;
@@ -540,7 +543,8 @@ if(SQ.game){window.addEventListener('load',function(){var tr=rowFor(SQ.game);if(
 document.addEventListener('click',function(e){
   var cell=e.target.closest('td.cellvod[data-vod]');
   if(cell&&window.CT_SIDE){var mm=cell.dataset.vod.match(/videos\/(\d+)\?t=([0-9hms]+)/);if(mm){urlState('vod',mm[1]+'@'+mm[2]);window.CT_SIDE.go(mm[1],mm[2])}return}
-  var tr=e.target.closest('tr.clickrow[data-gwatch]');if(!tr||e.target.closest('a,button'))return;
+  var tr=e.target.closest('tr[data-gwatch]');   /* 2026-10-12: rows lost .clickrow, so a click went to the match page */
+  if(!tr||e.target.closest('a,button'))return;
   var list=JSON.parse(tr.dataset.gwatch);
   if(list.length>1){window.__mdur=+tr.dataset.dur||600;window.__mname=tr.dataset.name;open(list);showGame(tr,true)}
   else if(window.CT_SIDE){window.CT_SIDE.go(list[0].video,list[0].t)}});

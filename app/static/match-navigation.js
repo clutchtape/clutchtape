@@ -1,1 +1,1 @@
-document.addEventListener('click',function(e){const row=e.target.closest('tr[data-match]');if(!row||e.target.closest('a,button,input,.cellvod')||e.ctrlKey||e.metaKey||e.shiftKey||e.button)return;location.href=row.dataset.match;});
+document.addEventListener('click',function(e){const row=e.target.closest('tr[data-match]');if(!row||row.dataset.gwatch||e.target.closest('a,button,input,.cellvod')||e.ctrlKey||e.metaKey||e.shiftKey||e.button)return;location.href=row.dataset.match;});

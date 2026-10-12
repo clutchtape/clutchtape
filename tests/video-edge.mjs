@@ -8,7 +8,7 @@ const geo=p=>p.evaluate(()=>{const R=s=>{const e=document.querySelector(s);if(!e
 const drag=async(p,dx)=>{const hb=await p.locator('.mainsplit').boundingBox();const y=hb.y+Math.min(300,hb.height/2);await p.mouse.move(hb.x+6,y);await p.mouse.down();await p.mouse.move(hb.x+6+dx,y,{steps:10});await p.mouse.up();await p.waitForTimeout(600)};
 for(const [name,so,lay] of [['live video',false,{}],['stats only + chat',true,{sochat:true}]]){
 const ctx=await b.newContext({viewport:{width:1853,height:950}});const p=await ctx.newPage();
-await p.addInitScript(([s,l])=>{if(!sessionStorage.getItem('t')){sessionStorage.setItem('t','1');localStorage.setItem('ct-statsonly',s?'1':'0');localStorage.setItem('ct-layout',JSON.stringify(l));['ct-mainw','ct-sow','ct-sidecols'].forEach(k=>localStorage.removeItem(k))}},[so,lay]);
+await p.addInitScript(([s,l])=>{if(!sessionStorage.getItem('t')){sessionStorage.setItem('t','1');localStorage.setItem('ct-show',JSON.stringify({k:location.pathname.split('/').slice(0,3).join('/'),at:Date.now(),video:!(s)}));localStorage.setItem('ct-layout',JSON.stringify(l));['ct-mainw','ct-sow','ct-sidecols'].forEach(k=>localStorage.removeItem(k))}},[so,lay]);
 await p.goto(process.argv[2],{waitUntil:'load'});await p.waitForTimeout(3500);
 const a=await geo(p);ok(a.handle,`${name}: handle on chat's left edge`,JSON.stringify(a));
 await drag(p,180);const c=await geo(p);

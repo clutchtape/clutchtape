@@ -405,7 +405,7 @@ document.addEventListener('toggle', function (e) {
   /* window.ctStatsOnly(on): also used by the Show switch (customize.js) for its Video button */
   function go(on) {
     function apply() { html.classList.toggle('statsonly', on);
-      try { localStorage.setItem('ct-statsonly', on ? '1' : '0'); } catch (x) {}
+      if (window.ctShow) window.ctShow.set({ video: !on });   /* this page only, 12 h (base.html) */
       if (on) { try { window.__sp && window.__sp.pause(); } catch (x) {} html.classList.remove('chat-open'); }
       else { if (window.CTInitSide) window.CTInitSide(); }
       window.dispatchEvent(new Event('resize')); if (window.ctSideFit) window.ctSideFit(); sync(); }
