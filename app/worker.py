@@ -1,4 +1,7 @@
-"""One background worker runs player syncs one at a time (keeps the shared Xbox login well under Halo's rate limits)."""
+"""One background worker runs player syncs one at a time (keeps the shared Xbox login well under Halo's rate limits).
+2026-10-11: a priority line, not first-come-first-served — player syncs (a finished game showing up) first, then
+match-page loads, then film reads, and a film job reads at most FILM_BATCH games before the rest go back in line, so
+a live squad's games never wait minutes behind a long film read."""
 import asyncio
 import logging
 import os
@@ -10,7 +13,10 @@ import db
 import ingest
 
 log = logging.getLogger("clutchtape.worker")
-_q = queue.Queue()
+_q = queue.PriorityQueue()   # items: (priority, seq, job)
+_seq = 0
+PRI_SYNC, PRI_DETAIL, PRI_FILM = 0, 1, 2
+FILM_BATCH = 3
 _queued = set()
 _lock = threading.Lock()
 RESYNC_AFTER_S = 10 * 60
@@ -19,17 +25,26 @@ _metrics = {"started": 0, "completed": 0, "errors": 0, "job_started_at": 0, "las
 _running = None
 
 
+def _put(job, pri):
+    global _seq
+    with _lock:
+        _seq += 1
+        n = _seq
+    _q.put((pri, n, job))
+
+
 def enqueue(player_id, reset=False):
     with _lock:
         if player_id in _queued or len(_queued)>=MAX_PENDING:
             return False
         if reset:db.run("UPDATE players SET sync_state='queued',sync_error=NULL WHERE id=?",player_id)
         _queued.add(player_id)
-    _q.put(player_id)
+    _put(player_id, PRI_SYNC)
     return True
 
 
 _film_pending = {}
+_film_rest = {}
 
 
 def enqueue_film(player_id, match_ids):
@@ -43,7 +58,7 @@ def enqueue_film(player_id, match_ids):
             return False
         _queued.add(key)
     _film_pending[player_id] = ids
-    _q.put(key)
+    _put(key, PRI_FILM)
     return True
 
 
@@ -56,7 +71,7 @@ def enqueue_detail(mid):
             return False
         db.kv_set('matchload:' + mid, {'state': 'loading', 'at': time.time()})
         _queued.add(key)
-        _q.put(key)
+    _put(key, PRI_DETAIL)
     return True
 
 
@@ -66,7 +81,7 @@ def position(pid):
         if pid not in _queued:
             return 0
     with _q.mutex:
-        items = [x for x in _q.queue if not isinstance(x, tuple)]
+        items = [x[2] for x in sorted(_q.queue) if not isinstance(x[2], tuple)]
     return (items.index(pid) + 1) if pid in items else 1
 
 
@@ -97,7 +112,9 @@ async def _job(pid):
         elif isinstance(pid,tuple) and pid[0]=='history':
             await ingest.backfill_player(pid[1])
         elif isinstance(pid,tuple):
-            await ingest.film_matches(pid[1],_film_pending.pop(pid[1],[]))
+            ids=_film_pending.pop(pid[1],[])
+            if ids[FILM_BATCH:]:_film_rest[pid[1]]=ids[FILM_BATCH:]     # the rest goes back in line (after any syncs)
+            await ingest.film_matches(pid[1],ids[:FILM_BATCH])
         else:await ingest.sync_player(pid)
 
 
@@ -105,7 +122,7 @@ def _loop():
     global _running
     while True:
         queued=True
-        try:pid=_q.get(timeout=2)
+        try:pid=_q.get(timeout=2)[2]
         except queue.Empty:
             # Deep history yields to foreground jobs between batches.
             pending=db.q1("SELECT k FROM kv WHERE k LIKE 'history_pending:%' AND json_extract(v,'$.at')<=? ORDER BY json_extract(v,'$.at') LIMIT 1",time.time())
@@ -128,6 +145,7 @@ def _loop():
         finally:
             with _lock:_queued.discard(pid);_running=None
             if queued:_q.task_done()
+            if isinstance(pid,tuple) and pid[0]=='film' and pid[1] in _film_rest:enqueue_film(pid[1],_film_rest.pop(pid[1]))
         time.sleep(0.5)
 
 
