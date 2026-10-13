@@ -9,8 +9,8 @@ def for_matches(matches, player_ids):
     """Count detected film moments in this session, not the capped sidebar clip list.
 
     Use the same eight-second duplicate window as analytics.moments, scoped to
-    the selected players. A clip is a detected highlight, not a promise that a
-    Twitch broadcast is still available.
+    the selected players. These are gameplay highlights, not video clips; they exist even when
+    the player was not streaming.
     """
     games = {m['match_id']: m for m in matches if m.get('outcome') in ('Win', 'Loss', 'Tie')}
     ids = list(dict.fromkeys(player_ids))
@@ -38,8 +38,8 @@ def for_matches(matches, player_ids):
             cues.append({'kind': 'close', 'text': 'Tied finish', 'detail': 'The completed game ended tied.'})
         count = len(moments[mid])
         if count:
-            cues.append({'kind': 'clips' if count >= 3 else 'clip', 'count': count, 'text': f"{count} clip{'s' if count != 1 else ''}",
-                         'detail': f'{count} auto-detected film highlights from the selected players; duplicate squad perspectives combined. Video availability is shown by the VOD buttons.'})
+            cues.append({'kind': 'clips' if count >= 3 else 'clip', 'count': count, 'text': f"{count} highlight{'s' if count != 1 else ''}",
+                         'detail': f'{count} highlights detected from Theater events; duplicate squad perspectives combined. This does not mean video was recorded. Watchable recordings have a VOD button.'})
         if cues:
             out[mid] = cues
     return out
@@ -65,7 +65,7 @@ def for_sessions(sessions, player_ids, vod_map=None):
         if close:
             reasons.append(f"{close} close game{'s' if close != 1 else ''}")
         if clips:
-            reasons.append(f"{clips} detected clip{'s' if clips != 1 else ''}")
+            reasons.append(f"{clips} detected highlight{'s' if clips != 1 else ''}")
         if longest >= 3:
             reasons.append(f'{longest}-game win streak')
         standout = close >= 2 or clips >= 6 or longest >= 4

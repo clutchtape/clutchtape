@@ -1,3 +1,3 @@
 {% set cues = (watch_cues or {}).get(watch_match.match_id, []) %}
-{# compact (2026-10-09 declutter): "Close" / "Tied" / "🎬 n"; the detail stays in the tooltip #}
-{% if cues %}<span class="watch-cues" aria-label="Watch highlights">{% for cue in cues %}<span class="watch-cue {{ cue.kind }}" title="{{ cue.text }} · {{ cue.detail }}">{% if cue.kind in ('clip','clips') %}🎬 {{ cue.count }}{% elif cue.text.startswith('Tied') %}Tied{% else %}Close{% endif %}</span>{% endfor %}</span>{% endif %}
+{# Theater highlights do not imply that a stream recording exists. #}
+{% if cues %}<span class="watch-cues" aria-label="Game highlights">{% for cue in cues %}<span class="watch-cue {{ cue.kind }}" title="{{ cue.text }} · {{ cue.detail }}">{% if cue.kind in ('clip','clips') %}{{ cue.text }}{% elif cue.text.startswith('Tied') %}Tied{% else %}Close{% endif %}</span>{% endfor %}</span>{% endif %}

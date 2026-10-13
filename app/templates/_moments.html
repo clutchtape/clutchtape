@@ -15,7 +15,7 @@
     </div>{% endfor %}</div>
   {% if d.moments|length > 6 %}<button type="button" class="clipmore" data-showall=".clipsec">Show all {{ d.moments|length }} clips</button>{% endif %}
 </section>
-{% elif tab == 'latest' and tw and d.moments_all is defined and d.moments_all %}<section class="panel clipsec clipsec-empty" id="clips"><div class="ph"><h2>Clips from this session</h2><span class="muted">No auto clips from this session's games yet.</span><a class="allclips" href="{{ tab_url('clips') }}">All clips →</a></div></section>
+{% elif tab == 'latest' and tw and d.moments_all is defined and d.moments_all %}<section class="panel clipsec clipsec-empty" id="clips"><div class="ph"><h2>Clips from this session</h2><span class="muted">No watchable clips from this session.</span><a class="allclips" href="{{ tab_url('clips') }}">All clips →</a></div></section>
 {% elif d.clips_pending and tw %}
-<section class="panel"><div class="ph"><h2>Auto clips</h2><span class="muted">Finding the best plays in your newest games… refresh in a minute.</span></div></section>
+<section class="panel"><div class="ph"><h2>Highlights</h2><span class="muted">Analyzing Theater events from your newest games. Video clips require a matching recording.</span></div></section>
 {% endif %}

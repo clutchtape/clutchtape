@@ -30,7 +30,7 @@ class SessionWatch(unittest.TestCase):
         rows += [(2, 'a', 1000), (99, 'a', 999999), (1, 'other-session', 0)]
         self.conn.executemany('INSERT INTO moments VALUES (?,?,?)', rows)
         result = session_watch.for_matches([self.game()], [1, 2])
-        self.assertEqual(result['a'][-1]['text'], '16 clips')
+        self.assertEqual(result['a'][-1]['text'], '16 highlights')
 
     def test_no_scores_no_clips_and_unfinished_are_not_promoted(self):
         self.conn.execute("INSERT INTO moments VALUES (1,'dnf',1000)")
@@ -41,7 +41,7 @@ class SessionWatch(unittest.TestCase):
     def test_known_tie_and_single_clip(self):
         self.conn.execute("INSERT INTO moments VALUES (1,'a',1000)")
         cues = session_watch.for_matches([self.game(team=2, enemy=2, outcome='Tie')], [1])['a']
-        self.assertEqual([c['text'] for c in cues], ['Tied finish', '1 clip'])
+        self.assertEqual([c['text'] for c in cues], ['Tied finish', '1 highlight'])
 
     def test_session_reasons_count_games_once_and_use_chronological_streak(self):
         games = [dict(self.game(str(i)), started_at=i) for i in range(4)]
@@ -50,7 +50,7 @@ class SessionWatch(unittest.TestCase):
         session = dict(matches=list(reversed(games)))
         result = session_watch.for_sessions([session], [1, 2], {'123': [['0', 0], ['0', 1]]})['0']
         self.assertEqual(result['label'], 'Top pick')
-        self.assertEqual(result['reasons'], ['4 close games', '2 detected clips', '4-game win streak'])
+        self.assertEqual(result['reasons'], ['4 close games', '2 detected highlights', '4-game win streak'])
         self.assertEqual(result['recorded'], 1)
 
     def test_session_does_not_invent_reasons_and_loss_breaks_streak(self):
@@ -72,6 +72,8 @@ class SessionWatch(unittest.TestCase):
             self.assertTrue(picks[str(i)]['interesting'])
             self.assertEqual(picks[str(i)]['heat'], 0)
             self.assertTrue(picks[str(i)]['reasons'])
+            self.assertFalse(any('clip' in reason for reason in picks[str(i)]['reasons']))
+            self.assertIn('8 detected highlights', picks[str(i)]['reasons'])
         self.assertEqual(picks['4']['label'], 'Top pick')
         self.assertEqual(picks['4']['heat'], 5)
 
