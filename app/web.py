@@ -434,7 +434,6 @@ def _add_one(gt, tw_raw):
     tw_login=twitch.parse_login(tw_raw) if tw_raw else None
     p=db.q1("SELECT slug FROM players WHERE gamertag=? COLLATE NOCASE",gt)
     if p:return p['slug'],tw_login,None
-    if worker.backlog()>=MAX_QUEUE:return None,None,"The sync queue is full. Existing profiles still work; please try again shortly."
     if not xbox.status()['connected']:return None,None,"Halo connection is temporarily unavailable. Existing stats are still available."
     if not capacity.limiter.allow('new-lookups',20) or not capacity.lookups.acquire(blocking=False):
         return None,None,"New player lookups are busy. Please try again in a minute, or explore an existing profile."
@@ -468,13 +467,11 @@ def _resolve_new(gt, tw_raw):
             return p["slug"], tw_login, None
         if db.q1("SELECT COUNT(*) c FROM players")["c"] >= MAX_PLAYERS:
             return None, None, "The demo is full right now."
-        if worker.backlog() >= MAX_QUEUE:
-            return None, None, "Lots of people are trying the demo right now. Try again in a few minutes, or open the example."
         slug = slugify(canonical)
         if db.q1("SELECT 1 FROM players WHERE slug=?", slug):
             slug = f"{slug}-{xuid[-4:]}"
         cur = db.run("INSERT INTO players(xuid,gamertag,slug,created_at) VALUES(?,?,?,?)", xuid, canonical, slug, time.time())
-        worker.enqueue(cur.lastrowid)
+        worker.enqueue(cur.lastrowid, background=True)
         return slug, tw_login, None
 
 
@@ -555,7 +552,7 @@ def squad(slugs, short=False, code=None, game=None):
             worker.enqueue(p["id"])
     if data["clips_pending"]:
         for p in ps:
-            if p["sync_state"] in ("ready", "error") and now - (p["last_synced"] or 0) > 45:
+            if p["sync_state"] in ("ready", "error") and worker.stale(p, active=True):
                 worker.enqueue(p["id"])
     # Twitch channels: this browser's own choices (session), then featured/test-host config
     mine = _tw_map()
@@ -1451,7 +1448,7 @@ def profile(slug):
     if p["sync_state"] == "private" and time.time() - (p["last_synced"] or 0) > 3600:
         worker.enqueue(p["id"])                       # privacy settings can change: re-check hourly on view
     if p["sync_state"] in ("ready", "error") and (
-            worker.stale(p, active=bool(data["live"] and data["live"]["active"])) or (data["clips_pending"] and time.time() - (p["last_synced"] or 0) > 45)):
+            worker.stale(p, active=bool(data["live"] and data["live"]["active"])) or (data["clips_pending"] and worker.stale(p, active=True))):
         worker.enqueue(p["id"])
     tw = _channel_for(p) if twitch.enabled() else None
     u = None
@@ -1825,7 +1822,7 @@ def seed_featured():
                 cur = db.run("INSERT OR IGNORE INTO players(xuid,gamertag,slug,created_at) VALUES(?,?,?,?)",
                              xuid, canon, slug, time.time())
                 if cur.lastrowid:
-                    worker.enqueue(cur.lastrowid)
+                    worker.enqueue(cur.lastrowid, background=True)
             except Exception:
                 log.exception("seeding featured %s failed", gt)
     threading.Thread(target=run, name="seed-featured", daemon=True).start()

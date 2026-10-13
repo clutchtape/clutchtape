@@ -1,9 +1,13 @@
-"""One background worker runs player syncs one at a time (keeps the shared Xbox login well under Halo's rate limits).
-2026-10-11: a priority line, not first-come-first-served — player syncs (a finished game showing up) first, then
-match-page loads, then film reads, and a film job reads at most FILM_BATCH games before the rest go back in line, so
-a live squad's games never wait minutes behind a long film read."""
+"""One bounded Halo worker, durable import admission, and demand-aware refresh scheduling.
+
+Foreground refreshes take priority over detail, film and background syncs.
+Accepted imports remain in SQLite until serviced; an in-memory queue is only
+the next small batch, not the full waiting list.
+"""
 import asyncio
+import heapq
 import logging
+from itertools import zip_longest
 import os
 import queue
 import threading
@@ -33,13 +37,24 @@ def _put(job, pri):
     _q.put((pri, n, job))
 
 
-def enqueue(player_id, reset=False):
+def enqueue(player_id, reset=False, background=False):
     with _lock:
-        if player_id in _queued or len(_queued)>=MAX_PENDING:
+        if player_id in _queued:
+            if not background:
+                # A viewer opening an already scheduled profile promotes that
+                # job instead of leaving it behind the import backlog.
+                with _q.mutex:
+                    for i, (pri, seq, job) in enumerate(_q.queue):
+                        if job == player_id and pri > PRI_SYNC:
+                            _q.queue[i] = (PRI_SYNC, seq, job)
+                            heapq.heapify(_q.queue)
+                            break
+            return False
+        if len(_queued)>=(max(1, MAX_PENDING//2) if background else MAX_PENDING):
             return False
         if reset:db.run("UPDATE players SET sync_state='queued',sync_error=NULL WHERE id=?",player_id)
         _queued.add(player_id)
-    _put(player_id, PRI_SYNC)
+    _put(player_id, 3 if background else PRI_SYNC)
     return True
 
 
@@ -78,8 +93,12 @@ def enqueue_detail(mid):
 def position(pid):
     """1-based place in line (1 = running/next), or 0 if not queued."""
     with _lock:
-        if pid not in _queued:
+        pending = pid in _queued
+    if not pending:
+        p = db.q1("SELECT id FROM players WHERE id=? AND sync_state='queued'", pid)
+        if not p:
             return 0
+        return db.q1("SELECT COUNT(*) n FROM players WHERE sync_state IN ('queued','syncing') AND id<=?", pid)['n']
     with _q.mutex:
         items = [x[2] for x in sorted(_q.queue) if not isinstance(x[2], tuple)]
     return (items.index(pid) + 1) if pid in items else 1
@@ -93,11 +112,26 @@ ACTIVE_RESYNC_S = 30
 STREAMING_RESYNC_S = 20
 
 
+def touch(player_id):
+    """A short viewing lease; repeated viewers never create extra jobs."""
+    now = time.time()
+    db.run("UPDATE players SET last_view=? WHERE id=? AND (last_view IS NULL OR last_view<?)",
+           now, player_id, now-60)
+
+
+def viewing_interval():
+    # Budget two seconds per distinct watched player, leaving room for detail/film work.
+    # This is an admission budget, not a promise of upstream throughput.
+    n = db.q1("SELECT COUNT(*) n FROM players WHERE last_view>? AND sync_state IN ('ready','error')",
+              time.time()-180)['n']
+    return max(STREAMING_RESYNC_S, n * 2)
+
+
 def stale(player, active=False, streaming=False):
-    """Players on a live stream refresh every 20s (a finished game shows up fast while you watch), players who played
-    in the last couple of hours every 30s (only while someone has their page open), everyone else every 10 min."""
-    limit = STREAMING_RESYNC_S if streaming else ACTIVE_RESYNC_S if active else RESYNC_AFTER_S
-    return (not player["last_synced"]) or time.time() - player["last_synced"] > limit
+    touch(player["id"])
+    limit = max(STREAMING_RESYNC_S if streaming else ACTIVE_RESYNC_S if active else RESYNC_AFTER_S,
+                viewing_interval())
+    return not player["last_synced"] or time.time()-player["last_synced"] > limit
 
 
 def metrics():
@@ -146,14 +180,15 @@ def _loop():
             with _lock:_queued.discard(pid);_running=None
             if queued:_q.task_done()
             if isinstance(pid,tuple) and pid[0]=='film' and pid[1] in _film_rest:enqueue_film(pid[1],_film_rest.pop(pid[1]))
+        try:
+            schedule()
+        except Exception:
+            log.exception("scheduler refill failed")
         time.sleep(0.5)
 
 
-# Background refresh (2026-10-07): syncs used to happen only when someone opened a page, so the demo squad sat
-# 90h stale between visits and LIVE badges / "new game in" never fired unattended. Every REFRESH_TICK_S the refresher
-# queues: featured/demo players and anyone viewed in the last WATCHED_DAYS — every REFRESH_S normally, every
-# ACTIVE_RESYNC_S while they're mid-session (a game ended < 2h ago). Syncs stop at the first stored game, so idle
-# refreshes cost one history page each (well inside Halo's rate limits with the single worker).
+# Recently viewed players back off progressively after their viewing lease ends.
+# Featured/followed players retain an hourly background check.
 REFRESH_TICK_S = 60
 REFRESH_S = 15 * 60
 WATCHED_DAYS = 7
@@ -171,40 +206,52 @@ def _followed_names():
 
 
 def refresh_due(now=None):
-    """Player ids the refresher should queue right now (pure: reads the DB, queues nothing)."""
+    """Fair oldest-first background work, with inactivity backoff and no per-player match queries."""
     now = now or time.time()
     names, slugs = _followed_names()
+    interval = max(ACTIVE_RESYNC_S, viewing_interval())
     due = []
-    for p in db.q("SELECT id, gamertag, slug, sync_state, last_synced, last_view FROM players WHERE sync_state IN ('ready','error','queued','syncing')"):
-        if p['sync_state'] in ('queued','syncing'):
-            due.append(p['id']);continue
-        followed = p["gamertag"].lower() in names or (p["slug"] or "").lower() in slugs
-        watched = (p["last_view"] or 0) > now - WATCHED_DAYS * 86400
-        if not (followed or watched):
+    for p in db.q("SELECT id,gamertag,slug,sync_state,last_synced,last_view FROM players WHERE sync_state IN ('ready','error')"):
+        age = now - (p['last_view'] or 0)
+        followed = p['gamertag'].lower() in names or (p['slug'] or '').lower() in slugs
+        if age <= 180:
+            limit = interval
+        elif age <= 3600:
+            limit = 15 * 60
+        elif age <= 86400 or followed:
+            limit = 3600
+        elif age <= WATCHED_DAYS * 86400:
+            limit = 24 * 3600
+        else:
             continue
-        row = db.q1("SELECT MAX(started_at + COALESCE(duration_s, 0)) AS t FROM matches WHERE player_id=?", p["id"])
-        last_game = (row["t"] if row else 0) or 0
-        limit = ACTIVE_RESYNC_S if now - last_game < 2 * 3600 else REFRESH_S
-        if not p["last_synced"] or now - p["last_synced"] > limit:
-            due.append(p["id"])
-    return due
+        if now - (p['last_synced'] or 0) > limit:
+            due.append((p['last_synced'] or 0, p['id']))
+    return [pid for _, pid in sorted(due)]
+
+
+def schedule():
+    # Accepted imports live in SQLite, including across restarts. Keep most of a
+    # large backlog out of RAM and reserve capacity for foreground requests.
+    imports = [p['id'] for p in db.q("SELECT id FROM players WHERE sync_state='queued' ORDER BY id LIMIT ?", MAX_PENDING)]
+    for pair in zip_longest(imports, refresh_due()):
+        for pid in pair:
+            if pid is not None:
+                enqueue(pid, background=True)
+            with _lock:
+                if len(_queued) >= max(1, MAX_PENDING//2):
+                    return
 
 
 def _refresher():
     while True:
-        time.sleep(REFRESH_TICK_S)
         try:
-            if backlog() > 20:           # visitors' first syncs come first
-                continue
-            for pid in refresh_due():
-                if backlog()>=MAX_PENDING-3:break
-                enqueue(pid)
+            schedule()
         except Exception:
             log.exception("refresher tick failed")
+        time.sleep(REFRESH_TICK_S)
 
 
 def start():
-    for r in db.q("SELECT id FROM players WHERE sync_state IN ('queued','syncing')"):
-        enqueue(r["id"])
+    db.run("UPDATE players SET sync_state='queued' WHERE sync_state='syncing'")
     threading.Thread(target=_loop, name="sync-worker", daemon=True).start()
     threading.Thread(target=_refresher, name="refresher", daemon=True).start()

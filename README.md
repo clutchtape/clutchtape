@@ -108,3 +108,29 @@ Pull requests are welcome, but forking it and building something of your own is 
 ## Contact
 
 Questions or feedback: [support@clutchtape.com](mailto:support@clutchtape.com).
+
+
+## Sync capacity
+
+Viewers of the same gamertag share stored results and a deduplicated sync job.
+One worker fetches Halo data; adding HTTP workers alone does not increase Halo
+capacity (the scheduler and admission limits are currently single-process).
+
+Accepted new profiles wait durably in SQLite. The worker keeps only a bounded
+batch in memory, reserves half its queue for foreground work, and interleaves
+new imports with overdue refreshes. Restarting recovers unfinished imports.
+New-name resolution still has a shared 20/minute limit and two concurrent
+lookups; a burst beyond this receives a retry message, not a guaranteed place.
+
+Open profiles renew a three-minute viewing lease. Their refresh interval scales
+with the number of distinct watched players (a two-second budget per player,
+with normal 20–30 second minimums). After viewing ends, background checks back
+off to 15 minutes, hourly, then daily, and stop after seven days. Featured and
+notification-followed players retain hourly checks. These are scheduling
+targets; upstream latency, throttling and imports can delay results further.
+
+The latest 25 matches load first; deeper history and Theater work yield to
+foreground jobs. A surge can delay historical imports and highlights. Tests
+simulate 500 distinct players, bounded admission, duplicate viewers, backoff
+and queue recovery without contacting Halo. They are not an end-to-end
+500-user load certification.
