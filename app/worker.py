@@ -25,6 +25,15 @@ _queued = set()
 _lock = threading.Lock()
 RESYNC_AFTER_S = 10 * 60
 MAX_PENDING = int(os.getenv("MAX_QUEUE", "25"))
+MAX_DETAILS = 4
+MAX_FILMS = 3
+
+
+def _secondary_full(kind, limit):
+    # Called under _lock. Detail/film jobs must not consume the foreground reserve.
+    return (len(_queued) >= max(1, MAX_PENDING//2)
+            or sum(isinstance(job, tuple) and job[0] == kind for job in _queued) >= limit)
+
 _metrics = {"started": 0, "completed": 0, "errors": 0, "job_started_at": 0, "last_completed_at": 0}
 _running = None
 
@@ -69,7 +78,7 @@ def enqueue_film(player_id, match_ids):
         return False
     key = ("film", player_id)
     with _lock:
-        if key in _queued or len(_queued)>=MAX_PENDING:
+        if key in _queued or _secondary_full('film', MAX_FILMS):
             return False
         _queued.add(key)
     _film_pending[player_id] = ids
@@ -82,7 +91,7 @@ def enqueue_detail(mid):
     with _lock:
         if key in _queued:
             return True
-        if len(_queued) >= MAX_PENDING:
+        if _secondary_full('detail', MAX_DETAILS):
             return False
         db.kv_set('matchload:' + mid, {'state': 'loading', 'at': time.time()})
         _queued.add(key)

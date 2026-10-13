@@ -34,11 +34,35 @@ def send(text,recovered=False):
     if os.getenv('NTFY_URL'):ntfy(os.getenv('NTFY_URL'),'Clutchtape recovered' if recovered else 'Clutchtape needs attention',text,recovered);sent=True
     if not sent:print('Alert (no destination configured): '+text,flush=True)
 
+class QueuePressure:
+    """Queue capacity is advisory: ten minutes sustained, hourly at most, no recovery ping."""
+    def __init__(self):
+        self.since = None
+        self.sent_at = None
+
+    def due(self, full, now):
+        if not full:
+            self.since = None
+            return False
+        if self.since is None:
+            self.since = now
+        return (now-self.since >= 600
+                and (self.sent_at is None or now-self.sent_at >= 3600))
+
+
 def run():
-    failures=0;active=None;last=0
+    failures=0;active=None;last=0;pressure=QueuePressure()
     while True:
-        ok,alerts=check(os.getenv('HEALTH_URL','http://clutchtape:8140/readyz'));failures=0 if ok else failures+1
+        ok,alerts=check(os.getenv('HEALTH_URL','http://clutchtape:8140/readyz'))
+        queue_full=any('Halo queue is full' in alert for alert in alerts)
+        if queue_full:
+            alerts=[alert for alert in alerts if 'Halo queue is full' not in alert]
+            ok=not alerts
+        failures=0 if ok else failures+1
         try:
+            if pressure.due(queue_full,time.time()):
+                send('Clutchtape: Halo processing has stayed at capacity for 10 minutes. Saved stats remain available; new details may be delayed.')
+                pressure.sent_at=time.time()
             if failures>=3:
                 key=sorted(alerts)
                 if key!=active or time.time()-last>6*3600:

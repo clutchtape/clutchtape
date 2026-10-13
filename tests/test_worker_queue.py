@@ -30,3 +30,20 @@ class PriorityLine(unittest.TestCase):
         with patch.object(worker.ingest,'film_matches',fake):
             job=worker._q.get_nowait()[2];asyncio.run(worker._job(job))
         self.assertEqual(seen,[['a','b','c']]);self.assertEqual(worker._film_rest,{7:['d','e']})
+
+
+    def test_detail_burst_preserves_sync_slots(self):
+        self.assertEqual(sum(worker.enqueue_detail(str(i)) for i in range(500)), worker.MAX_DETAILS)
+        self.assertTrue(worker.enqueue(100))
+        self.assertEqual(worker._q.get_nowait()[2], 100)
+
+    def test_films_cannot_fill_queue(self):
+        self.assertEqual(sum(worker.enqueue_film(i, ['game']) for i in range(100)), worker.MAX_FILMS)
+        self.assertTrue(worker.enqueue(1000))
+
+    def test_secondary_jobs_respect_shared_foreground_reserve(self):
+        for pid in range(worker.MAX_PENDING//2):
+            worker.enqueue(pid, background=True)
+        self.assertFalse(worker.enqueue_detail('blocked'))
+        self.assertFalse(worker.enqueue_film(999, ['blocked']))
+        self.assertTrue(worker.enqueue(1000))
