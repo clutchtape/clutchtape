@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block robots %}{% endblock %}
-{% block head %}<link rel="stylesheet" href="/static/dense.css?v=4"><link rel="stylesheet" href="/static/personal-home.css?v=4">{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/dense.css?v=4"><link rel="stylesheet" href="/static/personal-home.css?v=6">{% endblock %}
 {% block content %}
 <div class="home-page">
 <section class="personal-home" aria-labelledby="personal-title" data-empty="true" data-has-alerts="false">
@@ -44,7 +44,7 @@
     <p id="lookup-status" role="status" class="muted" hidden></p>
   </form>
   <p class="fine">No sign-in. Stats are public by gamertag. <a href="/privacy">Privacy</a></p>
-  <script nonce="{{ csp_nonce }}" src="/static/lookup.js?v=1" defer></script>
+  <script nonce="{{ csp_nonce }}" src="/static/lookup.js?v=2" defer></script>
   <script nonce="{{ csp_nonce }}">(function(){var f=document.getElementById('lookup'),b=document.getElementById('addtw');if(!f||!b)return;
     if([].some.call(f.querySelectorAll('input[name=twitch]'),function(i){return i.value}))f.classList.add('with-tw');
     b.addEventListener('click',function(){f.classList.add('with-tw');var i=f.querySelector('.twf input');if(i)i.focus()})})();</script>
@@ -62,8 +62,12 @@
 <aside class="herocard" aria-label="Session stats example">
   <p class="eyebrow">Example · {{ demo.gamertag }}'s last ranked session</p>
   <div class="bigrec"><b>{{ demo.record }}</b><span>{{ demo.games }} games · {{ (demo.win_pct|round|int ~ '% wins') if demo.win_pct is not none else 'No decided games' }} · {{ demo.kda|kda }} KDA</span></div>
-  <div class="pips">{% for o in demo.pips %}<i class="pip {{ o }}"></i>{% endfor %}</div>
   <div class="home-stat-grid">{% for label,value in demo.stats %}<div><span>{{ label }}</span><b>{{ value if value is not none else '—' }}</b></div>{% endfor %}</div>
+  <div class="preview-head"><b>Session game log</b><span>Recent {{ demo.matches|length }} games</span></div>
+  <div class="tablewrap"><table class="rawtable heat heat-all home-preview"><thead><tr><th data-stick>Map / mode</th><th>Result</th><th>K/D/A</th><th data-heat>KDA</th><th data-heat>SC%</th><th data-heat>Dmg/min</th></tr></thead><tbody>
+  {% for m in demo.matches %}<tr><td><a href="/match/{{ m.match_id }}?player={{ demo.slug }}">{{ m.map or 'Unknown map' }}</a><small>{{ m.mode or 'Unknown mode' }}</small></td><td><b class="res {{ m.outcome|lower }}">{{ m.outcome }}</b></td><td>{{ m.kills }}/{{ m.deaths }}/{{ m.assists }}</td><td>{{ m.kda|kda }}</td><td>{{ (m.sc_pct ~ '%') if m.sc_pct is not none else '—' }}</td><td>{{ m.dmg_pm if m.dmg_pm is not none else '—' }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  <p class="preview-note">Actual session data · sortable stats · green = better, red = worse</p>
   <a class="pill" href="/p/{{ demo.slug }}">See the full page →</a>
 </aside>
 {% endif %}

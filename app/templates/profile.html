@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ p.gamertag }} — Clutchtape{% endblock %}
-{% block head %}{% if tab == 'analysis' %}<link rel="stylesheet" href="/static/companion.css?v=4"><link rel="stylesheet" href="/static/growth.css?v=1"><link rel="stylesheet" href="/static/analysis.css?v=4"><link rel="stylesheet" href="/static/dense.css?v=2">{% endif %}{% endblock %}
+{% block head %}{% if tab == 'analysis' %}<link rel="stylesheet" href="/static/companion.css?v=4"><link rel="stylesheet" href="/static/growth.css?v=1"><link rel="stylesheet" href="/static/analysis.css?v=6"><link rel="stylesheet" href="/static/dense.css?v=2">{% endif %}{% endblock %}
 {% block content %}
 {% set a = d.all %}
 {% set hub_title = p.gamertag %}{% set save_label = p.gamertag %}{% set hub_slugs = p.slug %}
@@ -37,15 +37,6 @@
 {% include "_board_body.html" %}
 {% elif tab == 'sessions' %}
 {% with sess_list = d.sessions, sess_sel = d.s_idx %}{% include "_hub_sessions.html" %}{% endwith %}
-{% elif tab == 'records' %}
-{% if d.insights %}<h2 class="hub-h2">Records</h2>
-<section class="insights">{% for i in d.insights %}
-  <div class="ins{{ ' fresh' if i.fresh }}"><span>{{ i.label }}{% if i.fresh %} <em class="newchip">NEW</em>{% endif %}</span><b>{{ i.big }}</b><small>{{ i.sub }}</small></div>
-{% endfor %}</section>
-{% endif %}
-{% if not d.insights %}<p class="muted">Records appear once a few sessions have loaded.</p>{% endif %}
-{% if periods %}{% include "_periods.html" %}{% endif %}
-{% include "_hub_tools.html" %}
 {% else %}
 {% set live_rows = [{"slug": p.slug, "gamertag": p.gamertag, "live": d.live}] %}{% set live_slugs = p.slug %}{% if not tw and tab == 'latest' and (not a.games or (d.live and d.live.active)) %}{% if d.live and d.live.ended_ago < 5400 %}<div class="tracker-quiet">{% include "_live.html" %}</div>{% else %}{% include "_live.html" %}{% endif %}{% endif %}{# "Playing now" (#playnow) is the visible live view; the tracker stays as live.js's poller #}
 {% if a.games %}
@@ -154,7 +145,7 @@
 {% endif %}
 {% endblock %}
 {% block scripts %}
-{% if tab == 'analysis' %}<script nonce="{{ csp_nonce }}" src="/static/growth.js?v=3" defer></script><script nonce="{{ csp_nonce }}" src="/static/analysis.js?v=8" defer></script><script nonce="{{ csp_nonce }}" src="/static/analysis_trends.js?v=2" defer></script>{% endif %}
+{% if tab == 'analysis' %}<script nonce="{{ csp_nonce }}" src="/static/growth.js?v=4" defer></script><script nonce="{{ csp_nonce }}" src="/static/analysis.js?v=10" defer></script><script nonce="{{ csp_nonce }}" src="/static/analysis_trends.js?v=2" defer></script>{% endif %}
 {% if tw and pcfg and tab in ('latest', 'clips') %}
 <script nonce="{{ csp_nonce }}" src="https://player.twitch.tv/js/embed/v1.js"></script>
 <script nonce="{{ csp_nonce }}" src="/static/twitch-shim.js?v=2"></script>

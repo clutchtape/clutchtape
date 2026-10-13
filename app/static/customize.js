@@ -107,7 +107,7 @@
 (function () {
   'use strict';
   var KEY = 'ct-sections', html = document.documentElement;
-  var SECS = [['media', 'Stream & clips', '#mediasec'], ['tiles', 'Session tiles', '.hubkpis'], ['log', 'Game log', '#latest'], ['modes', 'By mode & medals', '.brk']];
+  var SECS = [['media', 'Stream & clips', '#mediasec'], ['tiles', 'Session tiles', '.hubkpis'], ['log', 'Game log', '#latest'], ['modes', 'Modes, maps & medals', '.brk']];
   function load() { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } }
   function present() { return SECS.filter(function (x) { return document.querySelector(x[2]); }); }
   function state() { var s = load(), keys = present().map(function (x) { return x[0]; });
@@ -138,7 +138,7 @@
       list.innerHTML = '';
       s.order.forEach(function (k, i) { var li = document.createElement('li'); li.dataset.k = k;
         li.innerHTML = '<label><input type="checkbox"' + (s.hidden.indexOf(k) < 0 ? ' checked' : '') + '> <span></span></label>' +
-          '<button type="button" data-mv="-1" aria-label="Move up"' + (i ? '' : ' disabled') + '>↑</button><button type="button" data-mv="1" aria-label="Move down"' + (i < s.order.length - 1 ? '' : ' disabled') + '>↓</button>';
+          '<button type="button" data-mv="-1" aria-label="Move up"' + (i ? '' : ' disabled') + '><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5m-6 6 6-6 6 6"/></svg></button><button type="button" data-mv="1" aria-label="Move down"' + (i < s.order.length - 1 ? '' : ' disabled') + '><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m-6-6 6 6 6-6"/></svg></button>';
         li.querySelector('span').textContent = names[k]; list.appendChild(li); }); }
     list.addEventListener('click', function (e) { var b = e.target.closest('[data-mv]'); if (!b) return; var s = state(), k = b.closest('li').dataset.k, i = s.order.indexOf(k), j = i + +b.dataset.mv;
       if (j < 0 || j >= s.order.length) return; s.order.splice(i, 1); s.order.splice(j, 0, k); apply(s, true); render();

@@ -1057,7 +1057,7 @@ a.sessbtn:hover{border-color:var(--acc2);color:var(--acc2)}.sessbtn.off{opacity:
 .sesspos{font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums}
 @media(max-width:700px){.sessnav{margin:6px 0 0;width:100%}.sesspos{margin:0 auto}.sessbtn{min-height:38px;padding:0 14px}
 }
-.brk{grid-template-columns:minmax(0,1fr)}.brk .brk-side{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}
+.brk{grid-template-columns:minmax(0,1fr)}.brk .brk-side{grid-template-columns:repeat(2,minmax(0,1fr))}.brk-medals{grid-column:1/-1}.brk .panel{min-width:0}
 @media(max-width:900px){.brk .brk-side{grid-template-columns:minmax(0,1fr)}}
 /* Player stats table (_player_table.html): heat by rank, like the main Halo site — soft fill, coloured text */
 .ptable{border-collapse:collapse;font-variant-numeric:tabular-nums;width:100%}
@@ -1423,7 +1423,7 @@ html:has(.laypop[open]) .chattab{display:none!important}
    with their order; hide-<key> hides a section */
 html.lay-sec main:has(> .sumview){display:flex;flex-direction:column}
 html.lay-sec main:has(> .sumview)>*{order:0}
-html.lay-sec .sumview{display:contents}
+html.lay-sec:not(.rawview) .sumview{display:contents}
 html.lay-sec #mediasec{order:var(--o-media,1)!important}html.lay-sec .hubkpis{order:var(--o-tiles,2)!important}html.lay-sec #latest{order:var(--o-log,3)!important}html.lay-sec .brk{order:var(--o-modes,4)!important}   /* beats the old <1200px #latest{order:2!important} */
 html.lay-sec main:has(> .sumview)>#raw,html.lay-sec main:has(> .sumview)>.foot,html.lay-sec main:has(> .sumview)>footer{order:20}
 html.hide-media #mediasec,html.hide-tiles .hubkpis,html.hide-log #latest,html.hide-modes .brk{display:none!important}
@@ -1435,7 +1435,7 @@ html.hide-media #mediasec,html.hide-tiles .hubkpis,html.hide-log #latest,html.hi
 .arrlist li{display:flex;align-items:center;gap:6px;padding:4px 6px 4px 10px;border-radius:10px;border:1px solid var(--line);background:var(--panel2)}
 .arrlist label{flex:1;display:flex;align-items:center;gap:8px;min-height:36px;font-size:13.5px;cursor:pointer}
 .arrlist input{width:16px;height:16px;margin:0;flex:none;accent-color:var(--acc)}
-.arrlist button{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);font-size:16px;cursor:pointer}.arrlist button:disabled{opacity:.3;cursor:default}
+.arrlist button{display:inline-flex;align-items:center;justify-content:center;flex:0 0 40px;width:40px;height:40px;min-width:40px;min-height:40px;padding:0;line-height:1;box-sizing:border-box;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);font-size:16px;cursor:pointer}.arrlist button:disabled{opacity:.3;cursor:default}
 @media(max-width:700px){.arrcard{position:fixed;left:12px;right:12px;top:auto;bottom:calc(12px + env(safe-area-inset-bottom));width:auto}}
 html:has(.arrpop[open]) .chattab{display:none!important}
 html.vt-arr::view-transition-group(*){animation-duration:.26s}
@@ -1754,3 +1754,5 @@ html.vid-pin #player.is-live .embed{position:fixed!important;left:0;right:0;z-in
 .oa-morebars .lvb .lvbar{height:6px}
 .oa-morebars .oa-grp{flex-wrap:nowrap!important}.oa-morebars .oa-grp>.lab{flex-basis:auto!important}
 .oa-morebars .lvb{width:100%}
+
+.arrlist button svg{display:block;width:18px;height:18px;flex:none;pointer-events:none}

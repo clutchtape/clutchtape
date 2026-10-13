@@ -25,7 +25,7 @@ const P=[
  ['/sq/d7c3bb',{}],['/sq/d7c3bb?tab=sessions',{}],['/sq/d7c3bb?tab=clips',{}],['/sq/d7c3bb?tab=analysis',{}],['/sq/d7c3bb?tab=records',{}],
  sq.watch&&['/sq/d7c3bb?watch='+sq.watch,{watch:true}],sq.glink&&[sq.glink,{}],...(sqs||[]).map(h=>[h,{}]),
  ['/sq/7b802a',{}],['/squad/cykul,itz-so-frosty',{}],
- ['/history/cykul,itz-so-frosty',{}],['/weekly/cykul,itz-so-frosty',{}],['/practice/cykul,itz-so-frosty',{}],['/scrims/cykul,itz-so-frosty',{}],['/live/cykul,itz-so-frosty',{}],
+ ['/history/cykul,itz-so-frosty',{}],['/weekly/cykul,itz-so-frosty',{}],['/practice/cykul,itz-so-frosty',{}],['/live/cykul,itz-so-frosty',{}],
 ].filter(Boolean);
 const links=new Set();
 for(const [w,h] of [[1440,900],[390,844]]){const mob=w<700;const ctx=await b.newContext({viewport:{width:w,height:h},isMobile:mob,hasTouch:mob});

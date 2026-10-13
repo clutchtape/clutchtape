@@ -9,3 +9,17 @@
 a.bar-label{display:flex;align-items:center;min-height:44px;min-width:44px}
 
 @media(max-width:760px){.companion .session-score>strong{white-space:nowrap;font-size:clamp(44px,14vw,60px);letter-spacing:-3px;flex-shrink:0}.companion .session-score>div{min-width:0}.companion .session-score b{font-size:16px}}
+
+/* All Time tables share the game log's heat scale, sorting and horizontal scrolling. */
+.companion .dense-stats,.companion .games-panel{min-width:0}
+.companion .stat-grid{width:100%;font-variant-numeric:tabular-nums}
+.companion .stat-grid th,.companion .stat-grid td{font-size:13px;font-weight:400;padding:8px 10px!important;white-space:nowrap}
+.companion .stat-grid thead th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;cursor:pointer}
+.companion .stat-grid tbody th{font-weight:600}
+.stat-legend{font-size:12px;color:var(--ct-muted);line-height:1.5;margin:12px 0 0}
+.companion .stat-controls{align-items:center}
+.companion #game-stats-table thead th{cursor:pointer}
+.companion .filter-panel>summary{display:flex}
+.companion #game-stats-table th:first-child,.companion #game-stats-table td:first-child{min-width:220px;width:220px}
+.companion #game-stats-table td:first-child a{display:block;min-width:200px;max-width:220px;white-space:normal;min-height:0;line-height:1.5}
+@media(max-width:700px){.companion #game-stats-table th:first-child,.companion #game-stats-table td:first-child{min-width:150px;width:150px}.companion #game-stats-table td:first-child a{min-width:130px;max-width:150px}}

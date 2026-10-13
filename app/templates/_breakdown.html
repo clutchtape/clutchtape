@@ -2,10 +2,12 @@
    table above the game log (_player_table.html). Needs brk = web._breakdown(). #}
 <section class="brk" aria-label="Session breakdown">
   <div class="brk-side">
-    {% if brk.modes|length > 0 %}<div class="panel brk-modes"><div class="ph"><h2>By mode</h2></div>
-      <table class="brkmodes"><thead><tr><th>Mode</th><th>Games</th><th>W–L</th><th>SC%</th><th>KDA</th><th>Dmg/min</th></tr></thead><tbody>
-      {% for m in brk.modes %}<tr><td>{{ m.name }}</td><td>{{ m.games }}</td><td>{{ m.wins }}–{{ m.losses }}</td><td>{{ (m.sc_pct ~ '%') if m.sc_pct is not none else '—' }}</td><td>{{ m.kda|kda }}</td><td>{{ m.dmg_pm if m.dmg_pm is not none else '—' }}</td></tr>{% endfor %}
-      </tbody></table></div>{% endif %}
+    {% for label, groups, kind in [('Mode', brk.modes, 'modes'), ('Map', brk.maps, 'maps')] %}
+    {% if groups %}<div class="panel brk-{{ kind }}"><div class="ph"><h2>By {{ label|lower }}</h2></div>
+      <div class="tablewrap"><table class="brkmodes" aria-label="Session stats by {{ label|lower }}"><thead><tr><th>{{ label }}</th><th>Games</th><th>W–L</th><th>SC%</th><th>KDA</th><th>Dmg/min</th></tr></thead><tbody>
+      {% for m in groups %}<tr><td>{{ m.name }}</td><td>{{ m.games }}</td><td>{{ m.wins }}–{{ m.losses }}</td><td>{{ (m.sc_pct ~ '%') if m.sc_pct is not none else '—' }}</td><td>{{ m.kda|kda }}</td><td>{{ m.dmg_pm if m.dmg_pm is not none else '—' }}</td></tr>{% endfor %}
+      </tbody></table></div></div>{% endif %}
+    {% endfor %}
     {% if brk.medals %}<div class="panel brk-medals"><div class="ph"><h2>Medals</h2><span class="muted">{{ brk.medals|sum(attribute=1) }} this session</span></div>
       <div class="medlist">{% for name, n in brk.medals %}<span class="med"><b>{{ n }}</b> {{ name }}</span>{% endfor %}</div></div>{% endif %}
   </div>

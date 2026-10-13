@@ -158,23 +158,32 @@
    set early by an inline script in base.html so the page doesn't flash the other view */
 (function () {
   function sync() { var raw = document.documentElement.classList.contains('rawview');
-    [].forEach.call(document.querySelectorAll('[data-view]'), function (b) { b.setAttribute('aria-pressed', String((b.dataset.view === 'raw') === raw)); }); }
+    [].forEach.call(document.querySelectorAll('.viewsw button[data-view]'), function (b) { b.setAttribute('aria-pressed', String((b.dataset.view === 'raw') === raw)); }); }
   document.addEventListener('click', function (e) {
-    var b = e.target.closest('[data-view]'); if (!b) return;
+    var b = e.target.closest('.viewsw button[data-view]'); if (!b) return;
     var raw = b.dataset.view === 'raw'; document.documentElement.classList.toggle('rawview', raw);
     try { localStorage.setItem('ct-view', raw ? 'raw' : 'summary'); } catch (x) {}
     sync(); load(); if (window.ctPage) window.ctPage();
+    // Changing the presentation is not navigation: leave the view switch in place.
   });
   /* the raw table isn't in the page until it's wanted (2026-10-11): fetch this page with ?raw=1 and take its #raw */
   var loading = false;
   function load() {
     var ph = document.querySelector('#raw[data-lazy]'); if (!ph || loading || !document.documentElement.classList.contains('rawview')) return;
-    loading = true; var u = new URL(location.href); u.searchParams.set('raw', '1');
+    loading = true; ph.setAttribute('aria-busy', 'true');
+    var message = ph.querySelector('p'); if (message) message.textContent = 'Loading every stat…';
+    var retry = ph.querySelector('[data-raw-retry]'); if (retry) retry.remove();
+    var u = new URL(location.href); u.searchParams.set('raw', '1');
     fetch(u, { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : Promise.reject(); }).then(function (h) {
       var n = new DOMParser().parseFromString(h, 'text/html').getElementById('raw'), cur = document.querySelector('#raw[data-lazy]');
-      if (n && cur) { cur.replaceWith(document.importNode(n, true)); if (window.ctHeat) window.ctHeat(); if (window.ctPage) window.ctPage(); }
-    }).catch(function () { var c = document.querySelector('#raw[data-lazy] p'); if (c) c.textContent = 'Could not load the raw data. Try again in a moment.'; })
-      .then(function () { loading = false; });
+      if (!n || n.hasAttribute('data-lazy')) throw new Error('Missing raw data');
+      if (cur) { cur.replaceWith(document.importNode(n, true)); if (window.ctHeat) window.ctHeat(); if (window.ctPage) window.ctPage(); }
+    }).catch(function () {
+      var cur = document.querySelector('#raw[data-lazy]'); if (!cur) return;
+      var c = cur.querySelector('p'); if (c) c.textContent = 'Could not load the raw data. Try again in a moment.';
+      var button = document.createElement('button'); button.type = 'button'; button.className = 'secondary';
+      button.dataset.rawRetry = ''; button.textContent = 'Retry raw data'; button.onclick = load; cur.appendChild(button);
+    }).then(function () { loading = false; var cur = document.querySelector('#raw[data-lazy]'); if (cur) cur.removeAttribute('aria-busy'); });
   }
   window.ctRawLoad = load;
   function start() { sync(); load(); }

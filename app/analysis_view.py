@@ -47,6 +47,12 @@ METRICS = [   # display order (2026-10-09): SC%, KDA, damage first
     ('rounds_lost','Rounds lost / game',''),
     ('rounds_tied','Rounds tied / game',''),
 ]
+# Metric direction is shared by summary and game tables; volume/context metrics stay neutral.
+LOWER_IS_BETTER = {'deaths', 'death_pm', 'dmg_ka', 'suicides', 'betrayals', 'rounds_lost'}
+NEUTRAL_METRICS = {'duration', 'shots_fired', 'dmg_taken', 'spawns', 'rounds_tied'}
+def heat_direction(key):
+    return None if key in NEUTRAL_METRICS else 'lo' if key in LOWER_IS_BETTER else 'hi'
+
 EXTRA={'life':'average_life_duration','melee':'melee_kills','grenade':'grenade_kills','power':'power_weapon_kills',
        'spawns':'spawns','suicides':'suicides','betrayals':'betrayals','vehicles':'vehicle_destroys','drivers':'driver_assists',
        'hijacks':'hijacks','emp':'emp_assists','obj_completed':'objectives_completed',
@@ -149,7 +155,7 @@ def build(players, matches, histories, baseline='previous', sessions=None, idx=0
         m=next((x for x in r['metrics'] if x['key']=='sc_pct'),None)
         return (r['games']>0, m['value'] if m and m['value'] is not None else -1)
     reports.sort(key=_sc,reverse=True)
-    return dict(medals=medal_rows,players=reports,series=series,ranks=ranks,expectation=expectation,bars=bars,objectives=objective_bars,metrics=[dict(key=k,label=l,short=SHORT.get(k,l.replace(' / game','')),group=group_for(k),key_stat=k in KEYS,unit=u) for k,l,u in metric_defs],baseline=baseline,player_games=len(rows),scope_games=len(matches),coverage=sum(bool(r.get('extra')) for r in rows))
+    return dict(medals=medal_rows,players=reports,series=series,ranks=ranks,expectation=expectation,bars=bars,objectives=objective_bars,metrics=[dict(key=k,heat=heat_direction(k),label=l,short=SHORT.get(k,l.replace(' / game','')),group=group_for(k),key_stat=k in KEYS,unit=u) for k,l,u in metric_defs],baseline=baseline,player_games=len(rows),scope_games=len(matches),coverage=sum(bool(r.get('extra')) for r in rows))
 
 
 def _objective_values(rows):

@@ -123,9 +123,3 @@ def week_png(slugs):
     resp.headers['Cache-Control']='no-store'
     resp.headers['Content-Disposition']='attachment; filename="clutchtape-week.png"'
     return resp
-
-@bp.route('/scrims/<slugs>')
-def scrims(slugs):
-    b=data(slugs,'custom')
-    rows=[dict(id=m['match_id'],time=m['started_at'],map=m['map'],mode=m['mode'],outcome=m['outcome'],score=f'{m.get("team_score", "—")}–{m.get("enemy_score", "—")}',url=dashboard.link(slugs,'custom',match=m['match_id'])) for m in b['history']]
-    return render_template('scrims.html',b=b,scrim_rows=rows)

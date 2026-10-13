@@ -288,7 +288,7 @@ def _home_card():
             "stats": [("Score share", f"{round(stats['sc_pct'])}%" if stats.get("sc_pct") is not None else None),
                       ("Damage / min", round(stats["dmg_pm"]) if stats.get("dmg_pm") is not None else None),
                       ("K/D", round(stats["kd"], 2) if stats.get("kd") is not None else None)], "win_pct": s["win_pct"] if decided else None, "pips": [m["outcome"].lower() for m in reversed(s["matches"])][-24:],
-            "clips": d["moments"][:3], "csr": d["csr_now"]}
+            "clips": d["moments"][:3], "csr": d["csr_now"], "matches": s["matches"][:6]}
 
 
 def _live_demo_slugs():
@@ -669,7 +669,7 @@ def squad(slugs, short=False, code=None, game=None):
                     [next(iter(g["members"].values())) for g in night if g["members"]]) if night else []
     together_games = [m for n in data["nights"] for m in n["matches"]]
     periods = _periods({gt[pid]: [m["members"][pid] for m in together_games if pid in m["members"]] for pid in gt},
-                       [m["started_at"] for m in together_games]) if tab == "records" else None
+                       [m["started_at"] for m in together_games]) if tab == "analysis" else None
     onair = None
     if lives:
         slug0, st0 = lives[0]
@@ -898,7 +898,17 @@ def _channel_for(p):
 
 
 # ------------------------------------------------------------------ one page per player / squad (Halo-site layout)
-HUB_TABS = [("latest", "⚡ Latest session"), ("sessions", "Sessions"), ("clips", "Clips"), ("analysis", "Analysis"), ("records", "Records")]
+HUB_TABS = [("latest", "⚡ Latest session"), ("sessions", "Sessions"), ("clips", "Clips"), ("analysis", "All Time")]
+
+
+@app.before_request
+def old_records_link():
+    if request.args.get("tab") == "records" and request.path.startswith(("/p/", "/sq/", "/squad/")):
+        args = request.args.to_dict()
+        args.update(tab="analysis", scope="all")
+        for key in ("session", "s", "match"):
+            args.pop(key, None)
+        return redirect(request.path + "?" + urlencode(args) + "#personal-bests", code=302)
 
 
 def _tab():
@@ -910,6 +920,9 @@ def _tab():
 def hub_helpers():
     def tab_url(t, **extra):
         args = {k: v for k, v in request.args.items() if k not in ("tab", "watch", *extra)}
+        if t == "analysis" and request.args.get("tab") != "analysis":
+            for key in ("session", "s", "match", "scope"):
+                args.pop(key, None)
         if t != "latest":
             args["tab"] = t
         args.update({k: v for k, v in extra.items() if v is not None})
@@ -1123,6 +1136,7 @@ def _breakdown(matches, rows):
         vs.append(dict(label=label, now=now, usual=usual, unit=unit, delta=delta, good=good, help=help_))
     modes = analytics.group(matches, "mode")
     return dict(vs=vs, base_games=len(base_rows) if b else 0, days=BASE_DAYS, modes=modes,
+                maps=analytics.group([dict(m, map=m.get("map") or "Unknown map") for m in matches], "map", limit=len(matches)),
                 medals=analytics.medals(matches, top=10), agg=a)
 
 
@@ -1491,7 +1505,7 @@ def profile(slug):
     if _tab() == "latest" and tw and not onair and s:
         guide_usual = _usual_of(s["matches"], data["rows"])
         guide = watch_guide.build(s["matches"], {r["match_id"]: r for r in data["rows"]}, guide_usual, data["moments"])
-    return render_template("profile.html", recap_url=(f"/og/p/{p['slug']}/recap.png?session={_short_id(s['matches'][0]['match_id'])}" if s else None), guide=guide, guide_usual=guide_usual, session_picks=session_watch.for_sessions(data["sessions"], [p["id"] for p in [p] + alts], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(s["matches"] if s else [], [p["id"]] + [a["id"] for a in alts]) if tab == "latest" else {}, tab=tab, onair=onair, alts=alts, kpis=_kpis(s["matches"]) if s else [], adv=_adv_kpis({p["gamertag"]: s["matches"]}) if s else [], sess_agg=analytics._agg(s["matches"]) if s else None, brk=_breakdown(s["matches"], data["rows"]) if s and tab == "latest" else None, pt=_solo_table(s["matches"], data["rows"], "This session" if data["s_idx"] == 0 and _is_current(s["matches"]) else fmt_dt(s["start"], "%a %b %-d")) if s and tab == "latest" else None, sess_current=bool(s) and data["s_idx"] == 0 and _is_current(s["matches"]), sb=_live_board(s["matches"] if s and data["s_idx"] == 0 and _is_current(s["matches"]) else [], usual=_usual_of(s["matches"], data["rows"]) if s else None) if tab == "latest" else None, raw=raw_view.build(s["matches"]) if s and tab == "latest" and request.args.get("raw") == "1" else None, raw_lazy=bool(s) and tab == "latest", periods=_periods({p["gamertag"]: data["rows"]}, solo=True) if tab == "records" else None, **extra, comparison=comparison, recap_matches=session_review.recap_matches(s['matches'] if s else []), recap_names=[p['gamertag']], pcfg=pcfg, vm=vm, og=og, p=p, d=data, clips=clips, vods=vods, tw=tw, psrc=psrc, plabel=plabel,
+    return render_template("profile.html", recap_url=(f"/og/p/{p['slug']}/recap.png?session={_short_id(s['matches'][0]['match_id'])}" if s else None), guide=guide, guide_usual=guide_usual, session_picks=session_watch.for_sessions(data["sessions"], [p["id"] for p in [p] + alts], vm) if tab == "sessions" else {}, watch_cues=session_watch.for_matches(s["matches"] if s else [], [p["id"]] + [a["id"] for a in alts]) if tab == "latest" else {}, tab=tab, onair=onair, alts=alts, kpis=_kpis(s["matches"]) if s else [], adv=_adv_kpis({p["gamertag"]: s["matches"]}) if s else [], sess_agg=analytics._agg(s["matches"]) if s else None, brk=_breakdown(s["matches"], data["rows"]) if s and tab == "latest" else None, pt=_solo_table(s["matches"], data["rows"], "This session" if data["s_idx"] == 0 and _is_current(s["matches"]) else fmt_dt(s["start"], "%a %b %-d")) if s and tab == "latest" else None, sess_current=bool(s) and data["s_idx"] == 0 and _is_current(s["matches"]), sb=_live_board(s["matches"] if s and data["s_idx"] == 0 and _is_current(s["matches"]) else [], usual=_usual_of(s["matches"], data["rows"]) if s else None) if tab == "latest" else None, raw=raw_view.build(s["matches"]) if s and tab == "latest" and request.args.get("raw") == "1" else None, raw_lazy=bool(s) and tab == "latest", periods=_periods({p["gamertag"]: data["rows"]}, solo=True) if tab == "analysis" else None, **extra, comparison=comparison, recap_matches=session_review.recap_matches(s['matches'] if s else []), recap_names=[p['gamertag']], pcfg=pcfg, vm=vm, og=og, p=p, d=data, clips=clips, vods=vods, tw=tw, psrc=psrc, plabel=plabel,
                            host=request.host.split(":")[0])
 
 
@@ -1929,7 +1943,7 @@ def _board_data(slugs):
     ps=_board_players(slugs)
     kind=_kind()
     raw=request.args.get('days','30');days=int(raw) if raw in ('30','90') else 0 if raw=='all' else 30
-    scope=request.args.get('scope') or ('session' if request.args.get('session') or request.args.get('match') else '30');scope=scope if scope in ('session','30','90','all') else '30'   # Analysis defaults to the last 30 days (2026-10-09)
+    scope=request.args.get('scope') or ('session' if request.args.get('session') or request.args.get('match') else 'all');scope=scope if scope in ('session','30','90','all') else 'all'   # All Time uses all loaded history unless explicitly filtered
     baseline=request.args.get('compare','previous');baseline=baseline if baseline in ('previous','recent','month') else 'previous'
     playlist=request.args.get('playlist','')[:160]
     data=dashboard.load(ps,kind,request.args.get('session'),request.args.get('match'),days,scope,playlist,baseline)

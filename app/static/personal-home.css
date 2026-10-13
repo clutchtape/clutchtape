@@ -28,3 +28,15 @@
 .home-page #saved-profiles{display:none!important}   /* the chips above are the saved list now (Edit removes) */
 @media(max-width:600px){.personal-pick{flex-wrap:wrap;gap:2px 8px}.personal-pick em{flex-basis:100%}.personal-chip{max-width:calc(50vw - 30px)}}
 .personal-home[data-empty=true][data-has-alerts=false]{display:none}   /* first-time visitors: no empty box */
+
+/* Detailed live product preview, using the same table and heatmap as player pages. */
+.home-page .herocard{min-width:0;padding:22px;gap:12px}
+.home-page .herocard .bigrec{gap:16px;margin:6px 0}.home-page .herocard .bigrec>b{font-size:40px}
+.home-page .herocard .home-stat-grid{padding:12px 0;gap:12px}.home-page .herocard .home-stat-grid b{font-size:22px}
+.preview-head{display:flex;justify-content:space-between;gap:12px;font-size:12px}.preview-head span,.preview-note{color:var(--ct-muted)}
+.herocard .tablewrap{min-width:0;width:100%;max-width:100%}.home-preview{width:100%;font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.home-preview th,.home-preview td{padding:7px 8px;text-align:left}.home-preview th{font-size:10px;text-transform:uppercase}.home-preview td small{display:block;font-size:10px;color:var(--ct-muted);margin-top:3px}
+.preview-note{font-size:11px;line-height:1.5;margin:0}.herocard .eyebrow{font-size:11px}
+@media(min-width:1000px){.home-page .herowrap{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)}}
+@media(max-width:700px){.home-page .herocard{padding:16px}.home-preview th,.home-preview td{padding:7px 6px}}
+.home-page .herocard{display:flex}

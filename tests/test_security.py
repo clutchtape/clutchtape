@@ -18,7 +18,10 @@ class SecurityTests(unittest.TestCase):
         db.run("INSERT INTO players(xuid,gamertag,slug,created_at,sync_state,last_view) VALUES('999','HiddenLookupCanary','hidden-canary',0,'ready',?)",time.time())
         with patch.object(web,'FEATURED_SPEC',['CyKul']),patch.object(web,'_cached',return_value=None):
             for path in ['/','/live']:
-                r=self.client.get(path,follow_redirects=True);self.assertEqual(r.status_code,200);   # /live now redirects homeself.assertNotIn(b'HiddenLookupCanary',r.data);self.assertNotIn(b'hidden-canary',r.data)
+                r=self.client.get(path,follow_redirects=True)
+                self.assertEqual(r.status_code,200)  # /live redirects home
+                self.assertNotIn(b'HiddenLookupCanary',r.data)
+                self.assertNotIn(b'hidden-canary',r.data)
     def test_other_cached_match_perspectives_are_not_advertised(self):
         other=dict(stored(),slug='hidden-canary',gamertag='HiddenLookupCanary')
         with patch.object(match_detail,'known',return_value=[stored(),other]),patch.object(match_detail,'ensure',return_value=(None,'loading')):

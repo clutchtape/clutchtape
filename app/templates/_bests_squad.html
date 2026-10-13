@@ -1,0 +1,13 @@
+
+
+{% if d.together %}
+{% if d.best_maps %}
+<section class="panel"><div class="ph"><h2>Best maps together</h2></div>
+  <div class="tablewrap"><table><thead><tr><th>Map</th><th>Games</th><th>Wins</th><th>Win%</th></tr></thead>
+  <tbody>{% for x in d.best_maps %}<tr><td>{{ x.name }}</td><td>{{ x.games }}</td><td>{{ x.wins }}</td><td>{{ x.win_pct }}%</td></tr>{% endfor %}</tbody></table></div></section>
+{% endif %}
+{% elif not pending %}
+<div class="alert">No games found where these players were on the same team yet.</div>
+{% endif %}
+<details class="panel"><summary>Period comparisons</summary>{% if periods %}{% include "_periods.html" %}{% endif %}</details>
+{% include "_hub_tools.html" %}

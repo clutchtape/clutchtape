@@ -82,7 +82,7 @@
   /* ---- Summary <-> Raw: crossfade (heat.js toggles html.rawview on [data-view]) ------------------------------- */
   var passing = false;
   document.addEventListener('click', function (e) {
-    var b = e.target.closest('[data-view]'); if (!b || passing || !document.startViewTransition) return;
+    var b = e.target.closest('.viewsw button[data-view]'); if (!b || passing || !document.startViewTransition) return;
     var want = b.dataset.view === 'raw'; if (want === html.classList.contains('rawview')) return;
     if (document.querySelector('#player .embed iframe') && document.querySelector('#mediasec[open]')) return;   /* never cover a playing video */
     e.stopImmediatePropagation(); e.preventDefault();

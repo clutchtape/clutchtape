@@ -132,6 +132,7 @@
     function hide() { cross.setAttribute('visibility', 'hidden'); tip.hidden = true; }
     hit.addEventListener('mousemove', show); hit.addEventListener('mouseleave', hide); hit.addEventListener('touchstart', show, { passive: true });
     hit.addEventListener('click', function (evt) {
+      var fold = document.querySelector('.recap-fold'); if (fold) fold.open = true;
       var t = document.getElementById('recap-time'); if (!t) return; t.value = Math.round(at(evt) / 1000); t.dispatchEvent(new Event('input'));
       var list = document.getElementById('recap-events'); if (list) list.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });

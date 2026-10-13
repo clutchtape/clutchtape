@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ ps|map(attribute='gamertag')|join(' + ') }} — Clutchtape squad{% endblock %}
-{% block head %}{% if tab == 'analysis' %}<link rel="stylesheet" href="/static/companion.css?v=4"><link rel="stylesheet" href="/static/growth.css?v=1"><link rel="stylesheet" href="/static/analysis.css?v=4"><link rel="stylesheet" href="/static/dense.css?v=2">{% endif %}{% endblock %}
+{% block head %}{% if tab == 'analysis' %}<link rel="stylesheet" href="/static/companion.css?v=4"><link rel="stylesheet" href="/static/growth.css?v=1"><link rel="stylesheet" href="/static/analysis.css?v=6"><link rel="stylesheet" href="/static/dense.css?v=2">{% endif %}{% endblock %}
 {% block content %}
 {% set hub_title = ps|map(attribute="gamertag")|join(" + ") %}{% set save_label = hub_title %}{% set hub_slugs = slugs %}
 {% set hub_meta %}{% for p in ps %}{% set rest = ps|rejectattr('slug', 'equalto', p.slug)|map(attribute='slug')|list %}<span class="memchip" style="view-transition-name:mem-{{ p.slug }}"><a class="mem" href="/p/{{ p.slug }}">{{ p.gamertag }}</a><a class="memx" href="{{ ('/squad/' ~ rest|join(',')) if rest|length > 1 else ('/p/' ~ rest[0]) }}" title="Remove {{ p.gamertag }} from this squad" aria-label="Remove {{ p.gamertag }}">×</a></span>{% endfor %}{% if ps|length < 6 %}<details class="addmem"><summary>+ Add player</summary><form method="post" action="/add"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="squad" value="{{ ps|map(attribute='slug')|join(',') }}"><input name="gamertag" maxlength="15" required placeholder="Gamertag" aria-label="Gamertag to add" autocomplete="off"><input type="hidden" name="twitch" value=""><button type="submit">Add</button></form></details>{% endif %}{% set tw_rows = [] %}{% for p in ps %}{% set _ = tw_rows.append((p.slug, p.gamertag, chans.get(p.slug, ''))) %}{% endfor %}{% include "_tw_form.html" %}{% if d.games %}<span class="dot">·</span>{{ d.games }} games together{% endif %}{% endset %}
@@ -33,19 +33,6 @@
 {% include "_board_body.html" %}
 {% elif tab == 'sessions' %}
 {% with sess_list = d.nights, sess_sel = d.s_idx %}{% include "_hub_sessions.html" %}{% endwith %}
-{% elif tab == 'records' %}
-
-{% if d.together %}
-{% if d.best_maps %}
-<section class="panel"><div class="ph"><h2>Best maps together</h2></div>
-  <div class="tablewrap"><table><thead><tr><th>Map</th><th>Games</th><th>Wins</th><th>Win%</th></tr></thead>
-  <tbody>{% for x in d.best_maps %}<tr><td>{{ x.name }}</td><td>{{ x.games }}</td><td>{{ x.wins }}</td><td>{{ x.win_pct }}%</td></tr>{% endfor %}</tbody></table></div></section>
-{% endif %}
-{% elif not pending %}
-<div class="alert">No games found where these players were on the same team yet.</div>
-{% endif %}
-{% if periods %}{% include "_periods.html" %}{% endif %}
-{% include "_hub_tools.html" %}
 {% else %}
 {% if tab == 'latest' %}
 {% set gamelog_block %}
@@ -162,7 +149,7 @@
 {% endblock %}
 
 {% block scripts %}
-{% if tab == 'analysis' %}<script nonce="{{ csp_nonce }}" src="/static/growth.js?v=3" defer></script><script nonce="{{ csp_nonce }}" src="/static/analysis.js?v=8" defer></script><script nonce="{{ csp_nonce }}" src="/static/analysis_trends.js?v=2" defer></script>{% endif %}
+{% if tab == 'analysis' %}<script nonce="{{ csp_nonce }}" src="/static/growth.js?v=4" defer></script><script nonce="{{ csp_nonce }}" src="/static/analysis.js?v=10" defer></script><script nonce="{{ csp_nonce }}" src="/static/analysis_trends.js?v=2" defer></script>{% endif %}
 {% if tab in ('latest', 'clips') %}
 <script nonce="{{ csp_nonce }}" src="https://player.twitch.tv/js/embed/v1.js"></script>
 <script nonce="{{ csp_nonce }}" src="/static/twitch-shim.js?v=2"></script>

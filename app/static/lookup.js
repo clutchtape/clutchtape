@@ -14,7 +14,7 @@
       row.querySelector('.removemate').setAttribute('aria-label', 'Remove squadmate ' + i);
     });
     add.hidden = visible.length === 4;
-    submit.textContent = visible.length > 1 ? 'Show our squad' : 'Show my stats';
+    submit.textContent = 'Show stats';
   }
   add.addEventListener('click', function () {
     var row = rows().find(function (row) { return row.hidden; });

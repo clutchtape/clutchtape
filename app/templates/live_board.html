@@ -4,7 +4,7 @@
 {% block content %}
 <div class="companion" id="companion" data-slugs="{{ b.slugs }}" data-current="{{ 'true' if b.current else 'false' }}" data-version="{{ b.version }}" data-title="{{ b.title }}" data-stable="{{ b.stable_url }}" data-latest-time="{{ b.latest.started_at if b.latest else 0 }}">
 <div class="board-toolbar"><a class="back-link" href="/live">← Players & squads</a><div class="board-actions"><button type="button" class="secondary" data-save-profile data-label="{{ b.title }}">Save</button><a class="secondary" href="{{ '/p/' ~ b.slugs if b.players|length==1 else '/squad/' ~ b.slugs }}?kind={{ b.kind }}{% if b.anchor %}&session={{ b.anchor }}{% endif %}#latest">▶ Full page with video</a><button type="button" class="secondary" data-fullscreen="#companion">Full screen</button><button type="button" class="secondary" data-link="{{ request.host_url.rstrip('/') ~ b.stable_url }}">Share ↗</button>{% if b.selected %}<a class="primary" href="/report/{{ b.slugs }}.png?{{ b.report_query }}&download=1" download>↓ Report</a>{% endif %}</div></div>
-<details class="extra-tools"><summary>More tools</summary><div class="tool-links" id="growth-links"><a class="secondary" href="/history/{{ b.slugs }}?kind={{ b.kind }}">Match search</a><a class="secondary" href="/practice/{{ b.slugs }}?kind={{ b.kind }}">Personal goals</a><a class="secondary" href="/weekly/{{ b.slugs }}?kind={{ b.kind }}">Weekly recap</a><a class="secondary" href="/scrims/{{ b.slugs }}">Scrim series</a></div></details>
+<details class="extra-tools"><summary>More tools</summary><div class="tool-links" id="growth-links"><a class="secondary" href="/history/{{ b.slugs }}?kind={{ b.kind }}">Match search</a><a class="secondary" href="/practice/{{ b.slugs }}?kind={{ b.kind }}">Personal goals</a><a class="secondary" href="/weekly/{{ b.slugs }}?kind={{ b.kind }}">Weekly recap</a></div></details>
 <details class="filter-panel" open><summary>Filters & comparison</summary><form class="analysis-filters" method="get" id="analysis-filters">
 
 <label>Game type<select name="kind">{% for k,label in kinds %}<option value="{{ k }}" {{ 'selected' if k==b.kind }}>{{ label }}</option>{% endfor %}</select></label>
@@ -27,4 +27,4 @@
 <div class="timeline-panel span-full" data-view="replay">{% include '_recap.html' %}</div></div></div>
 <script type="application/json" nonce="{{ csp_nonce }}" id="analysis-data">{{ b.analysis|tojson }}</script>
 {% endblock %}
-{% block scripts %}<script nonce="{{ csp_nonce }}" src="/static/growth.js?v=3" defer></script><script nonce="{{ csp_nonce }}" src="/static/analysis.js?v=8" defer></script><script nonce="{{ csp_nonce }}" src="/static/analysis_trends.js?v=2" defer></script>{% endblock %}
+{% block scripts %}<script nonce="{{ csp_nonce }}" src="/static/growth.js?v=4" defer></script><script nonce="{{ csp_nonce }}" src="/static/analysis.js?v=8" defer></script><script nonce="{{ csp_nonce }}" src="/static/analysis_trends.js?v=2" defer></script>{% endblock %}

@@ -1,0 +1,9 @@
+
+{% if d.insights %}
+<section class="insights">{% for i in d.insights %}
+  <div class="ins{{ ' fresh' if i.fresh }}"><span>{{ i.label }}{% if i.fresh %} <em class="newchip">NEW</em>{% endif %}</span><b>{{ i.big }}</b><small>{{ i.sub }}</small></div>
+{% endfor %}</section>
+{% endif %}
+{% if not d.insights %}<p class="muted">Personal bests appear once a few sessions have loaded.</p>{% endif %}
+<details class="panel"><summary>Period comparisons</summary>{% if periods %}{% include "_periods.html" %}{% endif %}</details>
+{% include "_hub_tools.html" %}
