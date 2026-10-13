@@ -100,6 +100,11 @@ def _loop():
             if state['alerts']:log.warning('Operational alerts: %s','; '.join(state['alerts']))
             db.kv_set('ops:heartbeat',dict(at=time.time(),alerts=state['alerts']))
         except Exception:log.exception('Maintenance check failed')
+        try:
+            import activity_notify
+            activity_notify.poll()
+        except Exception as exc:
+            log.warning('Activity notification deferred (%s)', type(exc).__name__)
         time.sleep(60)
 
 

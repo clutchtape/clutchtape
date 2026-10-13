@@ -134,3 +134,15 @@ foreground jobs. A surge can delay historical imports and highlights. Tests
 simulate 500 distinct players, bounded admission, duplicate viewers, backoff
 and queue recovery without contacting Halo. They are not an end-to-end
 500-user load certification.
+
+### Optional operator activity notifications
+
+To receive minimal new-profile summaries, create
+`activity-notify.json` in `HALO_DATA_DIR` with
+`{"enabled": true, "url": "https://ntfy.example.com/private-topic"}`.
+Keep this file private and outside the repository. Existing profiles are
+baselined on activation; new additions are batched at most once per five
+minutes, at low priority. No names or IPs are sent. Repeat searches and
+background syncs do not trigger notices. This counts profiles, not unique
+people, and does not count visitors who only browse existing profiles.
+Notification state survives restarts and failed deliveries retry later.
