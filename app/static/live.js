@@ -1,7 +1,10 @@
 /* Polls /api/live/<slugs> every 30s and updates the live strip in place (no reload, the video keeps playing). */
 (function () {
-  var box = document.getElementById('live'); if (!box) return;
-  var slugs = box.dataset.slugs, seen = {}, first = true, busy = false, status = document.getElementById('lvstatus');
+  // Polling belongs to the page, even before the first game makes a live panel visible.
+  var source = document.getElementById('live-source') || document.getElementById('live'); if (!source) return;
+  var box = document.getElementById('live'), slugs = source.dataset.slugs, seen = {}, first = true, busy = false, status = document.getElementById('lvstatus');
+  try { if (source.dataset.seen) { seen = JSON.parse(source.dataset.seen); first = false; } } catch (e) {}
+  var refreshPending = false, refreshing = false;
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function game(p, L) { return { who: p.gamertag, outcome: L.outcome || '', map: L.map || '', mode: L.mode || '', k: L.k, d: L.d, a: L.a }; }
   var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -29,7 +32,7 @@
     fetch('/api/live/' + slugs, { cache: 'no-store', signal:controller.signal }).then(function (r) { if (!r.ok) throw new Error('Stats unavailable'); return r.json(); }).then(function (j) {
       var any = false, fresh = [];
       j.players.forEach(function (p) {
-        var l = p.live, card = box.querySelector('.lvcard[data-slug="' + p.slug + '"]');
+        var l = p.live, card = box && box.querySelector('.lvcard[data-slug="' + p.slug + '"]');
         if (!l) { if (first) seen[p.slug] = ''; return; }                 /* remember "no game yet" so the first game tonight counts as new */
         if (!card) { if (!first && seen[p.slug] !== l.last.match_id) fresh.push(game(p, l.last)); seen[p.slug] = l.last.match_id; return; }
         if (l.active) any = true;
@@ -44,12 +47,13 @@
         if (!first && seen[p.slug] != null && seen[p.slug] !== L.match_id) fresh.push(game(p, L));
         seen[p.slug] = L.match_id;
       });
-      if (any && box.hidden) { box.hidden = false; box.classList.add('on'); }
+      if (any && box && box.hidden) { box.hidden = false; box.classList.add('on'); }
       if (fresh.length) { fresh.forEach(function (g, i) { setTimeout(function () { banner(g); }, i * 2600); }); refresh(fresh);
         /* the rest of a game lands after its first row: squadmates' copies (often 2-3 min later), then the film read
            (advanced stats, clips) — none of which shows up as a new game, so check again a few times (2026-10-11) */
         clearTimeout(follow.a); clearTimeout(follow.b); clearTimeout(follow.c);
         follow.a = setTimeout(function () { refresh(fresh); }, 45000); follow.b = setTimeout(function () { refresh(fresh); }, 120000); follow.c = setTimeout(function () { refresh(fresh); }, 240000); }
+      if (refreshPending && !fresh.length) refresh();
       beat();
       first = false;
       if (status) status.textContent = j.players.some(function (p) { return p.syncing; }) ? 'Updating match history…' : 'Checked just now · new results may take a few minutes.';
@@ -106,9 +110,12 @@
   function appear(n) { if (calm) return; n.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.2,.8,.2,1)' }); }
   function vanish(o) { if (calm) { o.remove(); return; } o.animate([{ opacity: 1 }, { opacity: 0, transform: 'scale(.98)' }], { duration: 260, easing: 'ease-in' }).finished.then(function () { o.remove(); }, function () { o.remove(); }); }
   function refresh(quiet) {   /* quiet: the periodic pass — only the live box (stream info), never sections someone may have opened */
+    if (quiet !== true) refreshPending = true;
+    if (refreshing) return; refreshing = true;
+    var controller = new AbortController(), timeout = setTimeout(function () { controller.abort(); }, 12000);
     var lu = new URL(location.href); if (document.querySelector('#raw:not([data-lazy])')) lu.searchParams.set('raw', '1');   /* keep a loaded raw table */
     lastFull = Date.now();
-    fetch(lu, { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : Promise.reject(); }).then(function (html) {
+    fetch(lu, { cache: 'no-store', credentials: 'same-origin', signal: controller.signal }).then(function (r) { return r.ok ? r.text() : Promise.reject(); }).then(function (html) {
       var doc = new DOMParser().parseFromString(html, 'text/html');
       (quiet === true ? ['#onair', '#playnow'] : SWAP).forEach(function (sel) {
         var olds = document.querySelectorAll(sel), news = doc.querySelectorAll(sel);
@@ -122,8 +129,11 @@
         else if (olds.length && !news.length) [].forEach.call(olds, function (o) { if (!o.hasAttribute('data-hold')) vanish(o); });
       });
       if (window.ctHeat) window.ctHeat(); if (window.ctPage) window.ctPage();
+      if (quiet !== true) refreshPending = false;
       beat(); glow();
-    }).catch(function () { document.getElementById('lvreload').hidden = false; });
+    }).catch(function () { var retry = document.getElementById('lvreload'); if (retry) retry.hidden = false;
+      if (status) status.textContent = 'New results are available. Retrying the table update automatically…';
+    }).finally(function () { clearTimeout(timeout); refreshing = false; });
   }
   window.ctLiveRefresh = refresh; window.ctLiveBanner = banner;
   /* while someone is live, refresh quietly every 2 minutes too — stream title, viewers, the game they're on, and
@@ -131,7 +141,8 @@
   var lastFull = Date.now();
   setInterval(function () { if (document.hidden || busy || !(document.getElementById('onair') || document.getElementById('playnow'))) return;
     if (Date.now() - lastFull >= 115000) refresh(true); }, 15000);   /* also used by the browser test to replay an update */
-  document.getElementById('lvreload').onclick = function () { this.hidden = true; refresh(); };
+  var retry = document.getElementById('lvreload'); if (retry) retry.onclick = function () { this.hidden = true; refresh(); };
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) tick(); });
   /* keep the live uptime ticking */
   setInterval(function () { var oa = document.getElementById('onair'), b = oa && oa.querySelector('[data-uptime]'); if (!b || !oa.dataset.started) return;
     var up = Math.max(0, Math.floor(Date.now() / 1000 - +oa.dataset.started)); b.textContent = (up >= 3600 ? Math.floor(up / 3600) + 'h ' : '') + Math.floor(up % 3600 / 60) + 'm'; }, 30000);
